@@ -1,16 +1,17 @@
-﻿#include <SDL2/SDL_main.h>
+﻿#pragma once
+#include <SDL2/SDL_main.h>
 #include <glm/vec2.hpp>
 
 namespace Core::Input 
 {
 namespace Mouse 
 {
-glm::vec2 position = {0, 0};
-bool press_left = false;
-bool press_right = false;
-bool press_middle = false;
-bool press_four = false;
-bool press_five = false;
+inline glm::vec2 position = {0, 0};
+inline bool press_left = false;
+inline bool press_right = false;
+inline bool press_middle = false;
+inline bool press_four = false;
+inline bool press_five = false;
 }
 
 

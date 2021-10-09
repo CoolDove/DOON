@@ -21,6 +21,7 @@ GeoBatch::GeoBatch(std::initializer_list<Attribute> _attribs) {
 
 	glVertexArrayVertexBuffer(m_vao, 0, m_vertex_buf.get_id(), 0, offset);
 	glVertexArrayElementBuffer(m_vao, m_elem_buf.get_id());
+	printf("geo batch init\n");
 }
 
 void GeoBatch::add_quad(float _width, float _height, std::string _name) {

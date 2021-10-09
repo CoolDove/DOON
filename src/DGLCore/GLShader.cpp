@@ -8,7 +8,7 @@ static char* read_file(const char* _path) {
 	std::ifstream file(_path);
 	if (!file.good()) {
 		DLOG_ERROR("failed to read file: \"%s\"", _path);
-#ifdef _DEBUG
+#ifdef DEBUG
 		assert(true);
 #else
 		return nullptr;
