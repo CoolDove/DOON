@@ -16,7 +16,7 @@
 #include "DGLCore/GLCamera.h"
 #include "DGLCore/GLGeoBatch.h"
 
-#include "DSKCore/Input.h"
+#include "Core/Input.h"
 
 #include <glm/glm.hpp>
 #include <glm/ext/matrix_transform.hpp>
