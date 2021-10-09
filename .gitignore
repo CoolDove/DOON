@@ -1,0 +1,23 @@
+#dove
+*.swp
+*.out
+*.a
+/.vscode
+!vendor/
+
+# build sys && IDE
+/bin
+/obj
+bin/
+obj/
+*.obj
+*.o
+## linux
+*.make
+Makefile
+## win
+*.sln
+*.vcxproj
+*.vcxproj.user
+*.vcxproj.filters
+/.vs
