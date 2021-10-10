@@ -36,15 +36,15 @@ public:
 public:
 	Buffer();
 	~Buffer();
-	int get_id() { return m_id; }
-	size_t get_size() { return m_size; }
-	size_t get_capacity() { return m_capacity; }
-	BufferType get_type() { return m_type; }
+	int get_id() { return id_; }
+	size_t get_size() { return size_; }
+	size_t get_capacity() { return capacity_; }
+	BufferType get_type() { return type_; }
 private:
-	GLuint m_id;
-	size_t m_size;
-	size_t m_capacity;
-	BufferType m_type;
-	unsigned int m_flag; 
+	GLuint id_;
+	size_t size_;
+	size_t capacity_;
+	BufferType type_;
+	unsigned int flag_; 
 };
 }

@@ -3,7 +3,7 @@
 
 namespace DGL
 {
-Camera::Camera() : m_position(0, 0) {
+Camera::Camera() : position_(0, 0) {
 }
 
 glm::mat4 Camera::calc_view() {
@@ -13,15 +13,15 @@ glm::mat4 Camera::calc_view() {
 	view[2][2] = 1.0f;
 	view[3][3] = 1.0f;
 
-	view[3][0] = -m_position.x;
-	view[3][1] = -m_position.y;
+	view[3][0] = -position_.x;
+	view[3][1] = -position_.y;
 	return view;
 }
 
 glm::mat4 Camera::calc_proj(int _width, int _height) {
 	glm::mat4 proj(0);
-	proj[0][0] = 2.0f/(_width * m_size);
-	proj[1][1] = 2.0f/(_height * m_size);
+	proj[0][0] = 2.0f/(_width * size_);
+	proj[1][1] = 2.0f/(_height * size_);
 	proj[2][2] = 1;
 	proj[3][3] = 1;
 	return proj;

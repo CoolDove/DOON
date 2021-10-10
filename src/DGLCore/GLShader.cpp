@@ -74,7 +74,7 @@ bool Shader::load(const std::string _vert_path, const std::string _frag_path) {
 	delete [] vert_src;
 	delete [] frag_src;
 
-	m_id = shader_prog;
+	id_ = shader_prog;
 	return true;
 }
 }

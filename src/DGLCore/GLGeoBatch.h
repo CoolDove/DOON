@@ -33,25 +33,25 @@ public:
 	void upload();
 
 public:
-	GLuint get_vao_id() { return m_vao; };
-	std::vector<float>& get_vertices() { return m_vertices; };
-	std::vector<unsigned int>& get_indices() { return m_indices; };
-	Buffer* get_vertex_buffer() { return &m_vertex_buf; };
-	Buffer* get_element_buffer() { return &m_elem_buf; };
+	GLuint get_vao_id() { return vao_; };
+	std::vector<float>& get_vertices() { return vertices_; };
+	std::vector<unsigned int>& get_indices() { return indices_; };
+	Buffer* get_vertex_buffer() { return &vertex_buf_; };
+	Buffer* get_element_buffer() { return &elem_buf_; };
 
 private:
 	int get_vertices_count();
 private:
-	std::vector<Attribute> m_attribs;
-	std::vector<float> m_vertices;
-	std::vector<GLuint> m_indices;
+	std::vector<Attribute> attribs_;
+	std::vector<float> vertices_;
+	std::vector<GLuint> indices_;
 
 	// std::unordered_map<std::string, Geometry> m_geometries;
 	
-	Buffer m_vertex_buf;
-	Buffer m_elem_buf;
+	Buffer vertex_buf_;
+	Buffer elem_buf_;
 	
-	GLuint m_shader;
-	GLuint m_vao;
+	GLuint shader_;
+	GLuint vao_;
 };
 }
