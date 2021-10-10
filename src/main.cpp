@@ -12,7 +12,7 @@
 // #include <SDL2/SDL_image.h>
 #include <cstring>
 
-#include "Application.h"
+#include "Core/Application.h"
 
 int main(int argc, char** args) {
 	Application app;

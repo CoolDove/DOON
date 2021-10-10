@@ -25,8 +25,6 @@ GeoBatch::GeoBatch(std::initializer_list<Attribute> _attribs) {
 }
 
 void GeoBatch::add_quad(float _width, float _height, std::string _name) {
-	// m_geometries[_name] = { vertices_.size(), 4 };
-
 	int index_offset = get_vertices_count();
 	
 	auto add_point = [this](glm::vec4 _pos, glm::vec4 _uv, glm::vec4 _normal) {

@@ -28,6 +28,7 @@ project "DOON"
 		"*.cpp", 
 		"src/*.cpp", 
 		"src/DGLCore/*.cpp",
+		"src/Core/*.cpp",
 	}
 	links {
 		"SDL2main", 
