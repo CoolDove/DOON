@@ -10,25 +10,25 @@
 #include <imgui/backends/imgui_impl_sdl.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
 
-#include <thread>
-
+#include <time.h>
 
 Application::Application() 
 :	cam_pos(0),
-	cam_size(5.0f)
+	cam_size(5.0f),
+	terminated(false)
 {
 	init_dlog();
 	init_sdl();
 	init_opengl();
-	// init_imgui();
+	init_imgui();
 
 	camera = std::make_unique<DGL::Camera>();
 	shader = std::make_unique<DGL::Shader>();
 	batch = new DGL::GeoBatch({{DGL::Attribute::POSITION, 3}, { DGL::Attribute::UV, 2 }});
-
-    /*──────────┐
-    │ load data │
-    └──────────*/
+	
+	/*──────────┐
+	│ load data │
+	└──────────*/
 	shader->load("./res/shaders/base.vert", "./res/shaders/base.frag");
 	shader->bind();
 
@@ -37,15 +37,13 @@ Application::Application()
 }
 
 Application::~Application() {
+
 }
 
 void Application::run() {
-	terminated = false;
+	// terminated = false;
 	// do something
-	static float col[4] = {0.2f,0.2f,0.2f,0};
-	/*──────────────────────┐
-	│ OpenGL Data preparing │
-	└──────────────────────*/
+	static float col[4] = {0.4f,0.7f,0.2f,0};
 
 	glCreateTextures(GL_TEXTURE_2D, 1, &img_id);
 	glTextureStorage2D(img_id, 1, GL_RGBA12, images["jko"]->w, images["jko"]->h);
@@ -57,36 +55,25 @@ void Application::run() {
 	// canvas_size should be replaced by image size
 	batch->upload();
 
-	std::thread render_thd([this]{
-		SDL_GL_MakeCurrent(window, glcontext);
-		while(!terminated) {
-			render();
-		}
-	});
-
 	while (!terminated)
 	{
 		handle_event();
+		render();
 	}
 
-	render_thd.join();
-	// ImGui_ImplOpenGL3_Shutdown();
-	// ImGui_ImplSDL2_Shutdown();
-	// ImGui::DestroyContext();
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplSDL2_Shutdown();
+	ImGui::DestroyContext();
 	SDL_GL_DeleteContext(glcontext);
 	SDL_DestroyWindow(window);
 
 	SDL_Quit();
 }
+
 void Application::render() {
-	// render here
-	// glClearColor(col[0], col[1], col[2], col[3]);
-	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+	glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	/*─────────────┐
-	│ OpenGL Layer │
-	└─────────────*/
 	glTextureSubImage2D(img_id, 0, 0, 0, images["jko"]->w, images["jko"]->h, GL_RGBA, GL_UNSIGNED_BYTE, images["jko"]->pixels);	
 
 	glBindTexture(GL_TEXTURE_2D, img_id);
@@ -106,27 +93,27 @@ void Application::render() {
 	glUniformMatrix4fv(uid_proj_matrix, 1, false, &proj[0][0]);
 
 	// imgui layer
-	// ImGui_ImplOpenGL3_NewFrame();
-	// ImGui_ImplSDL2_NewFrame(window);
-	// ImGui::NewFrame();
+	ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplSDL2_NewFrame(window);
+	ImGui::NewFrame();
 
-	// // ImGui::ShowDemoWindow();
-	// {
-	// 	ImGui::Begin("Camera");
-	// 	ImGui::DragFloat2("position", &cam_pos[0], 0.01f, -1, 1);
-	// 	ImGui::DragFloat("size", &cam_size, 0.01f, 0.1f, 10.0f);
-	// 	ImGui::End();
-	// }
-	// camera->set_pos(cam_pos);
-	// camera->set_size(cam_size);
+	// ImGui::ShowDemoWindow();
+	{
+		ImGui::Begin("Camera");
+		ImGui::DragFloat2("position", &cam_pos[0], 0.01f, -1, 1);
+		ImGui::DragFloat("size", &cam_size, 0.01f, 0.1f, 10.0f);
+		ImGui::End();
+	}
+	camera->set_pos(cam_pos);
+	camera->set_size(cam_size);
 
-	// ImGui::EndFrame();
+	ImGui::EndFrame();
 
-	// ImGui::Render();
-	// ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+	ImGui::Render();
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
 	SDL_GL_SwapWindow(window);
-	SDL_Delay(16);
+	// SDL_Delay(16);
 }
 
 void Application::handle_event() {
@@ -147,6 +134,7 @@ void Application::handle_event() {
 				case SDL_WINDOWEVENT_RESIZED:
 					DLOG_INFO("resized");
 					glViewport(0, 0, target_event.window.data1, target_event.window.data2);
+					
 					break;
 				}
 			case SDL_MOUSEMOTION:
@@ -169,7 +157,8 @@ void Application::handle_event() {
 					int half_width = 0.5f * images["jko"]->w;
 					int half_height = 0.5f * images["jko"]->h;
 
-					// draw_circle(global_surface, cs_pos.x + half_width, -cs_pos.y + half_height, 30, 0xffffff00);
+					draw_circle(images["jko"], cs_pos.x + half_width, -cs_pos.y + half_height, 30, 0xffffff00);
+					
 				}
 			case SDL_MOUSEBUTTONDOWN:
 				if (target_event.button.button == SDL_BUTTON_LEFT) 
@@ -212,6 +201,33 @@ void Application::init_sdl() {
 
 	assert(window != nullptr);
 }
+void Application::draw_circle(SDL_Surface* _img, int _x, int _y, int _r, unsigned int _col) {
+	auto px = [=](int _x, int _y){
+		return _y * _img->w + _x;
+	};
+
+	int center = px(_x, _y);
+ 
+	for (int i = 0; i < 2 * _r; i++)
+	{
+		int scan_length = 2 * glm::sqrt(_r * _r - (_r - i) * (_r - i));
+
+		int start_x = _x - scan_length * 0.5f;
+		int start_y = _y - _r + i;
+
+		if (start_x > _img->w || start_x < 0 || start_y > _img->h || start_y < 0) {
+			return;
+		}
+		scan_length = glm::min(scan_length, _img->w - start_x);
+		int start = px(start_x, start_y);
+
+		for (int j = 0; j < scan_length; j++)
+		{
+			int* pix = (int*)_img->pixels + start + j;
+			*pix = _col;
+		}
+	}
+}
 
 void Application::init_opengl() {
 	
@@ -221,8 +237,7 @@ void Application::init_opengl() {
 	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
  
 	glcontext = SDL_GL_CreateContext(window);
-
-	// SDL_GL_MakeCurrent(window, glcontext);
+	SDL_GL_MakeCurrent(window, glcontext);
 
 	SDL_GL_SetSwapInterval(1);
 

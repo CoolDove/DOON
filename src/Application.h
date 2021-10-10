@@ -1,10 +1,14 @@
-﻿#include <SDL2/SDL.h>
+﻿#pragma once
+#include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <unordered_map>
 #include <string>
 #include <memory>
+#include <thread>
 
 #include "DGLCore/DGLCore.h"
+
+using namespace std;
 
 class Application {
 public:
@@ -16,21 +20,13 @@ public:
 	SDL_GLContext glcontext;
 
 private:
-	std::unordered_map<std::string, SDL_Surface*> images;
-
-	std::unique_ptr<DGL::Shader> shader;
-	std::unique_ptr<DGL::Camera> camera;
-	// std::unique_ptr<DGL::GeoBatch> batch;
-	DGL::GeoBatch* batch;
-
+	unordered_map<string, SDL_Surface*> images;
+	unique_ptr<DGL::Shader> shader;
+	unique_ptr<DGL::Camera> camera;
+	DGL::GeoBatch* 	batch;
 	GLuint img_id;
-
 	glm::vec2 cam_pos;
 	float cam_size;
-
-	// renderer
-	// sessions
-	// tool
 private:
 	bool terminated;
 
@@ -42,4 +38,5 @@ private:
 private:
 	void handle_event();
 	void render();
+	void draw_circle(SDL_Surface* _img, int _x, int _y, int _r, unsigned int _col);
 };
