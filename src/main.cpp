@@ -70,11 +70,13 @@ LRESULT CALLBACK windows_proc(HWND _window, UINT _message, WPARAM _w_param, LPAR
 		case WM_DESTROY:
 		{
 			OutputDebugString("destroy\n");
+			PostQuitMessage(0);
 			terminated = true;
 		} break;
 		case WM_CLOSE:
 		{
 			OutputDebugString("close\n");
+			PostQuitMessage(0);
 			terminated = true;
 		} break;
 		case WM_ACTIVATEAPP:

@@ -1,5 +1,5 @@
 ﻿workspace "Dove"
-	platforms {"Win", "Linux"}
+	platforms {"Win"}
 	configurations {"Debug", "Release"}
 	architecture "x86_64"
 	language "c++"
