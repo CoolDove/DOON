@@ -4,12 +4,13 @@
 	architecture "x86_64"
 	language "c++"
 	cppdialect "c++17"
+	characterset ("ASCII")
 
 include "./vendor/glad"
 include "./vendor/imgui"
 
 project "DOON"
-	kind "ConsoleApp"
+	kind "WindowedApp"
 	targetdir "%{wks.location}/bin/%{cfg.buildcfg}/%{prj.name}"
 	objdir "%{wks.location}/obj/%{cfg.buildcfg}/%{prj.name}"
 

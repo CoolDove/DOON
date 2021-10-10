@@ -1,52 +1,92 @@
 ﻿#include <thread>
-
-#include <SDL2/SDL.h>
-
+// #include <SDL2/SDL.h>
+#include <Windows.h>
 #include "DoveLog.hpp"
-
-#include <glm/glm.hpp>
-#include <glm/ext/matrix_transform.hpp>
-
-#include <time.h>
-
-// #include <SDL2/SDL_image.h>
-#include <cstring>
-
 #include "Core/Application.h"
+#include "string"
 
-int main(int argc, char** args) {
-	Application app;
+LRESULT CALLBACK windows_proc(HWND _window, UINT _message, WPARAM _w_param, LPARAM _l_param);
 
-	app.run();
+bool terminated = false;
 
-	DLOG_TRACE("terminate");
+int WinMain(HINSTANCE _instance, HINSTANCE _prev_instance, char* _cmd_line, int _show_code) {
+	std::string wnd_name = "DOON";
+
+	WNDCLASS wnd_class = {};
+	wnd_class.style = CS_HREDRAW | CS_VREDRAW;
+	wnd_class.lpfnWndProc = windows_proc;
+	wnd_class.hInstance = _instance;
+	wnd_class.lpszClassName = "DOOMWindowClass";
+
+	RegisterClass(&wnd_class);
+
+	HWND window = CreateWindowEx(0,
+								 wnd_class.lpszClassName, 
+								 "DOOM", 
+								 WS_OVERLAPPEDWINDOW | WS_VISIBLE, 
+								 CW_USEDEFAULT, 
+								 CW_USEDEFAULT,
+								 CW_USEDEFAULT, 
+								 CW_USEDEFAULT,
+								 nullptr, 
+								 nullptr,
+								 _instance,
+								 nullptr);
+
+	if (!window) {
+		MessageBox(nullptr, "error occured while creating windows", "error", MB_OK);
+		return -1;
+	} else {
+		// ShowWindow(window, _show_code);
+		// UpdateWindow(window);
+		while (!terminated)
+		{
+			MSG msg;
+			while (BOOL result = GetMessage(&msg, nullptr, 0, 0)) {
+				if (result > 0) {
+					TranslateMessage(&msg);
+					DispatchMessage(&msg);
+				} else {
+					break;
+				}
+			}
+		}
+	}
+	
+	// old code
+	// Application app;
+	// app.run();
 	return 0;
 }
 
-static void draw_circle(SDL_Surface* _img, int _x, int _y, int _r, unsigned int _col) {
-	auto px = [=](int _x, int _y){
-		return _y * _img->w + _x;
-	};
-
-	int center = px(_x, _y);
- 
-	for (int i = 0; i < 2 * _r; i++)
+LRESULT CALLBACK windows_proc(HWND _window, UINT _message, WPARAM _w_param, LPARAM _l_param) {
+	LRESULT result = 0;
+	switch (_message)
 	{
-		int scan_length = 2 * glm::sqrt(_r * _r - (_r - i) * (_r - i));
-
-		int start_x = _x - scan_length * 0.5f;
-		int start_y = _y - _r + i;
-
-		if (start_x > _img->w || start_x < 0 || start_y > _img->h || start_y < 0) {
-			return;
-		}
-		scan_length = glm::min(scan_length, _img->w - start_x);
-		int start = px(start_x, start_y);
-
-		for (int j = 0; j < scan_length; j++)
+		case WM_SIZE:
 		{
-			int* pix = (int*)_img->pixels + start + j;
-			*pix = _col;
-		}
+			OutputDebugString("resize\n");
+		} break;
+		case WM_DESTROY:
+		{
+			OutputDebugString("destroy\n");
+			terminated = true;
+		} break;
+		case WM_CLOSE:
+		{
+			OutputDebugString("close\n");
+			terminated = true;
+		} break;
+		case WM_ACTIVATEAPP:
+		{
+			OutputDebugString("activate\n");
+		} break;
+		default:
+		{
+			result = DefWindowProc(_window, _message, _w_param, _l_param);
+			// need this to handle WM_CREATE and rerurn a non-zero value, 
+			// otherwise we would failed to create a window
+		} break;
 	}
+	return result;
 }
