@@ -18,7 +18,7 @@ Application* Application::instance_ = nullptr;
 
 Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _cmd_line, int _show_code) 
 :	cam_pos{2,2},
-    cam_size(5.0f),
+    cam_size(0.1f),
     window_info_{0, 0},
     gl_info{},
     inited_(false)
@@ -31,6 +31,9 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     // init_imgui();
 
     camera_ = std::make_unique<DGL::Camera>();
+    camera_->set_pos(cam_pos);
+    camera_->set_size(cam_size);
+    
     shader_ = std::make_unique<DGL::Shader>();
     batch = new DGL::GeoBatch({{DGL::Attribute::POSITION, 3}, { DGL::Attribute::UV, 2 }});
     
@@ -86,7 +89,6 @@ void Application::render() {
     glClear(GL_COLOR_BUFFER_BIT);
 
     // glTextureSubImage2D(img_id, 0, 0, 0, images["jko"]->w, images["jko"]->h, GL_RGBA, GL_UNSIGNED_BYTE, images["jko"]->pixels);	
-
     // glBindTexture(GL_TEXTURE_2D, img_id);
 
     int uid_view_matrix = glGetUniformLocation(shader_->get_id(), "_view");
@@ -95,7 +97,7 @@ void Application::render() {
     glm::mat4 view = camera_->calc_view();
 
     // TODO: window width and height
-    int width = get_app()->window_info_.width;
+    int width  = get_app()->window_info_.width;
     int height = get_app()->window_info_.height;
     glm::mat4 proj = camera_->calc_proj(width, height);
 
@@ -131,16 +133,14 @@ case SDL_MOUSEMOTION:
         glm::vec2* mouse_pos = &Core::Input::Mouse::position;
         glm::vec4 ws_pos = glm::vec4(mouse_pos->x, mouse_pos->y, 1, 1);
         ws_pos.x = (ws_pos.x / width) * 2.0f - 1.0f;
-        ws_pos.y = (ws_pos.y / height) * 2.0f - 1.0f;
-        ws_pos.y *= -1;
+        ws_pos.y = -((ws_pos.y / height) * 2.0f - 1.0f);
 
         glm::vec4 cs_pos = matrix * ws_pos;
 
-        int half_width = 0.5f * images["jko"]->w;
+        int half_width  = 0.5f * images["jko"]->w;
         int half_height = 0.5f * images["jko"]->h;
 
         draw_circle(images["jko"], cs_pos.x + half_width, -cs_pos.y + half_height, 30, 0xffffff00);
-        
     }
 #endif
 
@@ -166,15 +166,13 @@ LRESULT CALLBACK windows_proc(HWND _window, UINT _message, WPARAM _w_param, LPAR
         {
             get_app()->window_info_.width = LOWORD(_l_param);
             get_app()->window_info_.height = HIWORD(_l_param);
-            DLOG_TRACE("resize - width:%d height:%d",
-                       get_app()->window_info_.width,
-                       get_app()->window_info_.height);
 
-            if (get_app()->inited_) {
-                glViewport(0, 0, get_app()->window_info_.width, get_app()->window_info_.height);
-                DLOG_TRACE("glviewport");
-            }
-         
+            int width  = get_app()->window_info_.width;
+            int height = get_app()->window_info_.height;
+
+            DLOG_TRACE("resize - width:%d height:%d", width, height);
+            if (get_app()->inited_) 
+                glViewport(0, 0, width, height);
         } break;
         case WM_DESTROY:
         {
