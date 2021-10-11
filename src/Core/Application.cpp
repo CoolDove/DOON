@@ -18,8 +18,8 @@ using wglCreateContextAttribsARB_t = HGLRC (WINAPI *) (HDC hDC, HGLRC hshareCont
 Application* Application::instance_ = nullptr;
 
 Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _cmd_line, int _show_code) 
-:	cam_pos{2,2},
-    cam_size(0.1f),
+:	cam_pos{0,0},
+    cam_size(5.0f),
     window_info_{0, 0},
     gl_info{},
     inited_(false)
@@ -62,7 +62,7 @@ void Application::run() {
 
     // batch->add_quad(0.5f * images["jko"]->w, 0.5f * images["jko"]->h, "quad");
     // batch->add_quad(0.5f * 2048, 0.5f * 2048, "quad");
-    batch->add_quad(1024, 1024, "quad");
+    batch->add_quad(512, 512, "quad");
     batch->upload();
 
     MSG msg;
@@ -110,7 +110,17 @@ void Application::render() {
 
     ImGui::NewFrame();
     // some imgui rendering
-    ImGui::ShowDemoWindow();
+    // ImGui::ShowDemoWindow();
+
+    if (ImGui::Begin("camera")) {
+        ImGui::DragFloat2("pos", (float*)&cam_pos, 0.01f, -1.0f, 1.0f);
+        ImGui::DragFloat("size", &cam_size, 0.1f, 0.01f, 10.0f);
+        ImGui::End();
+    }
+
+    camera_->set_pos(cam_pos);
+    camera_->set_size(cam_size);
+
     ImGui::EndFrame();
 
     ImGui::Render();
@@ -293,11 +303,16 @@ void Application::init_opengl() {
 
 
 void Application::init_imgui() {
-    // ImGui_ImplWin32_EnableDpiAwareness();
+    /*──────────────────────────────────────────────────────────────────────────────┐
+    │ ImGui_ImplWin32_EnableDpiAwareness();                                         │
+    │ i dont know why this function is called in the imgui example,                 │
+    │ but for my situation,                                                         │
+    │ calling this causes an offset of my mouse position depends on the window size │
+    └──────────────────────────────────────────────────────────────────────────────*/
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    // ImGui_ImplSDL2_InitForOpenGL(window, &glcontext);
+
     ImGui_ImplWin32_Init(window_);
     ImGui_ImplOpenGL3_Init(nullptr);
 
