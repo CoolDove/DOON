@@ -18,13 +18,11 @@ project "DOON"
 		"src/",
 		"vendor/",
 		"vendor/glad/include",
-		"vendor/SDL2/include",
-		"vendor/SDL2-img/include",
 	}
-	libdirs {
-		"vendor/SDL2/lib/x64/",
-		"vendor/SDL2-img/lib/x64/"
-	}
+	-- libdirs {
+	-- 	"vendor/SDL2/lib/x64/",
+	-- 	"vendor/SDL2-img/lib/x64/"
+	-- }
 	files {
 		"*.cpp", 
 		"src/*.cpp", 
@@ -32,9 +30,6 @@ project "DOON"
 		"src/Core/*.cpp",
 	}
 	links {
-		"SDL2main", 
-		"SDL2", 
-		"SDL2_image", 
 		"opengl32",
 		"ImGui",
 		"glad",
@@ -43,8 +38,6 @@ project "DOON"
 
 filter "platforms:Win"
 	postbuildcommands {
-		{("{COPY} vendor/SDL2/lib/x64/*.dll %{cfg.buildtarget.directory}")},
-		{("{COPY} vendor/SDL2-img/lib/x64/*.dll %{cfg.buildtarget.directory}")},
 		{("{COPY} res/ %{cfg.buildtarget.directory}/res")}
 	}
 

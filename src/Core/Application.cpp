@@ -4,13 +4,12 @@
 #include <assert.h>
 #include <time.h>
 
-#include <glad/glad.h>
-#include <gl/GL.h>
-
 #include <imgui/imgui.h>
-// #include <imgui/backends/imgui_impl_sdl.h>
 #include <imgui/backends/imgui_impl_win32.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
+
+#include <glad/glad.h>
+#include <gl/GL.h>
 
 
 using wglCreateContextAttribsARB_t = HGLRC (WINAPI *) (HDC hDC, HGLRC hshareContext, const int *attribList);
