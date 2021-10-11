@@ -7,9 +7,10 @@
 #include <glad/glad.h>
 #include <gl/GL.h>
 
-// #include <imgui/imgui.h>
+#include <imgui/imgui.h>
 // #include <imgui/backends/imgui_impl_sdl.h>
-// #include <imgui/backends/imgui_impl_opengl3.h>
+#include <imgui/backends/imgui_impl_win32.h>
+#include <imgui/backends/imgui_impl_opengl3.h>
 
 
 using wglCreateContextAttribsARB_t = HGLRC (WINAPI *) (HDC hDC, HGLRC hshareContext, const int *attribList);
@@ -28,7 +29,7 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     init_dlog();
     init_window(_instance, _prev_instance, _cmd_line, _show_code);
     inited_ = true;
-    // init_imgui();
+    init_imgui();
 
     camera_ = std::make_unique<DGL::Camera>();
     camera_->set_pos(cam_pos);
@@ -75,13 +76,10 @@ void Application::run() {
         }
     }
 
-    // ImGui_ImplOpenGL3_Shutdown();
-    // ImGui_ImplSDL2_Shutdown();
-    // ImGui::DestroyContext();
-    // SDL_GL_DeleteContext(glcontext);
-    // SDL_DestroyWindow(window);
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplWin32_Shutdown();
 
-    // SDL_Quit();
+    ImGui::DestroyContext();
 }
 
 void Application::render() {
@@ -107,14 +105,16 @@ void Application::render() {
     batch->draw_batch();
 
     // imgui layer
-    // ImGui_ImplOpenGL3_NewFrame();
-    // ImGui_ImplSDL2_NewFrame(window);
-    // ImGui::NewFrame();
-    // some imgui rendering
-    // ImGui::EndFrame();
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplWin32_NewFrame();
 
-    // ImGui::Render();
-    // ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    ImGui::NewFrame();
+    // some imgui rendering
+    ImGui::ShowDemoWindow();
+    ImGui::EndFrame();
+
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
     SwapBuffers(device_context_);
 }
@@ -157,9 +157,13 @@ Application* get_app() {
     return Application::get_instance();
 }
 
-LRESULT CALLBACK windows_proc(HWND _window, UINT _message, WPARAM _w_param, LPARAM _l_param) {
-    LRESULT result = 0;
+IMGUI_IMPL_API LRESULT  ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+// implemented in imgui_impl_win32.cpp
 
+LRESULT CALLBACK windows_proc(HWND _window, UINT _message, WPARAM _w_param, LPARAM _l_param) {
+    ImGui_ImplWin32_WndProcHandler(_window, _message, _w_param, _l_param);
+
+    LRESULT result = 0;
     switch (_message)
     {
         case WM_SIZE:
@@ -271,7 +275,7 @@ void Application::init_opengl() {
         HGLRC share_context = 0;
         int attrib_list[] = {
             WGL_CONTEXT_MAJOR_VERSION_ARB, 4,
-            WGL_CONTEXT_MINOR_VERSION_ARB, 6,
+            WGL_CONTEXT_MINOR_VERSION_ARB, 5,
 #ifdef DEBUG
             WGL_CONTEXT_FLAGS_ARB,         WGL_CONTEXT_DEBUG_BIT_ARB,
 #endif
@@ -287,11 +291,14 @@ void Application::init_opengl() {
     }
 }
 
-#if 0
+
 void Application::init_imgui() {
+    // ImGui_ImplWin32_EnableDpiAwareness();
+
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImGui_ImplSDL2_InitForOpenGL(window, &glcontext);
+    // ImGui_ImplSDL2_InitForOpenGL(window, &glcontext);
+    ImGui_ImplWin32_Init(window_);
     ImGui_ImplOpenGL3_Init(nullptr);
 
     ImGuiIO& io = ImGui::GetIO(); (void)io;
@@ -300,6 +307,7 @@ void Application::init_imgui() {
     DLOG_INFO("ImGui has been initialized");
 }
 
+#if 0
 void Application::draw_circle(SDL_Surface* _img, int _x, int _y, int _r, unsigned int _col) {
     auto px = [=](int _x, int _y){
         return _y * _img->w + _x;

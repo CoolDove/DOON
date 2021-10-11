@@ -40,6 +40,7 @@
         snprintf(buff, Dove::MAX_LOG_LENGTH, __VA_ARGS__);                                                          \
         Dove::LogManager::get()->push_msg({Dove::LogType::DLT_TRACE, buff, __FILE__, __FUNCTION__, __LINE__});}
 #else
+#define DLOG_INIT
 #define DLOG_ERROR(...)
 #define DLOG_WARN(...)
 #define DLOG_INFO(...)
