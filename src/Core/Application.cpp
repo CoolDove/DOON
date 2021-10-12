@@ -135,12 +135,6 @@ void Application::render() {
     SwapBuffers(device_context_);
 }
 
-#if 0
-// some space transfomation while painting
-case SDL_MOUSEMOTION:
-    // calc the position in canvas space:
-#endif
-
 void Application::init_dlog() {
     DLOG_ON_PUSH = [](const Dove::LogMsg& _msg){
         OutputDebugString(_msg.to_string(Dove::DMSG_FLAG_SIMPLE | Dove::DMSG_FLAG_FILE | Dove::DMSG_FLAG_LINE).c_str());
@@ -154,11 +148,10 @@ Application* get_app() {
     return Application::get_instance();
 }
 
-// IMGUI_IMPL_API LRESULT  ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-// implemented in imgui_impl_win32.cpp
-
 LRESULT CALLBACK windows_proc(HWND _window, UINT _message, WPARAM _w_param, LPARAM _l_param) {
-    ImGui_ImplWin32_WndProcHandler(_window, _message, _w_param, _l_param);
+    if (ImGui_ImplWin32_WndProcHandler(_window, _message, _w_param, _l_param))
+        return true;
+    
     static bool mouse_holding = false;
 
     LRESULT result = 0;
@@ -203,11 +196,8 @@ LRESULT CALLBACK windows_proc(HWND _window, UINT _message, WPARAM _w_param, LPAR
                 glm::mat4 matrix = get_app()->camera_->calc_view() * get_app()->camera_->calc_proj(width, height);
                 matrix = glm::inverse(matrix);
 
-                // glm::vec2* mouse_pos{ LOWORD(_l_param), HIWORD(_l_param) };
-                struct {
-                    int x;
-                    int y;
-                } mouse_pos = { LOWORD(_l_param), HIWORD(_l_param) };
+                struct { int x; int y; }
+                    mouse_pos = { LOWORD(_l_param), HIWORD(_l_param) };
 
                 glm::vec4 ws_pos = glm::vec4(mouse_pos.x, mouse_pos.y, 1, 1);
                 ws_pos.x = (ws_pos.x / width) * 2.0f - 1.0f;
@@ -218,7 +208,7 @@ LRESULT CALLBACK windows_proc(HWND _window, UINT _message, WPARAM _w_param, LPAR
                 int half_width  = (int)(0.5f * get_app()->images_["jko"]->info_.width);
                 int half_height = (int)(0.5f * get_app()->images_["jko"]->info_.height);
                 
-                get_app()->draw_circle(get_app()->images_["jko"].get(), cs_pos.x + half_width, -cs_pos.y + half_height, 30, 0xffffff00);
+                get_app()->draw_circle(get_app()->images_["jko"].get(), cs_pos.x + half_width, -cs_pos.y + half_height, 25, 0xffffff00);
             }
         } break;
         case WM_LBUTTONDOWN:
@@ -350,24 +340,33 @@ void Application::init_imgui() {
 }
 
 void Application::draw_circle(Image* _img, int _x, int _y, int _r, unsigned int _col) {
+    if (_x < -_r || _x > _img->info_.width + _r || _y < -_r || _y > _img->info_.height + _r )
+        return;
+
+    // a function changing the vec2 position into an index
     auto px = [=](int _x, int _y){
         return _y * _img->info_.width + _x;
     };
 
-    int center = px(_x, _y);
- 
-    for (int i = 0; i < 2 * _r; i++)
+    int start_y = _y - _r;
+
+    for (int i = 0; i < glm::min(2 * _r, _img->info_.height - start_y); i++)
     {
+        int line_y = start_y + i;
+        if (line_y < 0) 
+            continue;
+        
         int scan_length = (int)(2 * glm::sqrt(_r * _r - (_r - i) * (_r - i)));
 
         int start_x = (int)(_x - scan_length * 0.5f);
-        int start_y = _y - _r + i;
-
-        if (start_x > _img->info_.width || start_x < 0 || start_y > _img->info_.height || start_y < 0) {
-            return;
+        if (start_x < 0) {
+            scan_length += start_x;
+            start_x = 0;
         }
-        scan_length = glm::min(scan_length, _img->info_.width - start_x);
-        int start = px(start_x, start_y);
+
+        scan_length = glm::min(scan_length, _img->info_.width - start_x - 1);
+
+        int start = px(start_x, line_y);
 
         for (int j = 0; j < scan_length; j++)
         {
