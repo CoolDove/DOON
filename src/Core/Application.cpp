@@ -17,9 +17,7 @@ using wglCreateContextAttribsARB_t = HGLRC (WINAPI *) (HDC hDC, HGLRC hshareCont
 Application* Application::instance_ = nullptr;
 
 Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _cmd_line, int _show_code) 
-:	cam_pos{0,0},
-    cam_size(5.0f),
-    window_info_{0, 0},
+:   window_info_{0, 0},
     gl_info{},
     inited_(false)
 {
@@ -27,28 +25,23 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
 
     init_dlog();
     init_window(_instance, _prev_instance, _cmd_line, _show_code);
-    inited_ = true;
     init_imgui();
 
-    camera_ = std::make_unique<DGL::Camera>();
-    camera_->set_pos(cam_pos);
-    camera_->set_size(cam_size);
+    inited_ = true;
+
+    scenes_["jko"] = make_unique<Scene>("./res/textures/jko.png");
+    scenes_["test"] = make_unique<Scene>("./res/textures/test.png");
+
+    curr_scene_ = scenes_["jko"].get();
+
+    DLOG_TRACE("scene loaded");
     
     shader_ = std::make_unique<DGL::Shader>();
-    batch = new DGL::GeoBatch({{DGL::Attribute::POSITION, 3}, { DGL::Attribute::UV, 2 }});
-    
     /*──────────┐
-    │ load data │
+    │ load shader
     └──────────*/
     shader_->load("./res/shaders/base.vert", "./res/shaders/base.frag");
     shader_->bind();
-
-    // load images
-    long time = clock();
-    images_["jko"] = std::make_unique<Image>("./res/textures/jko.png", 0);
-    images_["test"] = std::make_unique<Image>("./res/textures/test.png", 0);
-    time = clock() - time;
-    DLOG_TRACE("load time: %d ms", time);
 }
 
 Application::~Application() {
@@ -57,13 +50,13 @@ Application::~Application() {
 
 void Application::run() {
     glCreateTextures(GL_TEXTURE_2D, 1, &img_id);
-    glTextureStorage2D(img_id, 1, GL_RGBA12, images_["jko"]->info_.width, images_["jko"]->info_.height);
+    // TODO(dove): move this part to somewhere else to realloc memory while switch current scene
+    glTextureStorage2D(img_id, 1, GL_RGBA12, 
+                       curr_scene_->image_.info_.width, 
+                       curr_scene_->image_.info_.height);
 
     glBindTextureUnit(0, img_id);
     glUniform1i(glGetUniformLocation(shader_->get_id(), "_tex"), 0);
-
-    batch->add_quad(0.5f * images_["jko"]->info_.width, 0.5f * images_["jko"]->info_.height, "quad");
-    batch->upload();
 
     MSG msg;
     while (BOOL result = GetMessage(&msg, nullptr, 0, 0)) {
@@ -87,28 +80,30 @@ void Application::render() {
     glClear(GL_COLOR_BUFFER_BIT);
 
     glTextureSubImage2D(img_id, 0, 0, 0, 
-                        images_["jko"]->info_.width,
-                        images_["jko"]->info_.height, 
+                        curr_scene_->image_.info_.width,
+                        curr_scene_->image_.info_.height,
                         GL_RGBA, 
                         GL_UNSIGNED_BYTE, 
-                        images_["jko"]->pixels_);	
+                        curr_scene_->image_.pixels_);	
 
     glBindTexture(GL_TEXTURE_2D, img_id);
 
     int uid_view_matrix = glGetUniformLocation(shader_->get_id(), "_view");
     int uid_proj_matrix = glGetUniformLocation(shader_->get_id(), "_proj");
 
-    glm::mat4 view = camera_->calc_view();
+    DGL::Camera* cam = &curr_scene_->camera_;
+
+    glm::mat4 view = cam->calc_view();
 
     // TODO: window width and height
     int width  = get_app()->window_info_.width;
     int height = get_app()->window_info_.height;
-    glm::mat4 proj = camera_->calc_proj(width, height);
+    glm::mat4 proj = cam->calc_proj(width, height);
 
     glUniformMatrix4fv(uid_view_matrix, 1, false, &view[0][0]);
     glUniformMatrix4fv(uid_proj_matrix, 1, false, &proj[0][0]);
 
-    batch->draw_batch();
+    curr_scene_->batch_.draw_batch();
 
     // imgui layer
     ImGui_ImplOpenGL3_NewFrame();
@@ -116,16 +111,12 @@ void Application::render() {
 
     ImGui::NewFrame();
     // some imgui rendering
-    // ImGui::ShowDemoWindow();
 
     if (ImGui::Begin("camera")) {
-        ImGui::DragFloat2("pos", (float*)&cam_pos, 0.01f, -1.0f, 1.0f);
-        ImGui::DragFloat("size", &cam_size, 0.1f, 0.1f, 10.0f);
+        ImGui::DragFloat2("pos", (float*)&cam->position_, 0.1f, -10.0f, 10.0f);
+        ImGui::DragFloat("size", &cam->size_, 0.1f, 0.1f, 10.0f);
         ImGui::End();
     }
-
-    camera_->set_pos(cam_pos);
-    camera_->set_size(cam_size);
 
     ImGui::EndFrame();
 
@@ -188,27 +179,38 @@ LRESULT CALLBACK windows_proc(HWND _window, UINT _message, WPARAM _w_param, LPAR
         } break;
         case WM_MOUSEMOVE:
         {
-            // DLOG_TRACE("mouse move");
             if (mouse_holding) {
-                int width = get_app()->window_info_.width;
-                int height = get_app()->window_info_.height;
+
+                int wnd_width = get_app()->window_info_.width;
+                int wnd_height = get_app()->window_info_.height;
+
+                DGL::Camera* cam = &get_app()->curr_scene_->camera_;
+                Image* img = &get_app()->curr_scene_->image_;
                 
-                glm::mat4 matrix = get_app()->camera_->calc_view() * get_app()->camera_->calc_proj(width, height);
+                glm::mat4 matrix = cam->calc_proj(wnd_width, wnd_height) * cam->calc_view();
                 matrix = glm::inverse(matrix);
 
                 struct { int x; int y; }
                     mouse_pos = { LOWORD(_l_param), HIWORD(_l_param) };
 
                 glm::vec4 ws_pos = glm::vec4(mouse_pos.x, mouse_pos.y, 1, 1);
-                ws_pos.x = (ws_pos.x / width) * 2.0f - 1.0f;
-                ws_pos.y = -((ws_pos.y / height) * 2.0f - 1.0f);
-
-                glm::vec4 cs_pos = matrix * ws_pos;
-
-                int half_width  = (int)(0.5f * get_app()->images_["jko"]->info_.width);
-                int half_height = (int)(0.5f * get_app()->images_["jko"]->info_.height);
                 
-                get_app()->draw_circle(get_app()->images_["jko"].get(), cs_pos.x + half_width, -cs_pos.y + half_height, 25, 0xffffff00);
+                ws_pos.x = glm::clamp(ws_pos.x, 0.0f, (float)wnd_width);
+                ws_pos.y = glm::clamp(ws_pos.y, 0.0f, (float)wnd_height);
+
+                ws_pos.x = (ws_pos.x / wnd_width) * 2.0f - 1.0f;
+                ws_pos.y = ((wnd_height - ws_pos.y) / wnd_height) * 2.0f - 1.0f;
+
+                DLOG_TRACE("wpos_x: %f - wpos_y: %f", ws_pos.x, ws_pos.y);
+                // error here
+                glm::vec4 cs_pos = matrix * ws_pos;
+                // DLOG_TRACE("cpos_x: %f - cpos_y: %f", cs_pos.x, cs_pos.y);
+
+
+                int half_width  = (int)(0.5f * img->info_.width);
+                int half_height = (int)(0.5f * img->info_.height);
+                
+                get_app()->draw_circle(img, cs_pos.x + half_width, -cs_pos.y + half_height, 25, 0x22efcdff);
             }
         } break;
         case WM_LBUTTONDOWN:
@@ -370,8 +372,22 @@ void Application::draw_circle(Image* _img, int _x, int _y, int _r, unsigned int 
 
         for (int j = 0; j < scan_length; j++)
         {
-            int* pix = (int*)_img->pixels_ + start + j;
-            *pix = _col;
+            char* col = (char*)&_col;
+            char* pix = (char*)((int*)_img->pixels_ + start + j);
+            
+            int check = 0x00ffffff;
+
+            if (*((char*)&check) == 0x00) {
+                pix[0] = col[0];
+                pix[1] = col[1];
+                pix[2] = col[2];
+                pix[3] = col[3];
+            } else {
+                pix[0] = col[3];
+                pix[1] = col[2];
+                pix[2] = col[1];
+                pix[3] = col[0];
+            }
         }
     }
 }

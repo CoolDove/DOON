@@ -20,8 +20,8 @@ glm::mat4 Camera::calc_view() {
 
 glm::mat4 Camera::calc_proj(int _width, int _height) {
 	glm::mat4 proj(0);
-	proj[0][0] = 2.0f/(_width * size_);
-	proj[1][1] = 2.0f/(_height * size_);
+	proj[0][0] = 2.0f * size_ /(_width);
+	proj[1][1] = 2.0f * size_ /(_height);
 	proj[2][2] = 1;
 	proj[3][3] = 1;
 	return proj;

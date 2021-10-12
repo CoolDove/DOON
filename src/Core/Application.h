@@ -5,8 +5,7 @@
 #include <thread>
 #include <Windows.h>
 
-#include "DGLCore/DGLCore.h"
-#include "Image.h"
+#include "Scene.h"
 
 #define WGL_CONTEXT_MAJOR_VERSION_ARB           	0x2091
 #define WGL_CONTEXT_MINOR_VERSION_ARB           	0x2092
@@ -40,10 +39,10 @@ public:
     } window_info_;
 
     struct OpenGLInfo {
-        std::string version;
-        std::string vendor;
-        std::string renderer;
-        std::string shading_lang_version;
+        string version;
+        string vendor;
+        string renderer;
+        string shading_lang_version;
     } gl_info;
 
     bool inited_;
@@ -55,14 +54,10 @@ public:
     void draw_circle(Image* _img, int _x, int _y, int _r, unsigned int _col);
 
 public:
-    unordered_map<string, unique_ptr<Image>> images_;
+    unordered_map<string, unique_ptr<Scene>> scenes_;
+    Scene* curr_scene_;
 
     unique_ptr<DGL::Shader> shader_;
-    unique_ptr<DGL::Camera> camera_;
-    DGL::GeoBatch* 	        batch;
-
-    glm::vec2 cam_pos;
-    float     cam_size;
 
     GLuint img_id;
 
@@ -70,9 +65,6 @@ public:
     HDC     device_context_;
     HGLRC   gl_context_;
     
-private:
-
-
 private:
     void init_dlog();
     void init_window(HINSTANCE _instance, HINSTANCE _prev_instance, char* _cmd_line, int _show_code);
