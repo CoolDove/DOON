@@ -50,9 +50,11 @@ public:
 public:
     void handle_event();
     void render();
-    // void draw_circle(SDL_Surface* _img, int _x, int _y, int _r, unsigned int _col);
 
-private:
+    // this is a temporary function, we will have a Painter class or something for this
+    void draw_circle(Image* _img, int _x, int _y, int _r, unsigned int _col);
+
+public:
     unordered_map<string, unique_ptr<Image>> images_;
 
     unique_ptr<DGL::Shader> shader_;

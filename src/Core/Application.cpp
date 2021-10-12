@@ -57,12 +57,12 @@ Application::~Application() {
 
 void Application::run() {
     glCreateTextures(GL_TEXTURE_2D, 1, &img_id);
-    glTextureStorage2D(img_id, 1, GL_RGBA12, images_["jko"]->info.width, images_["jko"]->info.height);
+    glTextureStorage2D(img_id, 1, GL_RGBA12, images_["jko"]->info_.width, images_["jko"]->info_.height);
 
     glBindTextureUnit(0, img_id);
     glUniform1i(glGetUniformLocation(shader_->get_id(), "_tex"), 0);
 
-    batch->add_quad(0.5f * images_["jko"]->info.width, 0.5f * images_["jko"]->info.height, "quad");
+    batch->add_quad(0.5f * images_["jko"]->info_.width, 0.5f * images_["jko"]->info_.height, "quad");
     batch->upload();
 
     MSG msg;
@@ -87,8 +87,8 @@ void Application::render() {
     glClear(GL_COLOR_BUFFER_BIT);
 
     glTextureSubImage2D(img_id, 0, 0, 0, 
-                        images_["jko"]->info.width,
-                        images_["jko"]->info.height, 
+                        images_["jko"]->info_.width,
+                        images_["jko"]->info_.height, 
                         GL_RGBA, 
                         GL_UNSIGNED_BYTE, 
                         images_["jko"]->pixels_);	
@@ -139,25 +139,6 @@ void Application::render() {
 // some space transfomation while painting
 case SDL_MOUSEMOTION:
     // calc the position in canvas space:
-    if (mouse_holding) {
-        int width, height;
-        SDL_GetWindowSize(window, &width, &height);
-
-        glm::mat4 matrix = camera_->calc_view() * camera_->calc_proj(width, height);
-        matrix = glm::inverse(matrix);
-
-        glm::vec2* mouse_pos = &Core::Input::Mouse::position;
-        glm::vec4 ws_pos = glm::vec4(mouse_pos->x, mouse_pos->y, 1, 1);
-        ws_pos.x = (ws_pos.x / width) * 2.0f - 1.0f;
-        ws_pos.y = -((ws_pos.y / height) * 2.0f - 1.0f);
-
-        glm::vec4 cs_pos = matrix * ws_pos;
-
-        int half_width  = 0.5f * images["jko"]->w;
-        int half_height = 0.5f * images["jko"]->h;
-
-        draw_circle(images["jko"], cs_pos.x + half_width, -cs_pos.y + half_height, 30, 0xffffff00);
-    }
 #endif
 
 void Application::init_dlog() {
@@ -173,11 +154,12 @@ Application* get_app() {
     return Application::get_instance();
 }
 
-IMGUI_IMPL_API LRESULT  ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+// IMGUI_IMPL_API LRESULT  ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 // implemented in imgui_impl_win32.cpp
 
 LRESULT CALLBACK windows_proc(HWND _window, UINT _message, WPARAM _w_param, LPARAM _l_param) {
     ImGui_ImplWin32_WndProcHandler(_window, _message, _w_param, _l_param);
+    static bool mouse_holding = false;
 
     LRESULT result = 0;
     switch (_message)
@@ -208,7 +190,46 @@ LRESULT CALLBACK windows_proc(HWND _window, UINT _message, WPARAM _w_param, LPAR
         } break;
         case WM_ACTIVATEAPP:
         {
+            mouse_holding = false;
             DLOG_TRACE("activate\n");
+        } break;
+        case WM_MOUSEMOVE:
+        {
+            // DLOG_TRACE("mouse move");
+            if (mouse_holding) {
+                int width = get_app()->window_info_.width;
+                int height = get_app()->window_info_.height;
+                
+                glm::mat4 matrix = get_app()->camera_->calc_view() * get_app()->camera_->calc_proj(width, height);
+                matrix = glm::inverse(matrix);
+
+                // glm::vec2* mouse_pos{ LOWORD(_l_param), HIWORD(_l_param) };
+                struct {
+                    int x;
+                    int y;
+                } mouse_pos = { LOWORD(_l_param), HIWORD(_l_param) };
+
+                glm::vec4 ws_pos = glm::vec4(mouse_pos.x, mouse_pos.y, 1, 1);
+                ws_pos.x = (ws_pos.x / width) * 2.0f - 1.0f;
+                ws_pos.y = -((ws_pos.y / height) * 2.0f - 1.0f);
+
+                glm::vec4 cs_pos = matrix * ws_pos;
+
+                int half_width  = (int)(0.5f * get_app()->images_["jko"]->info_.width);
+                int half_height = (int)(0.5f * get_app()->images_["jko"]->info_.height);
+                
+                get_app()->draw_circle(get_app()->images_["jko"].get(), cs_pos.x + half_width, -cs_pos.y + half_height, 30, 0xffffff00);
+            }
+        } break;
+        case WM_LBUTTONDOWN:
+        {
+            DLOG_TRACE("mouse L button down");
+            mouse_holding = true;
+        } break;
+        case WM_LBUTTONUP:
+        {
+            mouse_holding = false;
+            DLOG_TRACE("mouse L button up");
         } break;
         default:
         {
@@ -328,32 +349,30 @@ void Application::init_imgui() {
     DLOG_INFO("ImGui has been initialized");
 }
 
-#if 0
-void Application::draw_circle(SDL_Surface* _img, int _x, int _y, int _r, unsigned int _col) {
+void Application::draw_circle(Image* _img, int _x, int _y, int _r, unsigned int _col) {
     auto px = [=](int _x, int _y){
-        return _y * _img->w + _x;
+        return _y * _img->info_.width + _x;
     };
 
     int center = px(_x, _y);
  
     for (int i = 0; i < 2 * _r; i++)
     {
-        int scan_length = 2 * glm::sqrt(_r * _r - (_r - i) * (_r - i));
+        int scan_length = (int)(2 * glm::sqrt(_r * _r - (_r - i) * (_r - i)));
 
-        int start_x = _x - scan_length * 0.5f;
+        int start_x = (int)(_x - scan_length * 0.5f);
         int start_y = _y - _r + i;
 
-        if (start_x > _img->w || start_x < 0 || start_y > _img->h || start_y < 0) {
+        if (start_x > _img->info_.width || start_x < 0 || start_y > _img->info_.height || start_y < 0) {
             return;
         }
-        scan_length = glm::min(scan_length, _img->w - start_x);
+        scan_length = glm::min(scan_length, _img->info_.width - start_x);
         int start = px(start_x, start_y);
 
         for (int j = 0; j < scan_length; j++)
         {
-            int* pix = (int*)_img->pixels + start + j;
+            int* pix = (int*)_img->pixels_ + start + j;
             *pix = _col;
         }
     }
 }
-#endif

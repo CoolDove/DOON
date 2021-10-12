@@ -10,5 +10,5 @@ public:
 		int width;
 		int height;
 		int channel;
-	} info;
+	} info_;
 };
