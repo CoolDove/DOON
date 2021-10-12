@@ -43,9 +43,12 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     shader_->load("./res/shaders/base.vert", "./res/shaders/base.frag");
     shader_->bind();
 
-    // images["jko"] = IMG_Load("res/textures/jko.png");
-    // images["test"] = IMG_Load("res/textures/test.png");
-
+    // load images
+    long time = clock();
+    images_["jko"] = std::make_unique<Image>("./res/textures/jko.png", 0);
+    images_["test"] = std::make_unique<Image>("./res/textures/test.png", 0);
+    time = clock() - time;
+    DLOG_TRACE("load time: %d ms", time);
 }
 
 Application::~Application() {
@@ -53,15 +56,13 @@ Application::~Application() {
 }
 
 void Application::run() {
-    // glCreateTextures(GL_TEXTURE_2D, 1, &img_id);
-    // glTextureStorage2D(img_id, 1, GL_RGBA12, images["jko"]->w, images["jko"]->h);
+    glCreateTextures(GL_TEXTURE_2D, 1, &img_id);
+    glTextureStorage2D(img_id, 1, GL_RGBA12, images_["jko"]->info.width, images_["jko"]->info.height);
 
-    // glBindTextureUnit(0, img_id);
-    // glUniform1i(glGetUniformLocation(shader_->get_id(), "_tex"), 0);
+    glBindTextureUnit(0, img_id);
+    glUniform1i(glGetUniformLocation(shader_->get_id(), "_tex"), 0);
 
-    // batch->add_quad(0.5f * images["jko"]->w, 0.5f * images["jko"]->h, "quad");
-    // batch->add_quad(0.5f * 2048, 0.5f * 2048, "quad");
-    batch->add_quad(512, 512, "quad");
+    batch->add_quad(0.5f * images_["jko"]->info.width, 0.5f * images_["jko"]->info.height, "quad");
     batch->upload();
 
     MSG msg;
@@ -85,8 +86,14 @@ void Application::render() {
     glClearColor(0.8f, 0.4f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    // glTextureSubImage2D(img_id, 0, 0, 0, images["jko"]->w, images["jko"]->h, GL_RGBA, GL_UNSIGNED_BYTE, images["jko"]->pixels);	
-    // glBindTexture(GL_TEXTURE_2D, img_id);
+    glTextureSubImage2D(img_id, 0, 0, 0, 
+                        images_["jko"]->info.width,
+                        images_["jko"]->info.height, 
+                        GL_RGBA, 
+                        GL_UNSIGNED_BYTE, 
+                        images_["jko"]->pixels_);	
+
+    glBindTexture(GL_TEXTURE_2D, img_id);
 
     int uid_view_matrix = glGetUniformLocation(shader_->get_id(), "_view");
     int uid_proj_matrix = glGetUniformLocation(shader_->get_id(), "_proj");
@@ -113,7 +120,7 @@ void Application::render() {
 
     if (ImGui::Begin("camera")) {
         ImGui::DragFloat2("pos", (float*)&cam_pos, 0.01f, -1.0f, 1.0f);
-        ImGui::DragFloat("size", &cam_size, 0.1f, 0.01f, 10.0f);
+        ImGui::DragFloat("size", &cam_size, 0.1f, 0.1f, 10.0f);
         ImGui::End();
     }
 

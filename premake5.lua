@@ -28,6 +28,7 @@ project "DOON"
 		"src/*.cpp", 
 		"src/DGLCore/*.cpp",
 		"src/Core/*.cpp",
+		"vendor/stb_image/*.cpp", -- use stb_image lib
 	}
 	links {
 		"opengl32",
@@ -36,7 +37,6 @@ project "DOON"
 	}
 	staticruntime "On"
 
-filter "platforms:Win"
 	postbuildcommands {
 		{("{COPY} res/ %{cfg.buildtarget.directory}/res")}
 	}

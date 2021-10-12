@@ -6,8 +6,7 @@
 #include <Windows.h>
 
 #include "DGLCore/DGLCore.h"
-
-using namespace std;
+#include "Image.h"
 
 #define WGL_CONTEXT_MAJOR_VERSION_ARB           	0x2091
 #define WGL_CONTEXT_MINOR_VERSION_ARB           	0x2092
@@ -23,54 +22,59 @@ using namespace std;
 #define WGL_CONTEXT_CORE_PROFILE_BIT_ARB        	0x00000001
 #define WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB 	0x00000002
 
+using namespace std;
+
 class Application {
 public:
-	Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _cmd_line, int _show_code);
-	~Application();
-	void run();
+    Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _cmd_line, int _show_code);
+    ~Application();
+    void run();
 
-	static Application* get_instance() { return instance_; };
-	static Application* instance_;
+    static Application* get_instance() { return instance_; };
+    static Application* instance_;
 
 public:
-	struct WindowInfo {
-		int width;
-		int height;
-	} window_info_;
+    struct WindowInfo {
+        int width;
+        int height;
+    } window_info_;
 
-	struct OpenGLInfo {
-		std::string version;
-		std::string vendor;
-		std::string renderer;
-		std::string shading_lang_version;
-	} gl_info;
+    struct OpenGLInfo {
+        std::string version;
+        std::string vendor;
+        std::string renderer;
+        std::string shading_lang_version;
+    } gl_info;
 
-	bool inited_;
+    bool inited_;
 public:
-	void handle_event();
-	void render();
-	// void draw_circle(SDL_Surface* _img, int _x, int _y, int _r, unsigned int _col);
+    void handle_event();
+    void render();
+    // void draw_circle(SDL_Surface* _img, int _x, int _y, int _r, unsigned int _col);
 
 private:
-	// unordered_map<string, SDL_Surface*> images;
-	unique_ptr<DGL::Shader> shader_;
-	unique_ptr<DGL::Camera> camera_;
-	DGL::GeoBatch* 	batch;
-	GLuint img_id;
-	glm::vec2 cam_pos;
-	float cam_size;
+    unordered_map<string, unique_ptr<Image>> images_;
 
-	HWND window_;
-	HDC device_context_;
-	HGLRC gl_context_;
-	
+    unique_ptr<DGL::Shader> shader_;
+    unique_ptr<DGL::Camera> camera_;
+    DGL::GeoBatch* 	        batch;
+
+    glm::vec2 cam_pos;
+    float     cam_size;
+
+    GLuint img_id;
+
+    HWND    window_;
+    HDC     device_context_;
+    HGLRC   gl_context_;
+    
 private:
 
 
 private:
-	void init_dlog();
-	void init_window(HINSTANCE _instance, HINSTANCE _prev_instance, char* _cmd_line, int _show_code);
-	void init_opengl();
-	void init_imgui();
+    void init_dlog();
+    void init_window(HINSTANCE _instance, HINSTANCE _prev_instance, char* _cmd_line, int _show_code);
+    void init_opengl();
+    void init_imgui();
 };
 Application* get_app();
