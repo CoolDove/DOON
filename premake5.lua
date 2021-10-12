@@ -19,22 +19,20 @@ project "DOON"
 		"vendor/",
 		"vendor/glad/include",
 	}
-	-- libdirs {
-	-- 	"vendor/SDL2/lib/x64/",
-	-- 	"vendor/SDL2-img/lib/x64/"
-	-- }
+
 	files {
-		"*.cpp", 
 		"src/*.cpp", 
-		"src/DGLCore/*.cpp",
-		"src/Core/*.cpp",
-		"vendor/stb_image/*.cpp", -- use stb_image lib
+		"src/*/*.cpp", 
+		"src/*/*/*.cpp", 
+		"vendor/stb_image/*.cpp",
 	}
+
 	links {
 		"opengl32",
 		"ImGui",
 		"glad",
 	}
+
 	staticruntime "On"
 
 	postbuildcommands {

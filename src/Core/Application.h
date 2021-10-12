@@ -6,6 +6,7 @@
 #include <Windows.h>
 
 #include "Scene.h"
+#include "Tool/Tools.h"
 
 #define WGL_CONTEXT_MAJOR_VERSION_ARB           	0x2091
 #define WGL_CONTEXT_MINOR_VERSION_ARB           	0x2092
@@ -28,11 +29,36 @@ public:
     Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _cmd_line, int _show_code);
     ~Application();
     void run();
+    
+    void handle_event();
+    void render();
 
     static Application* get_instance() { return instance_; };
     static Application* instance_;
 
+    Scene* curr_scene_;
+    unordered_map<string, unique_ptr<Scene>> scenes_;
+
+/* TOOLS */
+    Tool::Tool*             curr_tool_;
+    struct {
+    unique_ptr<Tool::Brush> brush;
+    // ...
+
+    } tools_;
+/* TOOLS */
+
+    // temporary
+    unique_ptr<DGL::Shader> shader_;
+    void draw_circle(Image* _img, int _x, int _y, int _r, unsigned int _col);
+    GLuint img_id;
+
 public:
+    bool    inited_;
+    HWND    window_;
+    HDC     device_context_;
+    HGLRC   gl_context_;
+
     struct WindowInfo {
         int width;
         int height;
@@ -43,32 +69,20 @@ public:
         string vendor;
         string renderer;
         string shading_lang_version;
-    } gl_info;
+    } gl_info_;
 
-    bool inited_;
-public:
-    void handle_event();
-    void render();
+    // struct MousePos{
+    //     int x;
+    //     int y;
+    // } mouse_pos_;
 
-    // this is a temporary function, we will have a Painter class or something for this
-    void draw_circle(Image* _img, int _x, int _y, int _r, unsigned int _col);
-
-public:
-    unordered_map<string, unique_ptr<Scene>> scenes_;
-    Scene* curr_scene_;
-
-    unique_ptr<DGL::Shader> shader_;
-
-    GLuint img_id;
-
-    HWND    window_;
-    HDC     device_context_;
-    HGLRC   gl_context_;
-    
 private:
     void init_dlog();
     void init_window(HINSTANCE _instance, HINSTANCE _prev_instance, char* _cmd_line, int _show_code);
     void init_opengl();
     void init_imgui();
+
+    void init_tools();
 };
+
 Application* get_app();

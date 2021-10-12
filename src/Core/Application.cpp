@@ -11,14 +11,13 @@
 #include <glad/glad.h>
 #include <gl/GL.h>
 
-
 using wglCreateContextAttribsARB_t = HGLRC (WINAPI *) (HDC hDC, HGLRC hshareContext, const int *attribList);
 
 Application* Application::instance_ = nullptr;
 
 Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _cmd_line, int _show_code) 
 :   window_info_{0, 0},
-    gl_info{},
+    gl_info_{},
     inited_(false)
 {
     instance_ = this;
@@ -42,6 +41,13 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     └──────────*/
     shader_->load("./res/shaders/base.vert", "./res/shaders/base.frag");
     shader_->bind();
+
+    // init tools
+    tools_.brush = make_unique<Tool::Brush>(this);
+    tools_.brush->on_init();
+
+    curr_tool_ = tools_.brush.get();
+    curr_tool_->on_activate();
 }
 
 Application::~Application() {
@@ -50,7 +56,8 @@ Application::~Application() {
 
 void Application::run() {
     glCreateTextures(GL_TEXTURE_2D, 1, &img_id);
-    // TODO(dove): move this part to somewhere else to realloc memory while switch current scene
+    // TODO: move this part to somewhere else to realloc memory while switch current scene
+    //       or just move into renderer
     glTextureStorage2D(img_id, 1, GL_RGBA12, 
                        curr_scene_->image_.info_.width, 
                        curr_scene_->image_.info_.height);
@@ -95,7 +102,6 @@ void Application::render() {
 
     glm::mat4 view = cam->calc_view();
 
-    // TODO: window width and height
     int width  = get_app()->window_info_.width;
     int height = get_app()->window_info_.height;
     glm::mat4 proj = cam->calc_proj(width, height);
@@ -105,13 +111,10 @@ void Application::render() {
 
     curr_scene_->batch_.draw_batch();
 
-    // imgui layer
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplWin32_NewFrame();
 
     ImGui::NewFrame();
-    // some imgui rendering
-
     if (ImGui::Begin("camera")) {
         ImGui::DragFloat2("pos", (float*)&cam->position_, 0.1f, -10.0f, 10.0f);
         ImGui::DragFloat("size", &cam->size_, 0.1f, 0.1f, 10.0f);
@@ -177,51 +180,115 @@ LRESULT CALLBACK windows_proc(HWND _window, UINT _message, WPARAM _w_param, LPAR
             mouse_holding = false;
             DLOG_TRACE("activate\n");
         } break;
-        case WM_MOUSEMOVE:
-        {
-            if (mouse_holding) {
-
-                int wnd_width = get_app()->window_info_.width;
-                int wnd_height = get_app()->window_info_.height;
-
-                DGL::Camera* cam = &get_app()->curr_scene_->camera_;
-                Image* img = &get_app()->curr_scene_->image_;
-                
-                glm::mat4 matrix = cam->calc_proj(wnd_width, wnd_height) * cam->calc_view();
-                matrix = glm::inverse(matrix);
-
-                struct { int x; int y; }
-                    mouse_pos = { LOWORD(_l_param), HIWORD(_l_param) };
-
-                glm::vec4 ws_pos = glm::vec4(mouse_pos.x, mouse_pos.y, 1, 1);
-                
-                ws_pos.x = glm::clamp(ws_pos.x, 0.0f, (float)wnd_width);
-                ws_pos.y = glm::clamp(ws_pos.y, 0.0f, (float)wnd_height);
-
-                ws_pos.x = (ws_pos.x / wnd_width) * 2.0f - 1.0f;
-                ws_pos.y = ((wnd_height - ws_pos.y) / wnd_height) * 2.0f - 1.0f;
-
-                DLOG_TRACE("wpos_x: %f - wpos_y: %f", ws_pos.x, ws_pos.y);
-                // error here
-                glm::vec4 cs_pos = matrix * ws_pos;
-                // DLOG_TRACE("cpos_x: %f - cpos_y: %f", cs_pos.x, cs_pos.y);
-
-
-                int half_width  = (int)(0.5f * img->info_.width);
-                int half_height = (int)(0.5f * img->info_.height);
-                
-                get_app()->draw_circle(img, cs_pos.x + half_width, -cs_pos.y + half_height, 25, 0x22efcdff);
-            }
-        } break;
         case WM_LBUTTONDOWN:
         {
-            DLOG_TRACE("mouse L button down");
-            mouse_holding = true;
+            if (get_app()->curr_tool_) {
+                Input::MouseInfo info = {};
+                Input::parse_mouse_info_from_wparam(_w_param, &info);
+                get_app()->curr_tool_->on_mouse_down(info,
+                                                     Input::MouseButton::LEFT,
+                                                     LOWORD(_l_param),
+                                                     HIWORD(_l_param));
+            }
         } break;
         case WM_LBUTTONUP:
         {
-            mouse_holding = false;
-            DLOG_TRACE("mouse L button up");
+            if (get_app()->curr_tool_) {
+                Input::MouseInfo info = {};
+                Input::parse_mouse_info_from_wparam(_w_param, &info);
+                get_app()->curr_tool_->on_mouse_up(info,
+                                                   Input::MouseButton::LEFT,
+                                                   LOWORD(_l_param),
+                                                   HIWORD(_l_param));
+            }
+        } break;
+        case WM_RBUTTONDOWN:
+        {
+            if (get_app()->curr_tool_) {
+                Input::MouseInfo info = {};
+                Input::parse_mouse_info_from_wparam(_w_param, &info);
+                get_app()->curr_tool_->on_mouse_down(info,
+                                                     Input::MouseButton::RIGHT,
+                                                     LOWORD(_l_param),
+                                                     HIWORD(_l_param));
+            }
+        } break;
+        case WM_RBUTTONUP:
+        {
+            if (get_app()->curr_tool_) {
+                Input::MouseInfo info = {};
+                Input::parse_mouse_info_from_wparam(_w_param, &info);
+                get_app()->curr_tool_->on_mouse_up(info,
+                                                   Input::MouseButton::RIGHT,
+                                                   LOWORD(_l_param),
+                                                   HIWORD(_l_param));
+            }
+        } break;
+        case WM_MBUTTONDOWN:
+        {
+            if (get_app()->curr_tool_) {
+                Input::MouseInfo info = {};
+                Input::parse_mouse_info_from_wparam(_w_param, &info);
+                get_app()->curr_tool_->on_mouse_down(info,
+                                                     Input::MouseButton::MIDDLE,
+                                                     LOWORD(_l_param),
+                                                     HIWORD(_l_param));
+            }
+        } break;
+        case WM_MBUTTONUP:
+        {
+            if (get_app()->curr_tool_) {
+                Input::MouseInfo info = {};
+                Input::parse_mouse_info_from_wparam(_w_param, &info);
+                get_app()->curr_tool_->on_mouse_up(info,
+                                                   Input::MouseButton::MIDDLE,
+                                                   LOWORD(_l_param),
+                                                   HIWORD(_l_param));
+            }
+        } break;
+        case WM_MOUSEMOVE:
+        {
+            if (get_app()->curr_tool_) {
+                Input::MouseInfo info = {};
+                Input::parse_mouse_info_from_wparam(_w_param, &info);
+
+                get_app()->curr_tool_->on_mouse_move(info,
+                                                     LOWORD(_l_param),
+                                                     HIWORD(_l_param));
+            }
+            // if (mouse_holding) {
+
+            //     int wnd_width = get_app()->window_info_.width;
+            //     int wnd_height = get_app()->window_info_.height;
+
+            //     DGL::Camera* cam = &get_app()->curr_scene_->camera_;
+            //     Image* img = &get_app()->curr_scene_->image_;
+                
+            //     glm::mat4 matrix = cam->calc_proj(wnd_width, wnd_height) * cam->calc_view();
+            //     matrix = glm::inverse(matrix);
+
+            //     struct { int x; int y; }
+            //         mouse_pos = { LOWORD(_l_param), HIWORD(_l_param) };
+
+            //     glm::vec4 ws_pos = glm::vec4(mouse_pos.x, mouse_pos.y, 1, 1);
+                
+            //     ws_pos.x = glm::clamp(ws_pos.x, 0.0f, (float)wnd_width);
+            //     ws_pos.y = glm::clamp(ws_pos.y, 0.0f, (float)wnd_height);
+
+            //     ws_pos.x = (ws_pos.x / wnd_width) * 2.0f - 1.0f;
+            //     ws_pos.y = ((wnd_height - ws_pos.y) / wnd_height) * 2.0f - 1.0f;
+
+            //     DLOG_TRACE("wpos_x: %f - wpos_y: %f", ws_pos.x, ws_pos.y);
+            //     // error here
+            //     glm::vec4 cs_pos = matrix * ws_pos;
+            //     // DLOG_TRACE("cpos_x: %f - cpos_y: %f", cs_pos.x, cs_pos.y);
+
+
+            //     int half_width  = (int)(0.5f * img->info_.width);
+            //     int half_height = (int)(0.5f * img->info_.height);
+                
+            //     get_app()->draw_circle(img, cs_pos.x + half_width, -cs_pos.y + half_height, 25, 0x22efcdff);
+            // }
         } break;
         default:
         {
@@ -293,10 +360,10 @@ void Application::init_window(HINSTANCE _instance, HINSTANCE _prev_instance, cha
 }
 
 void Application::init_opengl() {
-    gl_info.version              = (char*)glGetString(GL_VERSION);
-    gl_info.vendor               = (char*)glGetString(GL_VENDOR);
-    gl_info.renderer             = (char*)glGetString(GL_RENDERER);
-    gl_info.shading_lang_version = (char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
+    gl_info_.version              = (char*)glGetString(GL_VERSION);
+    gl_info_.vendor               = (char*)glGetString(GL_VENDOR);
+    gl_info_.renderer             = (char*)glGetString(GL_RENDERER);
+    gl_info_.shading_lang_version = (char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
 
     wglCreateContextAttribsARB_t wglCreateContextAttribsARB
         = (wglCreateContextAttribsARB_t)wglGetProcAddress("wglCreateContextAttribsARB");

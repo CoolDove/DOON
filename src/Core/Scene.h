@@ -9,7 +9,6 @@ public:
     ~Scene();
 
     DGL::Camera     camera_;
-    // DGL::Shader     shader_;// should be in Renderer, now placed in Application
     DGL::GeoBatch   batch_;
     Image           image_;
 };
