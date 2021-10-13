@@ -15,15 +15,9 @@ public:
     virtual void on_activate();
     virtual void on_deactivate();
 
-    virtual void on_mouse_down  (Input::MouseInfo _info,
-                                 Input::MouseButton _button,
-                                 int _x, int _y);
-
-    virtual void on_mouse_up    (Input::MouseInfo _info,
-                                 Input::MouseButton _button,
-                                 int _x, int _y);
-
-    virtual void on_mouse_move  (Input::MouseInfo _info, int _x, int _y);
+    virtual void on_pointer_down(Input::PointerInfo _info, int _x, int _y);
+    virtual void on_pointer_up  (Input::PointerInfo _info, int _x, int _y);
+    virtual void on_pointer     (Input::PointerInfo _info, int _x, int _y);
 private:
     void draw_circle(int _x, int _y, int _r, unsigned int _col);
 private:

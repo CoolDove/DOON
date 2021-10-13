@@ -8,16 +8,20 @@
 #include "Scene.h"
 #include "Tool/Tools.h"
 
+// #include <wrl.h>
+// #include <wrl/client.h>
+// #include <inked.h>
+// #include <msinkaut.h>
+// #include <msinkaut15.h>
+
 #define WGL_CONTEXT_MAJOR_VERSION_ARB           	0x2091
 #define WGL_CONTEXT_MINOR_VERSION_ARB           	0x2092
 #define WGL_CONTEXT_LAYER_PLANE_ARB             	0x2093
 #define WGL_CONTEXT_FLAGS_ARB                   	0x2094
 #define WGL_CONTEXT_PROFILE_MASK_ARB            	0x9126
-
 // bits for WGL_CONTEXT_FLAGS_ARB
 #define WGL_CONTEXT_DEBUG_BIT_ARB               	0x0001
 #define WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB  	0x0002
-
 // bits for WGL_CONTEXT_PROFILE_MASK_ARB
 #define WGL_CONTEXT_CORE_PROFILE_BIT_ARB        	0x00000001
 #define WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB 	0x00000002
@@ -50,7 +54,6 @@ public:
 
     // temporary
     unique_ptr<DGL::Shader> shader_;
-    void draw_circle(Image* _img, int _x, int _y, int _r, unsigned int _col);
     GLuint img_id;
 
 public:
@@ -70,11 +73,9 @@ public:
         string renderer;
         string shading_lang_version;
     } gl_info_;
-
-    // struct MousePos{
-    //     int x;
-    //     int y;
-    // } mouse_pos_;
+private:
+    // ComPtr<IInkCollector> ink_collector_;
+    // ComPtr<IInkCursors> ink_cursors_;
 
 private:
     void init_dlog();
@@ -83,6 +84,7 @@ private:
     void init_imgui();
 
     void init_tools();
+    void init_tablet();
 };
 
 Application* get_app();

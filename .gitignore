@@ -3,6 +3,7 @@
 *.out
 *.a
 /.vscode
+/.linecount
 !vendor/
 
 # build sys && IDE

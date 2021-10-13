@@ -25,27 +25,23 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     init_dlog();
     init_window(_instance, _prev_instance, _cmd_line, _show_code);
     init_imgui();
+    init_tablet();
 
     inited_ = true;
 
     scenes_["jko"] = make_unique<Scene>("./res/textures/jko.png");
     scenes_["test"] = make_unique<Scene>("./res/textures/test.png");
-
     curr_scene_ = scenes_["jko"].get();
 
     DLOG_TRACE("scene loaded");
     
     shader_ = std::make_unique<DGL::Shader>();
-    /*──────────┐
-    │ load shader
-    └──────────*/
     shader_->load("./res/shaders/base.vert", "./res/shaders/base.frag");
     shader_->bind();
 
     // init tools
     tools_.brush = make_unique<Tool::Brush>(this);
     tools_.brush->on_init();
-
     curr_tool_ = tools_.brush.get();
     curr_tool_->on_activate();
 }
@@ -144,124 +140,116 @@ Application* get_app() {
 
 // region: PROC
 
-LRESULT CALLBACK windows_proc(HWND _window, UINT _message, WPARAM _w_param, LPARAM _l_param) {
-    if (ImGui_ImplWin32_WndProcHandler(_window, _message, _w_param, _l_param))
+LRESULT CALLBACK windows_proc(HWND _window, UINT _message, WPARAM _wparam, LPARAM _lparam) {
+    if (ImGui_ImplWin32_WndProcHandler(_window, _message, _wparam, _lparam))
         return true;
     
-    static bool mouse_holding = false;
+    static POINTER_PEN_INFO pen_info{};
+
+    Application* app = get_app();
 
     LRESULT result = 0;
     switch (_message)
     {
         case WM_SIZE:
         {
-            get_app()->window_info_.width = LOWORD(_l_param);
-            get_app()->window_info_.height = HIWORD(_l_param);
+            app->window_info_.width = LOWORD(_lparam);
+            app->window_info_.height = HIWORD(_lparam);
 
-            int width  = get_app()->window_info_.width;
-            int height = get_app()->window_info_.height;
+            int width  = app->window_info_.width;
+            int height = app->window_info_.height;
 
             DLOG_TRACE("resize - width:%d height:%d", width, height);
-            if (get_app()->inited_) 
+            if (app->inited_) 
                 glViewport(0, 0, width, height);
         } break;
         case WM_DESTROY:
         {
-            DLOG_TRACE("destroy\n");
             PostQuitMessage(0);
             // the GetMessage() will get 0 after this is invoked
             // so that we could end the message loop
         } break;
         case WM_CLOSE:
         {
-            DLOG_TRACE("close\n");
             PostQuitMessage(0);
         } break;
         case WM_ACTIVATEAPP:
         {
-            mouse_holding = false;
             DLOG_TRACE("activate\n");
         } break;
         case WM_LBUTTONDOWN:
         {
-            if (get_app()->curr_tool_) {
-                Input::MouseInfo info = {};
-                Input::parse_mouse_info_from_wparam(_w_param, &info);
-                get_app()->curr_tool_->on_mouse_down(info,
-                                                     Input::MouseButton::LEFT,
-                                                     LOWORD(_l_param),
-                                                     HIWORD(_l_param));
+            if (app->curr_tool_) {
+                pen_info = {0};
+                app->curr_tool_->on_pointer_down({pen_info, Input::PointerButton::LEFT}, LOWORD(_lparam), HIWORD(_lparam));
             }
         } break;
         case WM_LBUTTONUP:
         {
-            if (get_app()->curr_tool_) {
-                Input::MouseInfo info = {};
-                Input::parse_mouse_info_from_wparam(_w_param, &info);
-                get_app()->curr_tool_->on_mouse_up(info,
-                                                   Input::MouseButton::LEFT,
-                                                   LOWORD(_l_param),
-                                                   HIWORD(_l_param));
+            if (app->curr_tool_) {
+                pen_info = {0};
+                app->curr_tool_->on_pointer_up({pen_info, Input::PointerButton::LEFT}, LOWORD(_lparam), HIWORD(_lparam));
             }
         } break;
         case WM_RBUTTONDOWN:
         {
-            if (get_app()->curr_tool_) {
-                Input::MouseInfo info = {};
-                Input::parse_mouse_info_from_wparam(_w_param, &info);
-                get_app()->curr_tool_->on_mouse_down(info,
-                                                     Input::MouseButton::RIGHT,
-                                                     LOWORD(_l_param),
-                                                     HIWORD(_l_param));
+            if (app->curr_tool_) {
+                pen_info = {0};
+                app->curr_tool_->on_pointer_down({pen_info, Input::PointerButton::RIGHT}, LOWORD(_lparam), HIWORD(_lparam));
             }
         } break;
         case WM_RBUTTONUP:
         {
-            if (get_app()->curr_tool_) {
-                Input::MouseInfo info = {};
-                Input::parse_mouse_info_from_wparam(_w_param, &info);
-                get_app()->curr_tool_->on_mouse_up(info,
-                                                   Input::MouseButton::RIGHT,
-                                                   LOWORD(_l_param),
-                                                   HIWORD(_l_param));
+            if (app->curr_tool_) {
+                pen_info = {0};
+                app->curr_tool_->on_pointer_up({pen_info, Input::PointerButton::RIGHT}, LOWORD(_lparam), HIWORD(_lparam));
             }
         } break;
         case WM_MBUTTONDOWN:
         {
-            if (get_app()->curr_tool_) {
-                Input::MouseInfo info = {};
-                Input::parse_mouse_info_from_wparam(_w_param, &info);
-                get_app()->curr_tool_->on_mouse_down(info,
-                                                     Input::MouseButton::MIDDLE,
-                                                     LOWORD(_l_param),
-                                                     HIWORD(_l_param));
+            if (app->curr_tool_) {
+                pen_info = {0};
+                app->curr_tool_->on_pointer_down({pen_info, Input::PointerButton::MIDDLE}, LOWORD(_lparam), HIWORD(_lparam));
             }
         } break;
         case WM_MBUTTONUP:
         {
-            if (get_app()->curr_tool_) {
-                Input::MouseInfo info = {};
-                Input::parse_mouse_info_from_wparam(_w_param, &info);
-                get_app()->curr_tool_->on_mouse_up(info,
-                                                   Input::MouseButton::MIDDLE,
-                                                   LOWORD(_l_param),
-                                                   HIWORD(_l_param));
+            if (app->curr_tool_) {
+                pen_info = {0};
+                app->curr_tool_->on_pointer_up({pen_info, Input::PointerButton::MIDDLE}, LOWORD(_lparam), HIWORD(_lparam));
             }
         } break;
         case WM_MOUSEMOVE:
         {
-            if (get_app()->curr_tool_) {
-                Input::MouseInfo info = {};
-                Input::parse_mouse_info_from_wparam(_w_param, &info);
-
-                get_app()->curr_tool_->on_mouse_move(info,
-                                                     LOWORD(_l_param),
-                                                     HIWORD(_l_param));
+            if (app->curr_tool_) {
+                pen_info = {0};
+                app->curr_tool_->on_pointer({pen_info, Input::PointerButton::OTHER}, LOWORD(_lparam), HIWORD(_lparam));
+            }
+        } break;
+        case WM_POINTERDOWN:
+        {
+            if (app->curr_tool_) {
+                GetPointerPenInfo(GET_POINTERID_WPARAM(_wparam), &pen_info);
+                app->curr_tool_->on_pointer_down({pen_info, Input::PointerButton::PEN}, LOWORD(_lparam), HIWORD(_lparam));
+            }
+        } break;
+        case WM_POINTERUPDATE:
+        {
+            if (app->curr_tool_) {
+                GetPointerPenInfo(GET_POINTERID_WPARAM(_wparam), &pen_info);
+                app->curr_tool_->on_pointer({pen_info, Input::PointerButton::PEN}, LOWORD(_lparam), HIWORD(_lparam));
+            }
+        } break;
+        case WM_POINTERUP:
+        {
+            if (app->curr_tool_) {
+                GetPointerPenInfo(GET_POINTERID_WPARAM(_wparam), &pen_info);
+                app->curr_tool_->on_pointer_up({pen_info, Input::PointerButton::PEN}, LOWORD(_lparam), HIWORD(_lparam));
             }
         } break;
         default:
         {
-            result = DefWindowProc(_window, _message, _w_param, _l_param);
+            result = DefWindowProc(_window, _message, _wparam, _lparam);
         } break;
     }
     return result;
@@ -364,7 +352,6 @@ void Application::init_imgui() {
     │ but for my situation,                                                         │
     │ calling this causes an offset of my mouse position depends on the window size │
     └──────────────────────────────────────────────────────────────────────────────*/
-
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
 
@@ -375,4 +362,8 @@ void Application::init_imgui() {
     ImGui::StyleColorsDark();
     // ImFont* font = io.Fonts->AddFontFromFileTTF("...", 14.0f);
     DLOG_INFO("ImGui has been initialized");
+}
+
+void Application::init_tablet() {
+    EnableMouseInPointer(false);
 }
