@@ -24,14 +24,8 @@ public:
                                  int _x, int _y);
 
     virtual void on_mouse_move  (Input::MouseInfo _info, int _x, int _y);
-
-    virtual void on_keyboard_down();
-    virtual void on_keyboard_up();
-    virtual void on_keyboard_move();
-
-    virtual void on_pen_down();
-    virtual void on_pen_up();
-    virtual void on_pen_move();
+private:
+    void draw_circle(int _x, int _y, int _r, unsigned int _col);
 private:
     Application* app_;
 

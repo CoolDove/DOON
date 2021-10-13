@@ -142,6 +142,8 @@ Application* get_app() {
     return Application::get_instance();
 }
 
+// region: PROC
+
 LRESULT CALLBACK windows_proc(HWND _window, UINT _message, WPARAM _w_param, LPARAM _l_param) {
     if (ImGui_ImplWin32_WndProcHandler(_window, _message, _w_param, _l_param))
         return true;
@@ -256,49 +258,16 @@ LRESULT CALLBACK windows_proc(HWND _window, UINT _message, WPARAM _w_param, LPAR
                                                      LOWORD(_l_param),
                                                      HIWORD(_l_param));
             }
-            // if (mouse_holding) {
-
-            //     int wnd_width = get_app()->window_info_.width;
-            //     int wnd_height = get_app()->window_info_.height;
-
-            //     DGL::Camera* cam = &get_app()->curr_scene_->camera_;
-            //     Image* img = &get_app()->curr_scene_->image_;
-                
-            //     glm::mat4 matrix = cam->calc_proj(wnd_width, wnd_height) * cam->calc_view();
-            //     matrix = glm::inverse(matrix);
-
-            //     struct { int x; int y; }
-            //         mouse_pos = { LOWORD(_l_param), HIWORD(_l_param) };
-
-            //     glm::vec4 ws_pos = glm::vec4(mouse_pos.x, mouse_pos.y, 1, 1);
-                
-            //     ws_pos.x = glm::clamp(ws_pos.x, 0.0f, (float)wnd_width);
-            //     ws_pos.y = glm::clamp(ws_pos.y, 0.0f, (float)wnd_height);
-
-            //     ws_pos.x = (ws_pos.x / wnd_width) * 2.0f - 1.0f;
-            //     ws_pos.y = ((wnd_height - ws_pos.y) / wnd_height) * 2.0f - 1.0f;
-
-            //     DLOG_TRACE("wpos_x: %f - wpos_y: %f", ws_pos.x, ws_pos.y);
-            //     // error here
-            //     glm::vec4 cs_pos = matrix * ws_pos;
-            //     // DLOG_TRACE("cpos_x: %f - cpos_y: %f", cs_pos.x, cs_pos.y);
-
-
-            //     int half_width  = (int)(0.5f * img->info_.width);
-            //     int half_height = (int)(0.5f * img->info_.height);
-                
-            //     get_app()->draw_circle(img, cs_pos.x + half_width, -cs_pos.y + half_height, 25, 0x22efcdff);
-            // }
         } break;
         default:
         {
             result = DefWindowProc(_window, _message, _w_param, _l_param);
-            // need this to handle WM_CREATE and rerurn a non-zero value, 
-            // otherwise we would failed to create a window
         } break;
     }
     return result;
 }
+
+// region: INIT
 
 void Application::init_window(HINSTANCE _instance, HINSTANCE _prev_instance, char* _cmd_line, int _show_code) {
     WNDCLASS wnd_class = {};
@@ -406,55 +375,4 @@ void Application::init_imgui() {
     ImGui::StyleColorsDark();
     // ImFont* font = io.Fonts->AddFontFromFileTTF("...", 14.0f);
     DLOG_INFO("ImGui has been initialized");
-}
-
-void Application::draw_circle(Image* _img, int _x, int _y, int _r, unsigned int _col) {
-    if (_x < -_r || _x > _img->info_.width + _r || _y < -_r || _y > _img->info_.height + _r )
-        return;
-
-    // a function changing the vec2 position into an index
-    auto px = [=](int _x, int _y){
-        return _y * _img->info_.width + _x;
-    };
-
-    int start_y = _y - _r;
-
-    for (int i = 0; i < glm::min(2 * _r, _img->info_.height - start_y); i++)
-    {
-        int line_y = start_y + i;
-        if (line_y < 0) 
-            continue;
-        
-        int scan_length = (int)(2 * glm::sqrt(_r * _r - (_r - i) * (_r - i)));
-
-        int start_x = (int)(_x - scan_length * 0.5f);
-        if (start_x < 0) {
-            scan_length += start_x;
-            start_x = 0;
-        }
-
-        scan_length = glm::min(scan_length, _img->info_.width - start_x - 1);
-
-        int start = px(start_x, line_y);
-
-        for (int j = 0; j < scan_length; j++)
-        {
-            char* col = (char*)&_col;
-            char* pix = (char*)((int*)_img->pixels_ + start + j);
-            
-            int check = 0x00ffffff;
-
-            if (*((char*)&check) == 0x00) {
-                pix[0] = col[0];
-                pix[1] = col[1];
-                pix[2] = col[2];
-                pix[3] = col[3];
-            } else {
-                pix[0] = col[3];
-                pix[1] = col[2];
-                pix[2] = col[1];
-                pix[3] = col[0];
-            }
-        }
-    }
 }
