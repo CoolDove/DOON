@@ -63,6 +63,8 @@ public:
     HGLRC   gl_context_;
 
     struct WindowInfo {
+        int posx;
+        int posy;
         int width;
         int height;
     } window_info_;

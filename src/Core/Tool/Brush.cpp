@@ -31,7 +31,8 @@ void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
 }
 
 void Brush::on_pointer(Input::PointerInfo _info, int _x, int _y) {
-    if (_info.pen_info.pressure > 1 || _info.button == Input::PointerButton::OTHER) {
+    if (_info.btn_state.mouse_l || _info.pen_info.pressure > 1) 
+    {
         // DLOG_TRACE("dragging mouse");
         // transform mouseposition to image space from window space
         int wnd_width = app_->window_info_.width;
@@ -56,7 +57,7 @@ void Brush::on_pointer(Input::PointerInfo _info, int _x, int _y) {
         int half_height = (int)(0.5f * img->info_.height);
         
         unsigned int brush_size = ((float)_info.pen_info.pressure / 1024.0f) * 20 + 5;
-        draw_circle((int)cs_pos.x + half_width, -(int)cs_pos.y + half_height, brush_size, 0x22efcdff);
+        draw_circle((int)cs_pos.x + half_width, -(int)cs_pos.y + half_height, brush_size, 0x224355ff);
     }
 }
 

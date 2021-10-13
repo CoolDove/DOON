@@ -2,7 +2,6 @@
 #include "Tool.h"
 
 class Application;
-
 namespace Tool
 {
 class Brush : public Tool
@@ -22,6 +21,5 @@ private:
     void draw_circle(int _x, int _y, int _r, unsigned int _col);
 private:
     Application* app_;
-
 };
 }

@@ -8,6 +8,8 @@
 #include <imgui/backends/imgui_impl_win32.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
 
+#include <Core/Input.h>
+
 #include <glad/glad.h>
 #include <gl/GL.h>
 
@@ -29,7 +31,7 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
 
     inited_ = true;
 
-    scenes_["jko"] = make_unique<Scene>("./res/textures/jko.png");
+    scenes_["jko"]  = make_unique<Scene>("./res/textures/jko.png");
     scenes_["test"] = make_unique<Scene>("./res/textures/test.png");
     curr_scene_ = scenes_["jko"].get();
 
@@ -79,7 +81,9 @@ void Application::run() {
 }
 
 void Application::render() {
-    glClearColor(0.8f, 0.4f, 0.1f, 1.0f);
+    // background color
+    glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+
     glClear(GL_COLOR_BUFFER_BIT);
 
     glTextureSubImage2D(img_id, 0, 0, 0, 
@@ -138,129 +142,11 @@ Application* get_app() {
     return Application::get_instance();
 }
 
-// region: PROC
-
-LRESULT CALLBACK windows_proc(HWND _window, UINT _message, WPARAM _wparam, LPARAM _lparam) {
-    if (ImGui_ImplWin32_WndProcHandler(_window, _message, _wparam, _lparam))
-        return true;
-    
-    static POINTER_PEN_INFO pen_info{};
-
-    Application* app = get_app();
-
-    LRESULT result = 0;
-    switch (_message)
-    {
-        case WM_SIZE:
-        {
-            app->window_info_.width = LOWORD(_lparam);
-            app->window_info_.height = HIWORD(_lparam);
-
-            int width  = app->window_info_.width;
-            int height = app->window_info_.height;
-
-            DLOG_TRACE("resize - width:%d height:%d", width, height);
-            if (app->inited_) 
-                glViewport(0, 0, width, height);
-        } break;
-        case WM_DESTROY:
-        {
-            PostQuitMessage(0);
-            // the GetMessage() will get 0 after this is invoked
-            // so that we could end the message loop
-        } break;
-        case WM_CLOSE:
-        {
-            PostQuitMessage(0);
-        } break;
-        case WM_ACTIVATEAPP:
-        {
-            DLOG_TRACE("activate\n");
-        } break;
-        case WM_LBUTTONDOWN:
-        {
-            if (app->curr_tool_) {
-                pen_info = {0};
-                app->curr_tool_->on_pointer_down({pen_info, Input::PointerButton::LEFT}, LOWORD(_lparam), HIWORD(_lparam));
-            }
-        } break;
-        case WM_LBUTTONUP:
-        {
-            if (app->curr_tool_) {
-                pen_info = {0};
-                app->curr_tool_->on_pointer_up({pen_info, Input::PointerButton::LEFT}, LOWORD(_lparam), HIWORD(_lparam));
-            }
-        } break;
-        case WM_RBUTTONDOWN:
-        {
-            if (app->curr_tool_) {
-                pen_info = {0};
-                app->curr_tool_->on_pointer_down({pen_info, Input::PointerButton::RIGHT}, LOWORD(_lparam), HIWORD(_lparam));
-            }
-        } break;
-        case WM_RBUTTONUP:
-        {
-            if (app->curr_tool_) {
-                pen_info = {0};
-                app->curr_tool_->on_pointer_up({pen_info, Input::PointerButton::RIGHT}, LOWORD(_lparam), HIWORD(_lparam));
-            }
-        } break;
-        case WM_MBUTTONDOWN:
-        {
-            if (app->curr_tool_) {
-                pen_info = {0};
-                app->curr_tool_->on_pointer_down({pen_info, Input::PointerButton::MIDDLE}, LOWORD(_lparam), HIWORD(_lparam));
-            }
-        } break;
-        case WM_MBUTTONUP:
-        {
-            if (app->curr_tool_) {
-                pen_info = {0};
-                app->curr_tool_->on_pointer_up({pen_info, Input::PointerButton::MIDDLE}, LOWORD(_lparam), HIWORD(_lparam));
-            }
-        } break;
-        case WM_MOUSEMOVE:
-        {
-            if (app->curr_tool_) {
-                pen_info = {0};
-                app->curr_tool_->on_pointer({pen_info, Input::PointerButton::OTHER}, LOWORD(_lparam), HIWORD(_lparam));
-            }
-        } break;
-        case WM_POINTERDOWN:
-        {
-            if (app->curr_tool_) {
-                GetPointerPenInfo(GET_POINTERID_WPARAM(_wparam), &pen_info);
-                app->curr_tool_->on_pointer_down({pen_info, Input::PointerButton::PEN}, LOWORD(_lparam), HIWORD(_lparam));
-            }
-        } break;
-        case WM_POINTERUPDATE:
-        {
-            if (app->curr_tool_) {
-                GetPointerPenInfo(GET_POINTERID_WPARAM(_wparam), &pen_info);
-                app->curr_tool_->on_pointer({pen_info, Input::PointerButton::PEN}, LOWORD(_lparam), HIWORD(_lparam));
-            }
-        } break;
-        case WM_POINTERUP:
-        {
-            if (app->curr_tool_) {
-                GetPointerPenInfo(GET_POINTERID_WPARAM(_wparam), &pen_info);
-                app->curr_tool_->on_pointer_up({pen_info, Input::PointerButton::PEN}, LOWORD(_lparam), HIWORD(_lparam));
-            }
-        } break;
-        default:
-        {
-            result = DefWindowProc(_window, _message, _wparam, _lparam);
-        } break;
-    }
-    return result;
-}
-
 // region: INIT
-
 void Application::init_window(HINSTANCE _instance, HINSTANCE _prev_instance, char* _cmd_line, int _show_code) {
     WNDCLASS wnd_class = {};
     wnd_class.style = CS_HREDRAW | CS_VREDRAW;
-    wnd_class.lpfnWndProc = windows_proc;
+    wnd_class.lpfnWndProc = Input::wnd_proc;
     wnd_class.hInstance = _instance;
     wnd_class.lpszClassName = "DOONWindowClass";
 
@@ -356,11 +242,13 @@ void Application::init_imgui() {
     ImGui::CreateContext();
 
     ImGui_ImplWin32_Init(window_);
+    Input::imgui_proc = ImGui_ImplWin32_WndProcHandler;
     ImGui_ImplOpenGL3_Init(nullptr);
 
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     ImGui::StyleColorsDark();
     // ImFont* font = io.Fonts->AddFontFromFileTTF("...", 14.0f);
+
     DLOG_INFO("ImGui has been initialized");
 }
 
