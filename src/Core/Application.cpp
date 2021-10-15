@@ -33,6 +33,7 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
 
     scenes_["jko"]  = make_unique<Scene>("./res/textures/jko.png");
     scenes_["test"] = make_unique<Scene>("./res/textures/test.png");
+    scenes_["white"] = make_unique<Scene>(0xffffffff);
     curr_scene_ = scenes_["jko"].get();
 
     DLOG_TRACE("scene loaded");

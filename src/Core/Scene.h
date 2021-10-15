@@ -6,6 +6,7 @@
 class Scene {
 public:
     Scene(const char* _image_path);
+    Scene(unsigned int _base_color);
     ~Scene();
 
     DGL::Camera     camera_;
