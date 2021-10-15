@@ -5,7 +5,8 @@
 namespace Tool
 {
 Brush::Brush(Application* _app) 
-:   app_(_app)
+:   app_(_app),
+    col_{1,1,1,1}
 {
     DLOG_TRACE("brush constructed");
 }
@@ -57,7 +58,19 @@ void Brush::on_pointer(Input::PointerInfo _info, int _x, int _y) {
         int half_height = (int)(0.5f * img->info_.height);
         
         unsigned int brush_size = ((float)_info.pen_info.pressure / 1024.0f) * 20 + 5;
-        draw_circle((int)cs_pos.x + half_width, -(int)cs_pos.y + half_height, brush_size, 0x224355ff);
+        unsigned int cr, cg, cb, ca = 0;
+        cr = (unsigned int)(col_[0] * 255);
+        cg = (unsigned int)(col_[1] * 255);
+        cb = (unsigned int)(col_[2] * 255);
+        ca = (unsigned int)(col_[3] * 255);
+
+        unsigned int ucol = 0;
+        ucol |= (cr << 24);
+        ucol |= (cg << 16);
+        ucol |= (cb <<  8);
+        ucol |= (ca <<  0);
+
+        draw_circle((int)cs_pos.x + half_width, -(int)cs_pos.y + half_height, brush_size, ucol);
     }
 }
 

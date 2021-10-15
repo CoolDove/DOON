@@ -115,11 +115,15 @@ void Application::render() {
     ImGui_ImplWin32_NewFrame();
 
     ImGui::NewFrame();
-    if (ImGui::Begin("camera")) {
-        ImGui::DragFloat2("pos", (float*)&cam->position_, 0.1f, -10.0f, 10.0f);
-        ImGui::DragFloat("size", &cam->size_, 0.1f, 0.1f, 10.0f);
+    if (ImGui::Begin("temp")) {
+        ImGui::DragFloat2("cam_pos", (float*)&cam->position_, 0.1f, -10.0f, 10.0f);
+        ImGui::DragFloat("cam_size", &cam->size_, 0.1f, 0.1f, 10.0f);
+        if (dynamic_cast<Tool::Brush*>(curr_tool_)) {
+            ImGui::ColorPicker3("brush_col", dynamic_cast<Tool::Brush*>(curr_tool_)->col_);
+        }
         ImGui::End();
     }
+
 
     ImGui::EndFrame();
 
