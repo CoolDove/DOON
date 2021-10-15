@@ -27,8 +27,20 @@ struct PointerInfo {
     PointerButton       button;
 };
 
-// inline InputProcess imgui_proc = nullptr;
+struct InputContext {
+    struct {
+        int x;
+        int y;
+    } mouse_pos;
+    bool8   mouse_down_l;
+    bool8   mouse_down_r;
+    bool8   mouse_down_m;
+    bool8   pen_down;
+};
+
 extern InputProcess imgui_proc;
+
+extern InputContext input_context;
 
 LRESULT CALLBACK wnd_proc(HWND _window, UINT _message, WPARAM _wparam, LPARAM _lparam);
 
