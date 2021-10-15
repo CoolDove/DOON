@@ -60,6 +60,7 @@ LRESULT CALLBACK wnd_proc(HWND _window, UINT _message, WPARAM _wparam, LPARAM _l
             info.button = Input::PointerButton::LEFT;
             Input::parse_to_btnstate_from_wparam(_wparam, &info.btn_state);
             app->curr_tool_->on_pointer_down(info, LOWORD(_lparam), HIWORD(_lparam));
+
         } break;
         case WM_LBUTTONUP:
         {

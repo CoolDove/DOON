@@ -120,6 +120,7 @@ void Application::render() {
         ImGui::DragFloat("size", &cam->size_, 0.1f, 0.1f, 10.0f);
         ImGui::End();
     }
+    DLOG_TRACE("ImGui::MousePos:%f,%f", ImGui::GetMousePos().x, ImGui::GetMousePos().y);
 
     ImGui::EndFrame();
 
