@@ -102,7 +102,6 @@ void Brush::draw_circle(int _x, int _y, int _r, unsigned int _col) {
         }
 
         scan_length = glm::min(scan_length, img->info_.width - start_x - 1);
-
         int start = px(start_x, line_y);
 
         for (int j = 0; j < scan_length; j++)

@@ -2,11 +2,17 @@
 #include <Core/Application.h>
 #include <DoveLog.hpp>
 
+#define IMGUI_MONOPOLY_INPUT 0x0010
 namespace Input {
+InputProcess imgui_proc = nullptr;
+
 LRESULT CALLBACK wnd_proc(HWND _window, UINT _message, WPARAM _wparam, LPARAM _lparam) {
-    if (imgui_proc && imgui_proc(_window, _message, _wparam, _lparam)) 
-        return true;
-    
+    if (imgui_proc) {
+        LRESULT rst = imgui_proc(_window, _message, _wparam, _lparam);
+        if (rst == IMGUI_MONOPOLY_INPUT) {
+            return 1;
+        }
+    }
     
     static POINTER_PEN_INFO pen_info{};
 
@@ -30,7 +36,7 @@ LRESULT CALLBACK wnd_proc(HWND _window, UINT _message, WPARAM _wparam, LPARAM _l
         {
             app->window_info_.posx = LOWORD(_lparam);
             app->window_info_.posy = HIWORD(_lparam);
-            DLOG_TRACE("move pos(%d, %d)", app->window_info_.posx, app->window_info_.posy);
+            // DLOG_TRACE("move pos(%d, %d)", app->window_info_.posx, app->window_info_.posy);
         } break;
         case WM_DESTROY:
         {
@@ -54,6 +60,7 @@ LRESULT CALLBACK wnd_proc(HWND _window, UINT _message, WPARAM _wparam, LPARAM _l
             info.button = Input::PointerButton::LEFT;
             Input::parse_to_btnstate_from_wparam(_wparam, &info.btn_state);
             app->curr_tool_->on_pointer_down(info, LOWORD(_lparam), HIWORD(_lparam));
+
         } break;
         case WM_LBUTTONUP:
         {
