@@ -8,12 +8,6 @@
 #include "Scene.h"
 #include "Tool/Tools.h"
 
-// #include <wrl.h>
-// #include <wrl/client.h>
-// #include <inked.h>
-// #include <msinkaut.h>
-// #include <msinkaut15.h>
-
 #define WGL_CONTEXT_MAJOR_VERSION_ARB           	0x2091
 #define WGL_CONTEXT_MINOR_VERSION_ARB           	0x2092
 #define WGL_CONTEXT_LAYER_PLANE_ARB             	0x2093
@@ -52,7 +46,6 @@ public:
     } tools_;
 /* TOOLS */
 
-    // temporary
     unique_ptr<DGL::Shader> shader_;
     GLuint img_id;
 
@@ -75,10 +68,6 @@ public:
         string renderer;
         string shading_lang_version;
     } gl_info_;
-private:
-    // ComPtr<IInkCollector> ink_collector_;
-    // ComPtr<IInkCursors> ink_cursors_;
-
 private:
     void init_dlog();
     void init_window(HINSTANCE _instance, HINSTANCE _prev_instance, char* _cmd_line, int _show_code);
