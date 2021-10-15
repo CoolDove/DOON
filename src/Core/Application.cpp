@@ -123,7 +123,8 @@ void Application::render() {
         }
         ImGui::End();
     }
-    DLOG_TRACE("ImGui::MousePos:%f,%f", ImGui::GetMousePos().x, ImGui::GetMousePos().y);
+
+    // DLOG_TRACE("ImGui::MousePos:%f,%f", ImGui::GetMousePos().x, ImGui::GetMousePos().y);
 
 
     ImGui::EndFrame();
