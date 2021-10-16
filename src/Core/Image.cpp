@@ -12,7 +12,7 @@ Image::Image(unsigned int _width, unsigned int _height, unsigned int _base_color
     info_.height   = _height;
     info_.channels = 4;
 
-    pixels_ = (unsigned char*)malloc(_width * _height);
+    pixels_ = (unsigned char*)malloc(_width * _height * 4);
 
     // temp
     unsigned char col[4] = {
@@ -23,7 +23,7 @@ Image::Image(unsigned int _width, unsigned int _height, unsigned int _base_color
     };
 
     int chan = 0;
-    for (int i = 0; i < _width * _height; i++) {
+    for (int i = 0; i < _width * _height * 4; i++) {
         pixels_[i] = col[chan];
         chan = (chan+1)%4;
     }

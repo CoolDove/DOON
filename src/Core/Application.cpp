@@ -33,9 +33,11 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
 
     inited_ = true;
 
-    scenes_["jko"]    = make_unique<Scene>("./res/textures/jko.png");
-    scenes_["anji"]   = make_unique<Scene>("./res/textures/anji.png");
-    curr_scene_       = scenes_["anji"].get();
+    scenes_["jko"]   = make_unique<Scene>("./res/textures/jko.png");
+    scenes_["anji"]  = make_unique<Scene>("./res/textures/anji.png");
+    scenes_["pq"]    = make_unique<Scene>("./res/textures/pq.png");
+    scenes_["white"] = make_unique<Scene>(0xffffffff);
+    curr_scene_ = scenes_.begin()->second.get();
 
     DLOG_TRACE("scene loaded");
 
@@ -58,7 +60,7 @@ void Application::run() {
         if (result > 0) {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
-            render();
+            render_ui();
             renderer_->render();
         } else {
             break;
@@ -71,7 +73,7 @@ void Application::run() {
     ImGui::DestroyContext();
 }
 
-void Application::render() {
+void Application::render_ui() {
     DGL::Camera* cam = &curr_scene_->camera_;
 
     ImGui_ImplOpenGL3_NewFrame();
@@ -127,8 +129,6 @@ void Application::change_scene(const std::string& _name) {
         renderer_->create_gl_image();
     }
 }
-
-
 
 void Application::init_dlog() {
     DLOG_ON_PUSH = [](const Dove::LogMsg& _msg){

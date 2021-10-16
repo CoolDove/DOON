@@ -33,7 +33,7 @@ public:
     void run();
     
     void handle_event();
-    void render();
+    void render_ui();
 
     void change_scene(const std::string& _name);
 
