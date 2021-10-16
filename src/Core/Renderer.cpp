@@ -1,6 +1,7 @@
 ﻿#include "Renderer.h"
 #include <Core/Image.h>
 #include <gl/GL.h>
+#include "DoveLog.hpp"
 
 Renderer::Renderer(Application* _app) {
     app_ = _app;
@@ -70,24 +71,32 @@ void Renderer::render() {
     glBlendEquation(GL_FUNC_ADD);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        int width  = app_->window_info_.width;
-        int height = app_->window_info_.height;
+    int width  = app_->window_info_.width;
+    int height = app_->window_info_.height;
 
-        DGL::Camera* cam = &app_->curr_scene_->camera_;
-        glm::mat4 view = cam->calc_view();
-        glm::mat4 proj = cam->calc_proj(width, height);
+    DGL::Camera* cam = &app_->curr_scene_->camera_;
+    glm::mat4 view = cam->calc_view();
+    glm::mat4 proj = cam->calc_proj(width, height);
 
     {// draw base
         shader_base_.bind();
         int uid_view_matrix = glGetUniformLocation(shader_base_.get_id(), "_view");
         int uid_proj_matrix = glGetUniformLocation(shader_base_.get_id(), "_proj");
 
-        int uid_size = glGetUniformLocation(shader_base_.get_id(), "_size");
+        int uid_size  = glGetUniformLocation(shader_base_.get_id(), "_size");
+        int uid_scale = glGetUniformLocation(shader_base_.get_id(), "_scale");
 
         glUniformMatrix4fv(uid_view_matrix, 1, false, &view[0][0]);
         glUniformMatrix4fv(uid_proj_matrix, 1, false, &proj[0][0]);
 
         glUniform2f(uid_size, img->info_.width, img->info_.height);
+
+        float cam_size = (10.0f - cam->size_)/10.0f;
+        int cell_scale = (cam_size * cam_size * cam_size) * 30 + 1;
+
+        DLOG_TRACE("cam_size:%f  cell_scale:%d", cam_size, cell_scale);
+
+        glUniform1i(uid_scale, cell_scale);
 
         batch_.draw_batch();
     }

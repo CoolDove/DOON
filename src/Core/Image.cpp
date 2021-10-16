@@ -3,6 +3,12 @@
 
 Image::Image(const char* _path, int _desired_channel) {
     pixels_ = stbi_load(_path, &info_.width, &info_.height, &info_.channels, _desired_channel);
+    /*────────────────────────────────────────────────────────────────────────────────────┐
+    │ Note: if load a image without Alpha channel, the programe cannot render it properly │
+    │      need to append default alpha channel manually, but not here, this is just a    │
+    │      temp way to load asset, we will have a Resource class for this                 │
+    └────────────────────────────────────────────────────────────────────────────────────*/
+    
     assert(pixels_);
 }
 

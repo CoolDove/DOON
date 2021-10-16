@@ -36,8 +36,7 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     scenes_["void"]  = make_unique<Scene>(0x00000000);
     scenes_["jko"]   = make_unique<Scene>("./res/textures/jko.png");
     scenes_["anji"]  = make_unique<Scene>("./res/textures/anji.png");
-    // scenes_["pq"]    = make_unique<Scene>("./res/textures/pq.png");
-    // scenes_["white"] = make_unique<Scene>(0xffffffff);
+    scenes_["alp"]  = make_unique<Scene>("./res/textures/alp.png");
     curr_scene_ = scenes_.begin()->second.get();
 
     DLOG_TRACE("scene loaded");
@@ -185,8 +184,73 @@ void Application::init_imgui() {
     ImGui_ImplOpenGL3_Init(nullptr);
 
     ImGuiIO& io = ImGui::GetIO(); (void)io;
-    ImGui::StyleColorsDark();
-    // ImFont* font = io.Fonts->AddFontFromFileTTF("...", 14.0f);
+    ImGui::StyleColorsClassic();
+    ImFont* font = io.Fonts->AddFontFromFileTTF("res/fonts/FiraCode.ttf", 20.0f);
+    io.FontDefault = font;
+    io.FontGlobalScale = 0.8f;
+
+    // imgui style
+    auto colfom = [](unsigned int _col)->ImVec4{
+        unsigned char col[4] = {
+            (_col & 0xff000000)>>24,
+            (_col & 0x00ff0000)>>16,
+            (_col & 0x0000ff00)>> 8,
+            (_col & 0x000000ff)>> 0,
+        };
+        return {(float)col[0]/255.0f, (float)col[1]/255.0f, (float)col[2]/255.0f, (float)col[3]/255.0f};
+    };
+
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
+    ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize,  0);
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize,  0);
+    ImGui::PushStyleVar(ImGuiStyleVar_PopupBorderSize,  1);
+
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding,    3);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding,   3);
+
+    ImGui::PushStyleColor(ImGuiCol_TitleBg,                 colfom(0x212121ee));
+    ImGui::PushStyleColor(ImGuiCol_TitleBgActive,           colfom(0x6d9886ff));
+    ImGui::PushStyleColor(ImGuiCol_TitleBgCollapsed,        colfom(0x6d9886a0));
+
+    ImGui::PushStyleColor(ImGuiCol_MenuBarBg,               colfom(0x323232e0));
+    ImGui::PushStyleColor(ImGuiCol_WindowBg,                colfom(0x212121ee));
+
+    ImGui::PushStyleColor(ImGuiCol_FrameBg,                 colfom(0x6e6e6e62));
+    ImGui::PushStyleColor(ImGuiCol_FrameBgActive,           colfom(0x7e7e7e62));
+    ImGui::PushStyleColor(ImGuiCol_FrameBgHovered,          colfom(0x80808079));
+
+
+    ImGui::PushStyleColor(ImGuiCol_Text,                    colfom(0xf6f6f6ee));
+    ImGui::PushStyleColor(ImGuiCol_TextDisabled,            colfom(0xd9cab3ef));
+    ImGui::PushStyleColor(ImGuiCol_TextSelectedBg,          colfom(0xf6f6f6aa));
+
+    ImGui::PushStyleColor(ImGuiCol_ScrollbarBg,             colfom(0x323232e0));
+    ImGui::PushStyleColor(ImGuiCol_ScrollbarGrab,           colfom(0x6d9886ee));
+    ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabActive,     colfom(0x9dd9afff));
+    ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabHovered,    colfom(0x8dc99aff));
+
+    ImGui::PushStyleColor(ImGuiCol_Header,                  colfom(0x6d9886ff));
+    ImGui::PushStyleColor(ImGuiCol_HeaderActive,            colfom(0x7dad90ff));
+    ImGui::PushStyleColor(ImGuiCol_HeaderHovered,           colfom(0x7dad90ff));
+
+    ImGui::PushStyleColor(ImGuiCol_Tab,                     colfom(0x6d9886ff));
+    ImGui::PushStyleColor(ImGuiCol_TabActive,               colfom(0x7dad90ff));
+    ImGui::PushStyleColor(ImGuiCol_TabHovered,              colfom(0x7dad90ff));
+    ImGui::PushStyleColor(ImGuiCol_TabUnfocused,            colfom(0x6d9886ff));
+    ImGui::PushStyleColor(ImGuiCol_TabUnfocusedActive,      colfom(0x6d9886ff));
+
+    ImGui::PushStyleColor(ImGuiCol_Button,                  colfom(0x6d9886ff));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive,            colfom(0x7dad90ff));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered,           colfom(0x9dbd90ff));
+
+    ImGui::PushStyleColor(ImGuiCol_ResizeGrip,              colfom(0xf2f2f277));
+    ImGui::PushStyleColor(ImGuiCol_ResizeGripActive,        colfom(0xf2f2f2ff));
+    ImGui::PushStyleColor(ImGuiCol_ResizeGripHovered,       colfom(0xf2f2f2dd));
+
+    ImGui::PushStyleColor(ImGuiCol_SliderGrab,              colfom(0xf2f2f288));
+    ImGui::PushStyleColor(ImGuiCol_SliderGrabActive,        colfom(0x6d9886ff));
+
+    ImGui::PushStyleColor(ImGuiCol_CheckMark,               colfom(0xf2f2f2ee));
 
     DLOG_INFO("ImGui has been initialized");
 }
