@@ -22,14 +22,14 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
 :   window_info_{0, 0},
     inited_(false)
 {
-    instance_ = this;
+    if (!instance_) 
+        instance_ = this;
 
     init_dlog();
     init_window(_instance, _prev_instance, _cmd_line, _show_code);
     renderer_ = make_unique<Renderer>(this);
     init_imgui();
     init_tablet();
-
 
     inited_ = true;
 
@@ -72,14 +72,7 @@ void Application::run() {
 }
 
 void Application::render() {
-
     DGL::Camera* cam = &curr_scene_->camera_;
-
-    // glm::mat4 view = cam->calc_view();
-
-    // int width  = get_app()->window_info_.width;
-    // int height = get_app()->window_info_.height;
-    // glm::mat4 proj = cam->calc_proj(width, height);
 
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplWin32_NewFrame();
@@ -94,14 +87,27 @@ void Application::render() {
         }
         ImGui::End();
     }
-    ImGui::SetNextWindowPos({1, 1});
+
+    {
+        if (ImGui::Begin("scene tab", nullptr, ImGuiWindowFlags_NoTitleBar)) {
+            for (auto ite = scenes_.begin(); ite != scenes_.end(); ite++)
+            {
+                // ImGui::SameLine();
+                if (ImGui::Selectable(ite->first.c_str())) {
+                    change_scene(ite->first);
+                }
+            }
+            ImGui::End();
+        }
+    }
+
+    ImGui::SetNextWindowPos({1, 50});
     if (ImGui::Begin("info", nullptr, 
                      ImGuiWindowFlags_NoInputs|
                      ImGuiWindowFlags_NoTitleBar|
                      ImGuiWindowFlags_AlwaysAutoResize)) 
     {
         ImGui::LabelText("mouse pos", "[%.0f, %.0f] ", io.MousePos.x, io.MousePos.y);
-        // ImGui::LabelText("mouse pos", "[%.0f, %.0f] ", io.MousePos.x, io.MousePos.y);
         ImGui::Selectable("imgui capturing mouse", io.WantCaptureMouse);
         ImGui::Selectable("imgui capturing keyboard", io.WantCaptureKeyboard);
         ImGui::End();
@@ -115,6 +121,15 @@ void Application::render() {
     SwapBuffers(device_context_);
 }
 
+void Application::change_scene(const std::string& _name) {
+    if (scenes_.find(_name) != scenes_.end()) {
+        curr_scene_ = scenes_[_name].get();
+        renderer_->create_gl_image();
+    }
+}
+
+
+
 void Application::init_dlog() {
     DLOG_ON_PUSH = [](const Dove::LogMsg& _msg){
         OutputDebugString(_msg.to_string(Dove::DMSG_FLAG_SIMPLE | Dove::DMSG_FLAG_FILE | Dove::DMSG_FLAG_LINE).c_str());
@@ -122,10 +137,6 @@ void Application::init_dlog() {
     };
 
     DLOG_INIT;
-}
-
-Application* get_app() {
-    return Application::get_instance();
 }
 
 // region: INIT

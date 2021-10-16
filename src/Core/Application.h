@@ -27,6 +27,7 @@ class Renderer;
 
 class Application {
 public:
+    static Application* instance_;
     Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _cmd_line, int _show_code);
     ~Application();
     void run();
@@ -34,14 +35,14 @@ public:
     void handle_event();
     void render();
 
-    static Application* get_instance() { return instance_; };
-    static Application* instance_;
+    void change_scene(const std::string& _name);
 
-    Scene* curr_scene_; // just a pointer to scenes_, no instantiation
+
+    Scene* curr_scene_;
     unordered_map<string, unique_ptr<Scene>> scenes_;
 
 /* TOOLS */
-    Tool::Tool*             curr_tool_;// just a pointer to tools_, no instantiation
+    Tool::Tool*             curr_tool_;
     struct {
     unique_ptr<Tool::Brush> brush;
     // ...
@@ -50,7 +51,7 @@ public:
 
     unique_ptr<Renderer>    renderer_;
 
-public:
+public:// window
     bool    inited_;
     HWND    window_;
     HDC     device_context_;
@@ -65,11 +66,8 @@ public:
 private:
     void init_dlog();
     void init_window(HINSTANCE _instance, HINSTANCE _prev_instance, char* _cmd_line, int _show_code);
-    // void init_opengl();
     void init_imgui();
 
     void init_tools();
     void init_tablet();
 };
-
-Application* get_app();

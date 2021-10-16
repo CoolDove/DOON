@@ -18,7 +18,7 @@ LRESULT CALLBACK wnd_proc(HWND _window, UINT _message, WPARAM _wparam, LPARAM _l
     
     static POINTER_PEN_INFO pen_info{};
 
-    Application* app = get_app();
+    Application* app = Application::instance_;
 
     LRESULT result = 0;
     switch (_message)
