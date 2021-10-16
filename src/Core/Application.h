@@ -37,11 +37,11 @@ public:
     static Application* get_instance() { return instance_; };
     static Application* instance_;
 
-    Scene* curr_scene_;
+    Scene* curr_scene_; // just a pointer to scenes_, no instantiation
     unordered_map<string, unique_ptr<Scene>> scenes_;
 
 /* TOOLS */
-    Tool::Tool*             curr_tool_;
+    Tool::Tool*             curr_tool_;// just a pointer to tools_, no instantiation
     struct {
     unique_ptr<Tool::Brush> brush;
     // ...
@@ -49,14 +49,11 @@ public:
 /* TOOLS */
 
     unique_ptr<Renderer>    renderer_;
-    // unique_ptr<DGL::Shader> shader_;
-    // GLuint img_id;
 
 public:
     bool    inited_;
     HWND    window_;
     HDC     device_context_;
-    // HGLRC   gl_context_;
 
     struct WindowInfo {
         int posx;
@@ -65,12 +62,6 @@ public:
         int height;
     } window_info_;
 
-    // struct OpenGLInfo {
-    //     string version;
-    //     string vendor;
-    //     string renderer;
-    //     string shading_lang_version;
-    // } gl_info_;
 private:
     void init_dlog();
     void init_window(HINSTANCE _instance, HINSTANCE _prev_instance, char* _cmd_line, int _show_code);

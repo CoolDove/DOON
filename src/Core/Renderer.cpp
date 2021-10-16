@@ -1,19 +1,72 @@
 ﻿#include "Renderer.h"
+#include <Core/Image.h>
 #include <gl/GL.h>
-
-
 
 Renderer::Renderer(Application* _app) {
     app_ = _app;
+    init_opengl();
 }
 
 void Renderer::init() {
+    batch_.init({{DGL::Attribute::POSITION, 3}, { DGL::Attribute::UV, 2 }});
 
-    init_opengl();
+    shader_.load("./res/shaders/base.vert", "./res/shaders/base.frag");
+    shader_.bind();
 
-    shader_ = std::make_unique<DGL::Shader>();
-    shader_->load("./res/shaders/base.vert", "./res/shaders/base.frag");
-    shader_->bind();
+    create_gl_image();
+}
+
+void Renderer::create_gl_image() {
+    if (app_->curr_scene_ && app_->curr_scene_->image_.pixels_) {
+        if (glIsTexture(img_id)) {
+            glDeleteTextures(1, &img_id);
+        }
+
+        Image* img = &app_->curr_scene_->image_;
+        int width = app_->curr_scene_->image_.info_.width;
+        int height = app_->curr_scene_->image_.info_.height;
+
+        glCreateTextures(GL_TEXTURE_2D, 1, &img_id);
+        glTextureStorage2D(img_id, 1, GL_RGBA8,
+                           width,
+                           height);
+
+        glTextureSubImage2D(img_id, 0,
+                            0, 0,
+                            width,
+                            height,
+                            GL_RGBA,
+                            GL_UNSIGNED_BYTE,
+                            img->pixels_);
+
+        glBindTextureUnit(0, img_id);
+        glUniform1i(glGetUniformLocation(shader_.get_id(), "_tex"), 0);
+
+        batch_.clear();
+        batch_.add_quad(width, height, "canvas");
+        batch_.upload();
+    }
+}
+
+void Renderer::render() {
+    glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    int uid_view_matrix = glGetUniformLocation(shader_.get_id(), "_view");
+    int uid_proj_matrix = glGetUniformLocation(shader_.get_id(), "_proj");
+
+    int width  = app_->window_info_.width;
+    int height = app_->window_info_.height;
+
+    DGL::Camera* cam = &app_->curr_scene_->camera_;
+    glm::mat4 view = cam->calc_view();
+    glm::mat4 proj = cam->calc_proj(width, height);
+
+    glUniformMatrix4fv(uid_view_matrix, 1, false, &view[0][0]);
+    glUniformMatrix4fv(uid_proj_matrix, 1, false, &proj[0][0]);
+
+    batch_.draw_batch();
 
 }
 
@@ -43,7 +96,6 @@ void Renderer::init_opengl() {
     wglMakeCurrent(device_context_, gl_context_);
 
     gladLoadGL();
-    // init_opengl();
 
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -80,14 +132,8 @@ void Renderer::init_opengl() {
 
 }
 
-void Renderer::change_image(Image* _image) {
-    image_ = _image;
-
-}
-
-void Renderer::render() {
-
-}
+// void Renderer::change_image(Image* _image) {
+// }
 
 void Renderer::on_ui() {
 

@@ -37,6 +37,8 @@ public:
     Buffer();
     ~Buffer();
 
+    void        init();
+
     int         get_id()        { return id_; }
     size_t      get_size()      { return size_; }
     size_t      get_capacity()  { return capacity_; }

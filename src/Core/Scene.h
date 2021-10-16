@@ -10,6 +10,6 @@ public:
     ~Scene();
 
     DGL::Camera     camera_;
-    DGL::GeoBatch   batch_;
+    // DGL::GeoBatch   batch_;
     Image           image_;
 };

@@ -20,20 +20,16 @@ Application* Application::instance_ = nullptr;
 
 Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _cmd_line, int _show_code) 
 :   window_info_{0, 0},
-    // gl_info_{},
     inited_(false)
 {
     instance_ = this;
 
     init_dlog();
     init_window(_instance, _prev_instance, _cmd_line, _show_code);
-
-
     renderer_ = make_unique<Renderer>(this);
-    renderer_->init();
-    
     init_imgui();
     init_tablet();
+
 
     inited_ = true;
 
@@ -44,16 +40,14 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     curr_scene_       = scenes_["anji"].get();
 
     DLOG_TRACE("scene loaded");
-    
-    // shader_ = std::make_unique<DGL::Shader>();
-    // shader_->load("./res/shaders/base.vert", "./res/shaders/base.frag");
-    // shader_->bind();
 
     // init tools
     tools_.brush = make_unique<Tool::Brush>(this);
     tools_.brush->on_init();
     curr_tool_ = tools_.brush.get();
     curr_tool_->on_activate();
+
+    renderer_->init();
 }
 
 Application::~Application() {
@@ -85,6 +79,7 @@ void Application::run() {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
             render();
+            renderer_->render();
         } else {
             break;
         }
@@ -98,9 +93,9 @@ void Application::run() {
 
 void Application::render() {
     // background color
-    glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+    // glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
 
-    glClear(GL_COLOR_BUFFER_BIT);
+    // glClear(GL_COLOR_BUFFER_BIT);
 
     // glTextureSubImage2D(img_id, 0,
     //                     0, 0,
