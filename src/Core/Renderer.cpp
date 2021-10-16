@@ -53,6 +53,15 @@ void Renderer::render() {
 
     glClear(GL_COLOR_BUFFER_BIT);
 
+    Image* img = &app_->curr_scene_->image_;
+    glTextureSubImage2D(img_id, 0,
+                        0, 0,
+                        img->info_.width,
+                        img->info_.height,
+                        GL_RGBA,
+                        GL_UNSIGNED_BYTE,
+                        img->pixels_);
+
     int uid_view_matrix = glGetUniformLocation(shader_.get_id(), "_view");
     int uid_proj_matrix = glGetUniformLocation(shader_.get_id(), "_proj");
 
@@ -131,9 +140,6 @@ void Renderer::init_opengl() {
     }
 
 }
-
-// void Renderer::change_image(Image* _image) {
-// }
 
 void Renderer::on_ui() {
 

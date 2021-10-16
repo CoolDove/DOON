@@ -8,29 +8,6 @@ GeoBatch::GeoBatch()
 {
 }
 
-// GeoBatch::GeoBatch(std::initializer_list<Attribute> _attribs)
-// :   buffer_inited_(false)
-// {
-//     glCreateVertexArrays(1, &vao_);
-
-//     int i = 0;
-//     int offset = 0;
-//     for (auto ite = _attribs.begin(); ite != _attribs.end(); ite++)
-//     {
-//         glVertexArrayAttribFormat(vao_, i, ite->count, GL_FLOAT, false, offset);
-//         glVertexArrayAttribBinding(vao_, i, 0);
-//         glEnableVertexArrayAttrib(vao_, i);
-
-//         offset += sizeof(float) * ite->count;
-//         i++;
-//         attribs_.push_back(*ite);
-//     }
-//     glVertexArrayVertexBuffer(vao_, 0, vertex_buf_.get_id(), 0, offset);
-//     glVertexArrayElementBuffer(vao_, index_buf_.get_id());
-
-//     printf("geo batch init\n");
-// }
-
 void GeoBatch::init(std::initializer_list<Attribute> _attribs) {
     vertex_buf_.init();
     index_buf_.init();
@@ -81,10 +58,10 @@ void GeoBatch::add_quad(float _width, float _height, std::string _name) {
         }
     };
 
-    add_point(glm::vec4(-_width, -_height, 0.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 0.0f), glm::vec4(0.0f, 0.0f, 1.0f, 0.0f));
-    add_point(glm::vec4(-_width,  _height, 0.0f, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 0.0f), glm::vec4(0.0f, 0.0f, 1.0f, 0.0f));
-    add_point(glm::vec4( _width,  _height, 0.0f, 0.0f), glm::vec4(1.0f, 1.0f, 0.0f, 0.0f), glm::vec4(0.0f, 0.0f, 1.0f, 0.0f));
-    add_point(glm::vec4( _width, -_height, 0.0f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 0.0f), glm::vec4(0.0f, 0.0f, 1.0f, 0.0f));
+    add_point(glm::vec4(-0.5f * _width, -0.5f * _height, 0.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 0.0f), glm::vec4(0.0f, 0.0f, 1.0f, 0.0f));
+    add_point(glm::vec4(-0.5f * _width,  0.5f * _height, 0.0f, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 0.0f), glm::vec4(0.0f, 0.0f, 1.0f, 0.0f));
+    add_point(glm::vec4( 0.5f * _width,  0.5f * _height, 0.0f, 0.0f), glm::vec4(1.0f, 1.0f, 0.0f, 0.0f), glm::vec4(0.0f, 0.0f, 1.0f, 0.0f));
+    add_point(glm::vec4( 0.5f * _width, -0.5f * _height, 0.0f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 0.0f), glm::vec4(0.0f, 0.0f, 1.0f, 0.0f));
 
     indices_.emplace_back(0 + index_offset);
     indices_.emplace_back(1 + index_offset);

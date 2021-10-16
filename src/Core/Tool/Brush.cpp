@@ -71,6 +71,7 @@ void Brush::on_pointer(Input::PointerInfo _info, int _x, int _y) {
         ucol |= (ca <<  0);
 
         draw_circle((int)cs_pos.x + half_width, -(int)cs_pos.y + half_height, brush_size, ucol);
+
     }
 }
 

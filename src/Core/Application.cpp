@@ -34,8 +34,6 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     inited_ = true;
 
     scenes_["jko"]    = make_unique<Scene>("./res/textures/jko.png");
-    scenes_["test_k"] = make_unique<Scene>("./res/textures/test_k.png");
-    scenes_["test_p"] = make_unique<Scene>("./res/textures/test_p.png");
     scenes_["anji"]   = make_unique<Scene>("./res/textures/anji.png");
     curr_scene_       = scenes_["anji"].get();
 
@@ -55,24 +53,6 @@ Application::~Application() {
 }
 
 void Application::run() {
-    // glCreateTextures(GL_TEXTURE_2D, 1, &img_id);
-    // TODO: move this part to somewhere else to realloc memory while switch current scene
-    //       or just move into renderer
-    // glTextureStorage2D(img_id, 1, GL_RGBA8,
-    //                    curr_scene_->image_.info_.width,
-    //                    curr_scene_->image_.info_.height);
-
-    // glTextureSubImage2D(img_id, 0,
-    //                     0, 0,
-    //                     curr_scene_->image_.info_.width,
-    //                     curr_scene_->image_.info_.height,
-    //                     GL_RGBA,
-    //                     GL_UNSIGNED_BYTE,
-    //                     curr_scene_->image_.pixels_);
-
-    // glBindTextureUnit(0, img_id);
-    // glUniform1i(glGetUniformLocation(shader_->get_id(), "_tex"), 0);
-
     MSG msg;
     while (BOOL result = GetMessage(&msg, nullptr, 0, 0)) {
         if (result > 0) {
@@ -92,39 +72,18 @@ void Application::run() {
 }
 
 void Application::render() {
-    // background color
-    // glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
-
-    // glClear(GL_COLOR_BUFFER_BIT);
-
-    // glTextureSubImage2D(img_id, 0,
-    //                     0, 0,
-    //                     curr_scene_->image_.info_.width,
-    //                     curr_scene_->image_.info_.height,
-    //                     GL_RGBA,
-    //                     GL_UNSIGNED_BYTE,
-    //                     curr_scene_->image_.pixels_);
-
-    // glBindTexture(GL_TEXTURE_2D, img_id);
-
-    // int uid_view_matrix = glGetUniformLocation(shader_->get_id(), "_view");
-    // int uid_proj_matrix = glGetUniformLocation(shader_->get_id(), "_proj");
 
     DGL::Camera* cam = &curr_scene_->camera_;
 
-    glm::mat4 view = cam->calc_view();
+    // glm::mat4 view = cam->calc_view();
 
-    int width  = get_app()->window_info_.width;
-    int height = get_app()->window_info_.height;
-    glm::mat4 proj = cam->calc_proj(width, height);
-
-    // glUniformMatrix4fv(uid_view_matrix, 1, false, &view[0][0]);
-    // glUniformMatrix4fv(uid_proj_matrix, 1, false, &proj[0][0]);
-
-    // curr_scene_->batch_.draw_batch();
+    // int width  = get_app()->window_info_.width;
+    // int height = get_app()->window_info_.height;
+    // glm::mat4 proj = cam->calc_proj(width, height);
 
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplWin32_NewFrame();
+    ImGuiIO& io = ImGui::GetIO();
 
     ImGui::NewFrame();
     if (ImGui::Begin("temp")) {
@@ -133,6 +92,18 @@ void Application::render() {
         if (dynamic_cast<Tool::Brush*>(curr_tool_)) {
             ImGui::ColorPicker3("brush_col", dynamic_cast<Tool::Brush*>(curr_tool_)->col_);
         }
+        ImGui::End();
+    }
+    ImGui::SetNextWindowPos({1, 1});
+    if (ImGui::Begin("info", nullptr, 
+                     ImGuiWindowFlags_NoInputs|
+                     ImGuiWindowFlags_NoTitleBar|
+                     ImGuiWindowFlags_AlwaysAutoResize)) 
+    {
+        ImGui::LabelText("mouse pos", "[%.0f, %.0f] ", io.MousePos.x, io.MousePos.y);
+        // ImGui::LabelText("mouse pos", "[%.0f, %.0f] ", io.MousePos.x, io.MousePos.y);
+        ImGui::Selectable("imgui capturing mouse", io.WantCaptureMouse);
+        ImGui::Selectable("imgui capturing keyboard", io.WantCaptureKeyboard);
         ImGui::End();
     }
 
@@ -186,67 +157,7 @@ void Application::init_window(HINSTANCE _instance, HINSTANCE _prev_instance, cha
     }
 
     device_context_ = GetDC(window_);
-
-    // pixel format
-    /*──────────────────────────────────────────────────────────────────────────────────────────┐
-    │ PIXELFORMATDESCRIPTOR desired_pixel_format = {};                                          │
-    │ desired_pixel_format.nSize      = sizeof(desired_pixel_format);                           │
-    │ desired_pixel_format.nVersion   = 1;                                                      │
-    │ desired_pixel_format.dwFlags    = PFD_SUPPORT_OPENGL|PFD_DRAW_TO_WINDOW|PFD_DOUBLEBUFFER; │
-    │ desired_pixel_format.iPixelType = PFD_TYPE_RGBA;                                          │
-    │ desired_pixel_format.cColorBits = 32;                                                     │
-    │ desired_pixel_format.cAlphaBits = 8;                                                      │
-    │                                                                                           │
-    │ PIXELFORMATDESCRIPTOR suggested_pixel_format = {};                                        │
-    │ int pixel_format_index = ChoosePixelFormat(device_context_, &desired_pixel_format);       │
-    │                                                                                           │
-    │ DescribePixelFormat(device_context_,                                                      │
-    │                     pixel_format_index,                                                   │
-    │                     sizeof(suggested_pixel_format),                                       │
-    │                     &suggested_pixel_format);                                             │
-    │                                                                                           │
-    │ SetPixelFormat(device_context_, pixel_format_index, &suggested_pixel_format);             │
-    │                                                                                           │
-    │ gl_context_ = wglCreateContext(device_context_);                                          │
-    │ wglMakeCurrent(device_context_, gl_context_);                                             │
-    │                                                                                           │
-    │ gladLoadGL();                                                                             │
-    │ init_opengl();                                                                            │
-    │                                                                                           │
-    │ glClearColor(0.2f, 0.2f, 0.2f, 1.0f);                                                     │
-    │ glClear(GL_COLOR_BUFFER_BIT);                                                             │
-    │ SwapBuffers(device_context_);                                                             │
-    └──────────────────────────────────────────────────────────────────────────────────────────*/
 }
-
-// void Application::init_opengl() {
-//     gl_info_.version              = (char*)glGetString(GL_VERSION);
-//     gl_info_.vendor               = (char*)glGetString(GL_VENDOR);
-//     gl_info_.renderer             = (char*)glGetString(GL_RENDERER);
-//     gl_info_.shading_lang_version = (char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
-
-//     wglCreateContextAttribsARB_t wglCreateContextAttribsARB
-//         = (wglCreateContextAttribsARB_t)wglGetProcAddress("wglCreateContextAttribsARB");
-//     if (wglCreateContextAttribsARB) {
-//         HGLRC share_context = 0;
-//         int attrib_list[] = {
-//             WGL_CONTEXT_MAJOR_VERSION_ARB, 4,
-//             WGL_CONTEXT_MINOR_VERSION_ARB, 5,
-// #ifdef DEBUG
-//             WGL_CONTEXT_FLAGS_ARB,         WGL_CONTEXT_DEBUG_BIT_ARB,
-// #endif
-//             WGL_CONTEXT_PROFILE_MASK_ARB,  WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
-//             0
-//         };
-//         HGLRC modern_glrc = wglCreateContextAttribsARB(device_context_, share_context, attrib_list);
-//         if (modern_glrc) {
-//             wglMakeCurrent(device_context_, modern_glrc);
-//             DLOG_TRACE("switch to modern OpenGL Render Context");
-//             gl_context_ = modern_glrc;
-//         }
-//     }
-// }
-
 
 void Application::init_imgui() {
     /*──────────────────────────────────────────────────────────────────────────────┐
