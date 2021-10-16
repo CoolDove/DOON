@@ -221,8 +221,6 @@ LRESULT CALLBACK wnd_proc(HWND _window, UINT _message, WPARAM _wparam, LPARAM _l
         io.MouseDown[0] = input_context.mouse_down_l | input_context.pen_down;
         io.MouseDown[1] = input_context.mouse_down_r;
         io.MouseDown[3] = input_context.mouse_down_m;
-        DLOG_TRACE("want capture mouse:%d", io.WantCaptureMouse);
-        DLOG_TRACE("MousePos:%f,%f", ImGui::GetMousePos().x, ImGui::GetMousePos().y);
     }
     return result;
 }

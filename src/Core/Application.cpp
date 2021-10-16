@@ -33,10 +33,11 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
 
     inited_ = true;
 
+    scenes_["void"]  = make_unique<Scene>(0x00000000);
     scenes_["jko"]   = make_unique<Scene>("./res/textures/jko.png");
     scenes_["anji"]  = make_unique<Scene>("./res/textures/anji.png");
-    scenes_["pq"]    = make_unique<Scene>("./res/textures/pq.png");
-    scenes_["white"] = make_unique<Scene>(0xffffffff);
+    // scenes_["pq"]    = make_unique<Scene>("./res/textures/pq.png");
+    // scenes_["white"] = make_unique<Scene>(0xffffffff);
     curr_scene_ = scenes_.begin()->second.get();
 
     DLOG_TRACE("scene loaded");
@@ -94,7 +95,6 @@ void Application::render_ui() {
         if (ImGui::Begin("scene tab", nullptr, ImGuiWindowFlags_NoTitleBar)) {
             for (auto ite = scenes_.begin(); ite != scenes_.end(); ite++)
             {
-                // ImGui::SameLine();
                 if (ImGui::Selectable(ite->first.c_str())) {
                     change_scene(ite->first);
                 }
@@ -103,7 +103,7 @@ void Application::render_ui() {
         }
     }
 
-    ImGui::SetNextWindowPos({1, 50});
+    ImGui::SetNextWindowPos({1, 1});
     if (ImGui::Begin("info", nullptr, 
                      ImGuiWindowFlags_NoInputs|
                      ImGuiWindowFlags_NoTitleBar|

@@ -2,6 +2,10 @@
 
 #include "DGLCore/DGLCore.h"
 #include "Image.h"
+// #include "Layer.h"
+
+#include <list>
+#include <memory>
 
 class Scene {
 public:
@@ -9,7 +13,7 @@ public:
     Scene(unsigned int _base_color);
     ~Scene();
 
-    DGL::Camera     camera_;
-    // DGL::GeoBatch   batch_;
-    Image           image_;
+    DGL::Camera      camera_;
+    Image            image_;
+    // std::list<std::unique_ptr<Layer*>> layers_;
 };

@@ -10,8 +10,8 @@ Renderer::Renderer(Application* _app) {
 void Renderer::init() {
     batch_.init({{DGL::Attribute::POSITION, 3}, { DGL::Attribute::UV, 2 }});
 
-    shader_.load("./res/shaders/base.vert", "./res/shaders/base.frag");
-    shader_.bind();
+    shader_canvas_.load("./res/shaders/canvas.vert", "./res/shaders/canvas.frag");
+    shader_base_.load("./res/shaders/base.vert", "./res/shaders/base.frag");
 
     create_gl_image();
 }
@@ -23,13 +23,16 @@ void Renderer::create_gl_image() {
         }
 
         Image* img = &app_->curr_scene_->image_;
-        int width = app_->curr_scene_->image_.info_.width;
+        int width  = app_->curr_scene_->image_.info_.width;
         int height = app_->curr_scene_->image_.info_.height;
 
         glCreateTextures(GL_TEXTURE_2D, 1, &img_id);
-        glTextureStorage2D(img_id, 1, GL_RGBA8,
-                           width,
-                           height);
+        glTextureStorage2D(img_id, 1, GL_RGBA8, width, height);
+
+        glTextureParameteri(img_id, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(img_id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(img_id, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTextureParameteri(img_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
         glTextureSubImage2D(img_id, 0,
                             0, 0,
@@ -40,7 +43,8 @@ void Renderer::create_gl_image() {
                             img->pixels_);
 
         glBindTextureUnit(0, img_id);
-        glUniform1i(glGetUniformLocation(shader_.get_id(), "_tex"), 0);
+
+        glUniform1i(glGetUniformLocation(shader_canvas_.get_id(), "_tex"), 0);
 
         batch_.clear();
         batch_.add_quad(width, height, "canvas");
@@ -49,8 +53,8 @@ void Renderer::create_gl_image() {
 }
 
 void Renderer::render() {
+    shader_canvas_.bind();
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
-
     glClear(GL_COLOR_BUFFER_BIT);
 
     Image* img = &app_->curr_scene_->image_;
@@ -62,21 +66,46 @@ void Renderer::render() {
                         GL_UNSIGNED_BYTE,
                         img->pixels_);
 
-    int uid_view_matrix = glGetUniformLocation(shader_.get_id(), "_view");
-    int uid_proj_matrix = glGetUniformLocation(shader_.get_id(), "_proj");
+    glEnable(GL_BLEND);
+    glBlendEquation(GL_FUNC_ADD);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    int width  = app_->window_info_.width;
-    int height = app_->window_info_.height;
+        int width  = app_->window_info_.width;
+        int height = app_->window_info_.height;
 
-    DGL::Camera* cam = &app_->curr_scene_->camera_;
-    glm::mat4 view = cam->calc_view();
-    glm::mat4 proj = cam->calc_proj(width, height);
+        DGL::Camera* cam = &app_->curr_scene_->camera_;
+        glm::mat4 view = cam->calc_view();
+        glm::mat4 proj = cam->calc_proj(width, height);
 
-    glUniformMatrix4fv(uid_view_matrix, 1, false, &view[0][0]);
-    glUniformMatrix4fv(uid_proj_matrix, 1, false, &proj[0][0]);
+    {// draw base
+        shader_base_.bind();
+        int uid_view_matrix = glGetUniformLocation(shader_base_.get_id(), "_view");
+        int uid_proj_matrix = glGetUniformLocation(shader_base_.get_id(), "_proj");
 
-    batch_.draw_batch();
+        int uid_size = glGetUniformLocation(shader_base_.get_id(), "_size");
 
+        glUniformMatrix4fv(uid_view_matrix, 1, false, &view[0][0]);
+        glUniformMatrix4fv(uid_proj_matrix, 1, false, &proj[0][0]);
+
+        glUniform2f(uid_size, img->info_.width, img->info_.height);
+
+        batch_.draw_batch();
+    }
+    {// draw canvas
+        shader_canvas_.bind();
+        int uid_view_matrix = glGetUniformLocation(shader_canvas_.get_id(), "_view");
+        int uid_proj_matrix = glGetUniformLocation(shader_canvas_.get_id(), "_proj");
+
+        int width  = app_->window_info_.width;
+        int height = app_->window_info_.height;
+
+        glUniformMatrix4fv(uid_view_matrix, 1, false, &view[0][0]);
+        glUniformMatrix4fv(uid_proj_matrix, 1, false, &proj[0][0]);
+
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        batch_.draw_batch();
+    }
 }
 
 void Renderer::init_opengl() {
@@ -106,6 +135,7 @@ void Renderer::init_opengl() {
 
     gladLoadGL();
 
+    glEnable(GL_BLEND);
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
     SwapBuffers(device_context_);
