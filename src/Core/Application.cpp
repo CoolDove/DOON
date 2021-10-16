@@ -31,10 +31,11 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
 
     inited_ = true;
 
-    scenes_["jko"]  = make_unique<Scene>("./res/textures/jko.png");
-    scenes_["test"] = make_unique<Scene>("./res/textures/test.png");
-    scenes_["white"] = make_unique<Scene>(0xffffffff);
-    curr_scene_ = scenes_["jko"].get();
+    scenes_["jko"]    = make_unique<Scene>("./res/textures/jko.png");
+    scenes_["test_k"] = make_unique<Scene>("./res/textures/test_k.png");
+    scenes_["test_p"] = make_unique<Scene>("./res/textures/test_p.png");
+    scenes_["anji"]   = make_unique<Scene>("./res/textures/anji.png");
+    curr_scene_       = scenes_["anji"].get();
 
     DLOG_TRACE("scene loaded");
     
@@ -57,9 +58,18 @@ void Application::run() {
     glCreateTextures(GL_TEXTURE_2D, 1, &img_id);
     // TODO: move this part to somewhere else to realloc memory while switch current scene
     //       or just move into renderer
-    glTextureStorage2D(img_id, 1, GL_RGBA12, 
-                       curr_scene_->image_.info_.width, 
+    glTextureStorage2D(img_id, 1, GL_RGBA8,
+                       curr_scene_->image_.info_.width,
                        curr_scene_->image_.info_.height);
+
+    glTextureSubImage2D(img_id, 0,
+                        0, 0,
+                        curr_scene_->image_.info_.width,
+                        curr_scene_->image_.info_.height,
+                        GL_RGBA,
+                        GL_UNSIGNED_BYTE,
+                        curr_scene_->image_.pixels_);
+                        // scenes_["jko"]->image_.pixels_);
 
     glBindTextureUnit(0, img_id);
     glUniform1i(glGetUniformLocation(shader_->get_id(), "_tex"), 0);
@@ -87,12 +97,13 @@ void Application::render() {
 
     glClear(GL_COLOR_BUFFER_BIT);
 
-    glTextureSubImage2D(img_id, 0, 0, 0, 
+    glTextureSubImage2D(img_id, 0,
+                        0, 0,
                         curr_scene_->image_.info_.width,
                         curr_scene_->image_.info_.height,
-                        GL_RGBA, 
-                        GL_UNSIGNED_BYTE, 
-                        curr_scene_->image_.pixels_);	
+                        GL_RGBA,
+                        GL_UNSIGNED_BYTE,
+                        curr_scene_->image_.pixels_);
 
     glBindTexture(GL_TEXTURE_2D, img_id);
 
@@ -124,9 +135,6 @@ void Application::render() {
         }
         ImGui::End();
     }
-
-    // DLOG_TRACE("ImGui::MousePos:%f,%f", ImGui::GetMousePos().x, ImGui::GetMousePos().y);
-
 
     ImGui::EndFrame();
 
