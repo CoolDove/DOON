@@ -42,6 +42,7 @@ void Scene::update(RectInt _region) {
             for (auto ite = layers_.cbegin(); ite != layers_.cend(); ite++)
             {
                 Col_RGBA* layer_pix = (Col_RGBA*)ite->get()->img_.pixels_;
+                layer_pix += info_.width * iy + ix;
 
                 switch (ite->get()->info_.blend_mode)
                 {

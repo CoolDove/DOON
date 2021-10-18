@@ -33,7 +33,7 @@ void Renderer::create_gl_image() {
         glTextureParameteri(img_id, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
         glTextureParameteri(img_id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTextureParameteri(img_id, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTextureParameteri(img_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTextureParameteri(img_id, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
         glTextureSubImage2D(img_id, 0,
                             0, 0,
@@ -60,6 +60,7 @@ void Renderer::render() {
 
     Scene* scn = app_->curr_scene_;
     Image* img = &app_->curr_scene_->image_;
+    // Image* img = &app_->curr_scene_->layers_.front()->img_;
 
     if (scn->region_.width != 0 && scn->region_.height != 0) {
         // upload the modified region row by row

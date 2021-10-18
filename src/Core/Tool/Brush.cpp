@@ -109,8 +109,6 @@ void Brush::draw_circle(int _x, int _y, int _r) {
     region.width  = glm::min(_x + _r, scn->info_.width) - region.posx;
     region.height = glm::min(_y + _r, scn->info_.height) - region.posy;
 
-    // DLOG_TRACE("region:(%d, %d - %d, %d)", region.posx, region.posy, region.width, region.height);
-
     scn->update(region);
 }
 }
