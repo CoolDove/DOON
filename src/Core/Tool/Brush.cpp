@@ -7,7 +7,7 @@ namespace Tool
 Brush::Brush(Application* _app) 
 :   app_(_app),
     col_{0xff,0xff,0xff,0xff},
-    size_min_(1),
+    size_min_(10),
     size_max_(20)
 {
     DLOG_TRACE("brush constructed");
@@ -36,8 +36,6 @@ void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
 void Brush::on_pointer(Input::PointerInfo _info, int _x, int _y) {
     if (_info.btn_state.mouse_l || _info.pen_info.pressure > 1) 
     {
-        // DLOG_TRACE("dragging mouse");
-        // transform mouseposition to image space from window space
         int wnd_width = app_->window_info_.width;
         int wnd_height = app_->window_info_.height;
 
@@ -66,7 +64,9 @@ void Brush::on_pointer(Input::PointerInfo _info, int _x, int _y) {
 }
 
 void Brush::draw_circle(int _x, int _y, int _r) {
-    Image* img = &app_->curr_scene_->image_;
+    assert(app_->curr_scene_->curr_layer_ && "no current layer selected");
+
+    Image* img = &app_->curr_scene_->curr_layer_->img_;
 
     if (_x < -_r || _x > img->info_.width + _r || _y < -_r || _y > img->info_.height + _r )
         return;
@@ -102,10 +102,15 @@ void Brush::draw_circle(int _x, int _y, int _r) {
         }
     }
     // mark the updated region of current scene
+    RectInt region;
     Scene* scn = app_->curr_scene_;
-    scn->region_.posx   = glm::max(_x - _r, 0);
-    scn->region_.posy   = glm::max(_y - _r, 0);
-    scn->region_.width  = glm::min(_x + _r, scn->info_.width) - scn->region_.posx;
-    scn->region_.height = glm::min(_y + _r, scn->info_.height) - scn->region_.posy;
+    region.posx   = glm::max(_x - _r, 0);
+    region.posy   = glm::max(_y - _r, 0);
+    region.width  = glm::min(_x + _r, scn->info_.width) - region.posx;
+    region.height = glm::min(_y + _r, scn->info_.height) - region.posy;
+
+    // DLOG_TRACE("region:(%d, %d - %d, %d)", region.posx, region.posy, region.width, region.height);
+
+    scn->update(region);
 }
 }

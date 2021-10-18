@@ -1,9 +1,12 @@
 ﻿#include "Layer.h"
 
-Layer::Layer(unsigned int _width, unsigned int _height) 
-:   img_(_width, _height, 0x00000000)
+Layer::Layer(unsigned int _width, unsigned int _height, std::string _name, Col_RGBA _col) 
+:   img_(_width, _height, _col)
 {
-    info_ = {0};
+    info_.name       = _name;
+    info_.blend_mode = BlendMode::NORMAL;
 }
+
 Layer::~Layer() {
+
 }

@@ -3,7 +3,10 @@
 
 namespace DGL
 {
-Camera::Camera() : position_(0, 0) {
+Camera::Camera()
+:	position_(0, 0),
+	size_(1.0f)
+{
 }
 
 glm::mat4 Camera::calc_view() {

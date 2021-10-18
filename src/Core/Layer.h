@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <string>
 #include <Core/Image.h>
+#include "Core/Color.h"
 
 enum class BlendMode : unsigned char {
     NORMAL,
@@ -9,7 +10,7 @@ enum class BlendMode : unsigned char {
 
 class Layer {
 public:
-    Layer(unsigned int _width, unsigned int _height);
+    Layer(unsigned int _width, unsigned int _height, std::string _name, Col_RGBA _col);
     ~Layer();
 public:
     Image img_;

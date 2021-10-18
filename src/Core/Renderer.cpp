@@ -48,7 +48,7 @@ void Renderer::create_gl_image() {
         glUniform1i(glGetUniformLocation(shader_canvas_.get_id(), "_tex"), 0);
 
         batch_.clear();
-        batch_.add_quad(width, height, "canvas");
+        batch_.add_quad((float)width, (float)height, "canvas");
         batch_.upload();
     }
 }
@@ -61,23 +61,22 @@ void Renderer::render() {
     Scene* scn = app_->curr_scene_;
     Image* img = &app_->curr_scene_->image_;
 
-    if (scn->region_.width != 0 || scn->region_.height != 0) {
+    if (scn->region_.width != 0 && scn->region_.height != 0) {
         // upload the modified region row by row
-
         // test
-        long time = std::clock();
-        glTextureSubImage2D(img_id, 0,
-                            scn->region_.posx, 
-                            scn->region_.posy, 
-                            scn->region_.width, 
-                            scn->region_.height, 
-                            GL_RGBA,
-                            GL_UNSIGNED_BYTE,
-                            img->pixels_);
+        // long time = std::clock();
+        // glTextureSubImage2D(img_id, 0,
+        //                     scn->region_.posx, 
+        //                     scn->region_.posy, 
+        //                     scn->region_.width, 
+        //                     scn->region_.height, 
+        //                     GL_RGBA,
+        //                     GL_UNSIGNED_BYTE,
+        //                     img->pixels_);
+        // DLOG_TRACE("A %ld ms", std::clock() - time);
+        // test
 
-        DLOG_TRACE("A %ld ms", std::clock() - time);
-
-        time = std::clock();
+        // time = std::clock();
         for (int i = scn->region_.posy; i < scn->region_.posy + scn->region_.height; i++) {
             glTextureSubImage2D(img_id, 0,
                                 scn->region_.posx, 
@@ -88,9 +87,8 @@ void Renderer::render() {
                                 GL_UNSIGNED_BYTE,
                                 img->pixels_ + i * 4 * scn->info_.width + scn->region_.posx * 4);
         }
-        DLOG_TRACE("B %ld ms", std::clock() - time);
-
-        scn->region_ = {0};
+        // DLOG_TRACE("B %ld ms", std::clock() - time);
+        memset(&scn->region_, 0, sizeof(RectInt));
     };
 
     glEnable(GL_BLEND);
@@ -115,12 +113,11 @@ void Renderer::render() {
         glUniformMatrix4fv(uid_view_matrix, 1, false, &view[0][0]);
         glUniformMatrix4fv(uid_proj_matrix, 1, false, &proj[0][0]);
 
-        glUniform2f(uid_size, img->info_.width, img->info_.height);
+        glUniform2f(uid_size, (float)img->info_.width, (float)img->info_.height);
 
         float cam_size = (10.0f - cam->size_)/10.0f;
-        int cell_scale = (cam_size * cam_size * cam_size) * 30 + 1;
+        int cell_scale = (int)((cam_size * cam_size * cam_size) * 30 + 1);
 
-        // DLOG_TRACE("cam_size:%f  cell_scale:%d", cam_size, cell_scale);
         glUniform1i(uid_scale, cell_scale);
 
         batch_.draw_batch();

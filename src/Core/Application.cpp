@@ -34,13 +34,13 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     inited_ = true;
 
     long clock = std::clock();
-    scenes_["void"]  = make_unique<Scene>(2048, 2048, 0xffffff00);
-    scenes_["anji"]  = make_unique<Scene>("./res/textures/anji.png");
-    scenes_["alp"]   = make_unique<Scene>("./res/textures/alp.png");
+    // scenes_["anji"]  = make_unique<Scene>("./res/textures/anji.png");
+    // scenes_["alp"]   = make_unique<Scene>("./res/textures/alp.png");
     // scenes_["test"]   = make_unique<Scene>("./res/textures/test.png");
 
     if (scenes_.size() == 0) {
-        scenes_["void"]  = make_unique<Scene>(2048, 2048, 0xfffff00);
+        // scenes_["void"]  = make_unique<Scene>(512, 512, Col_RGBA{0x00, 0x00, 0xff, 0xff});
+        scenes_["void"]  = make_unique<Scene>(512, 512, Col_RGBA{0x00, 0x00, 0x00, 0x00});
     }
     
     curr_scene_ = scenes_.begin()->second.get();
@@ -103,6 +103,12 @@ void Application::render_ui() {
             ImGui::DragIntRange2("brush_size", &brs->size_min_, &brs->size_max_, 1, 0, 8000);
         }
         
+        ImGui::End();
+    }
+
+    if (ImGui::Begin("scene")) {
+        // for (curr_scene_->layers_.size()) {
+        // }
         ImGui::End();
     }
 

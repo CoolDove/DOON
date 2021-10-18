@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <stdint.h>
 
 struct Col_RGB {
     union {
@@ -7,7 +8,7 @@ struct Col_RGB {
             unsigned char g;
             unsigned char b;
         };
-        unsigned int cluster;
+        uint32_t cluster;
     };
 };
 
@@ -19,7 +20,7 @@ struct Col_RGBA {
             unsigned char b;
             unsigned char a;
         };
-        unsigned int cluster;
+        uint32_t cluster;
     };
 };
 
@@ -30,6 +31,6 @@ struct Col_RGBA {
 //             unsigned char s;
 //             unsigned char v;
 //         };
-//         unsigned int cluster;
+//         uint32_t cluster;
 //     };
 // };
