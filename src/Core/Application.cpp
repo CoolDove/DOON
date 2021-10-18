@@ -34,13 +34,13 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     inited_ = true;
 
     long clock = std::clock();
-    scenes_["void"]  = make_unique<Scene>(0x00000000);
-    // scenes_["jko"]   = make_unique<Scene>("./res/textures/jko.png");
-    // scenes_["anji"]  = make_unique<Scene>("./res/textures/anji.png");
+    scenes_["void"]  = make_unique<Scene>(2048, 2048, 0xffffff00);
+    scenes_["anji"]  = make_unique<Scene>("./res/textures/anji.png");
     scenes_["alp"]   = make_unique<Scene>("./res/textures/alp.png");
+    // scenes_["test"]   = make_unique<Scene>("./res/textures/test.png");
 
     if (scenes_.size() == 0) {
-        scenes_["void"]  = make_unique<Scene>(0x00000000);
+        scenes_["void"]  = make_unique<Scene>(2048, 2048, 0xfffff00);
     }
     
     curr_scene_ = scenes_.begin()->second.get();
@@ -88,14 +88,19 @@ void Application::render_ui() {
     ImGuiIO& io = ImGui::GetIO();
 
     ImGui::NewFrame();
-    if (ImGui::Begin("temp")) {
+    if (ImGui::Begin("panel")) {
         float cam_region = 0.5f * glm::max(curr_scene_->image_.info_.width, curr_scene_->image_.info_.height);
         ImGui::DragFloat2("cam_pos", (float*)&cam->position_, 1.0f, -cam_region, cam_region);
         ImGui::DragFloat("cam_size", &cam->size_, 0.1f, 0.1f, 10.0f);
         if (dynamic_cast<Tool::Brush*>(curr_tool_)) {
             Tool::Brush* brs = dynamic_cast<Tool::Brush*>(curr_tool_);
-            // ImGui::ColorEdit4("brush_col", brs->col_, ImGuiColorEditFlags_AlphaBar);
-            ImGui::DragIntRange2("brush_size", &brs->size_min_, &brs->size_max_, 1, 0, 100);
+            static float bcol[4] = {1.0f,1.0f,1.0f,1.0f};
+            ImGui::ColorEdit4("brush_col", bcol, ImGuiColorEditFlags_AlphaBar);
+            brs->col_.r = (unsigned char)(bcol[0] * 0xff);
+            brs->col_.g = (unsigned char)(bcol[1] * 0xff);
+            brs->col_.b = (unsigned char)(bcol[2] * 0xff);
+            brs->col_.a = (unsigned char)(bcol[3] * 0xff);
+            ImGui::DragIntRange2("brush_size", &brs->size_min_, &brs->size_max_, 1, 0, 8000);
         }
         
         ImGui::End();
@@ -123,6 +128,11 @@ void Application::render_ui() {
         ImGui::LabelText("mouse pos", "[%.0f, %.0f] ", io.MousePos.x, io.MousePos.y);
         ImGui::Selectable("imgui capturing mouse", io.WantCaptureMouse);
         ImGui::Selectable("imgui capturing keyboard", io.WantCaptureKeyboard);
+
+        ImGui::BeginGroup();
+        ImGui::LabelText("canvas size",  "-%d * %d-", curr_scene_->info_.width, curr_scene_->info_.height);
+        ImGui::EndGroup();
+
         ImGui::End();
     }
 

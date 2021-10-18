@@ -58,16 +58,40 @@ void Renderer::render() {
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
+    Scene* scn = app_->curr_scene_;
     Image* img = &app_->curr_scene_->image_;
 
-    
-    glTextureSubImage2D(img_id, 0,
-                        0, 0,
-                        img->info_.width,
-                        img->info_.height,
-                        GL_RGBA,
-                        GL_UNSIGNED_BYTE,
-                        img->pixels_);
+    if (scn->region_.width != 0 || scn->region_.height != 0) {
+        // upload the modified region row by row
+
+        // test
+        long time = std::clock();
+        glTextureSubImage2D(img_id, 0,
+                            scn->region_.posx, 
+                            scn->region_.posy, 
+                            scn->region_.width, 
+                            scn->region_.height, 
+                            GL_RGBA,
+                            GL_UNSIGNED_BYTE,
+                            img->pixels_);
+
+        DLOG_TRACE("A %ld ms", std::clock() - time);
+
+        time = std::clock();
+        for (int i = scn->region_.posy; i < scn->region_.posy + scn->region_.height; i++) {
+            glTextureSubImage2D(img_id, 0,
+                                scn->region_.posx, 
+                                i,
+                                scn->region_.width, 
+                                1,
+                                GL_RGBA,
+                                GL_UNSIGNED_BYTE,
+                                img->pixels_ + i * 4 * scn->info_.width + scn->region_.posx * 4);
+        }
+        DLOG_TRACE("B %ld ms", std::clock() - time);
+
+        scn->region_ = {0};
+    };
 
     glEnable(GL_BLEND);
     glBlendEquation(GL_FUNC_ADD);

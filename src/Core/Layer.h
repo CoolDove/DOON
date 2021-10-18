@@ -9,7 +9,7 @@ enum class BlendMode : unsigned char {
 
 class Layer {
 public:
-    Layer();
+    Layer(unsigned int _width, unsigned int _height);
     ~Layer();
 public:
     Image img_;

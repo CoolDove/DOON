@@ -1,20 +1,35 @@
 ﻿#pragma once
 
 struct Col_RGB {
-    unsigned char r;
-    unsigned char g;
-    unsigned char b;
+    union {
+        struct {
+            unsigned char r;
+            unsigned char g;
+            unsigned char b;
+        };
+        unsigned int cluster;
+    };
 };
 
 struct Col_RGBA {
-    unsigned char r;
-    unsigned char g;
-    unsigned char b;
-    unsigned char a;
+    union {
+        struct {
+            unsigned char r;
+            unsigned char g;
+            unsigned char b;
+            unsigned char a;
+        };
+        unsigned int cluster;
+    };
 };
 
-struct Col_HSV {
-    unsigned char h;
-    unsigned char s;
-    unsigned char v;
-};
+// struct Col_HSV {
+//     union {
+//         struct {
+//             unsigned char h;
+//             unsigned char s;
+//             unsigned char v;
+//         };
+//         unsigned int cluster;
+//     };
+// };

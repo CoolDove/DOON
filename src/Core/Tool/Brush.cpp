@@ -58,19 +58,8 @@ void Brush::on_pointer(Input::PointerInfo _info, int _x, int _y) {
 
         int half_width  = (int)(0.5f * img->info_.width);
         int half_height = (int)(0.5f * img->info_.height);
-        
-        unsigned int brush_size = ((float)_info.pen_info.pressure / 1024.0f) * (size_max_ - (size_min_)) + size_min_;
-        // unsigned int cr, cg, cb, ca = 0;
-        // cr = (unsigned int)(col_[0] * 255);
-        // cg = (unsigned int)(col_[1] * 255);
-        // cb = (unsigned int)(col_[2] * 255);
-        // ca = (unsigned int)(col_[3] * 255);
 
-        // unsigned int ucol = 0;
-        // ucol |= (cr << 24);
-        // ucol |= (cg << 16);
-        // ucol |= (cb <<  8);
-        // ucol |= (ca <<  0);
+        unsigned int brush_size = ((float)_info.pen_info.pressure / 1024.0f) * (size_max_ - (size_min_)) + size_min_;
 
         draw_circle((int)cs_pos.x + half_width, -(int)cs_pos.y + half_height, brush_size);
     }
@@ -108,24 +97,15 @@ void Brush::draw_circle(int _x, int _y, int _r) {
 
         for (int j = 0; j < scan_length; j++)
         {
-            // char* col = (char*)&_col;
-            char* pix = (char*)((int*)img->pixels_ + start + j);
-            
-            int check = 0x00ffffff;
-
-            if (*((char*)&check) == 0x00) {
-                pix[0] = col_.r;
-                pix[1] = col_.g;
-                pix[2] = col_.b;
-                pix[3] = col_.a;
-            } else {
-                pix[0] = col_.a;
-                pix[1] = col_.g;
-                pix[2] = col_.b;
-                pix[3] = col_.r;
-            }
+            unsigned int* pix = (unsigned int*)img->pixels_ + start + j;
+            *pix = col_.cluster;
         }
     }
+    // mark the updated region of current scene
+    Scene* scn = app_->curr_scene_;
+    scn->region_.posx   = glm::max(_x - _r, 0);
+    scn->region_.posy   = glm::max(_y - _r, 0);
+    scn->region_.width  = glm::min(_x + _r, scn->info_.width) - scn->region_.posx;
+    scn->region_.height = glm::min(_y + _r, scn->info_.height) - scn->region_.posy;
 }
-
 }

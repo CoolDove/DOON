@@ -20,8 +20,10 @@ struct RectInt {
 class Scene {
 public:
     Scene(const char* _image_path);
-    Scene(unsigned int _base_color);
+    Scene(unsigned int _width, unsigned int _height, unsigned int _base_color);
     ~Scene();
+
+    void add_layer();
 
     void update(RectInt _region);
     void comfirm_update();
@@ -31,4 +33,9 @@ public:
     list<uptr(Layer)>   layers_;
 
     RectInt             region_;
+
+    struct {
+        int width;
+        int height;
+    } info_;
 };
