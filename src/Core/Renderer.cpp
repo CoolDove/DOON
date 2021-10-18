@@ -59,6 +59,8 @@ void Renderer::render() {
     glClear(GL_COLOR_BUFFER_BIT);
 
     Image* img = &app_->curr_scene_->image_;
+
+    
     glTextureSubImage2D(img_id, 0,
                         0, 0,
                         img->info_.width,
@@ -94,8 +96,7 @@ void Renderer::render() {
         float cam_size = (10.0f - cam->size_)/10.0f;
         int cell_scale = (cam_size * cam_size * cam_size) * 30 + 1;
 
-        DLOG_TRACE("cam_size:%f  cell_scale:%d", cam_size, cell_scale);
-
+        // DLOG_TRACE("cam_size:%f  cell_scale:%d", cam_size, cell_scale);
         glUniform1i(uid_scale, cell_scale);
 
         batch_.draw_batch();

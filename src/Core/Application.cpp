@@ -33,13 +33,20 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
 
     inited_ = true;
 
+    long clock = std::clock();
     scenes_["void"]  = make_unique<Scene>(0x00000000);
-    scenes_["jko"]   = make_unique<Scene>("./res/textures/jko.png");
-    scenes_["anji"]  = make_unique<Scene>("./res/textures/anji.png");
-    scenes_["alp"]  = make_unique<Scene>("./res/textures/alp.png");
-    curr_scene_ = scenes_.begin()->second.get();
+    // scenes_["jko"]   = make_unique<Scene>("./res/textures/jko.png");
+    // scenes_["anji"]  = make_unique<Scene>("./res/textures/anji.png");
+    scenes_["alp"]   = make_unique<Scene>("./res/textures/alp.png");
 
-    DLOG_TRACE("scene loaded");
+    if (scenes_.size() == 0) {
+        scenes_["void"]  = make_unique<Scene>(0x00000000);
+    }
+    
+    curr_scene_ = scenes_.begin()->second.get();
+    clock = std::clock() - clock;
+
+    DLOG_TRACE("scene loaded, takes %ldms", clock);
 
     // init tools
     tools_.brush = make_unique<Tool::Brush>(this);
@@ -82,16 +89,21 @@ void Application::render_ui() {
 
     ImGui::NewFrame();
     if (ImGui::Begin("temp")) {
-        ImGui::DragFloat2("cam_pos", (float*)&cam->position_, 0.1f, -10.0f, 10.0f);
+        float cam_region = 0.5f * glm::max(curr_scene_->image_.info_.width, curr_scene_->image_.info_.height);
+        ImGui::DragFloat2("cam_pos", (float*)&cam->position_, 1.0f, -cam_region, cam_region);
         ImGui::DragFloat("cam_size", &cam->size_, 0.1f, 0.1f, 10.0f);
         if (dynamic_cast<Tool::Brush*>(curr_tool_)) {
-            ImGui::ColorPicker3("brush_col", dynamic_cast<Tool::Brush*>(curr_tool_)->col_);
+            Tool::Brush* brs = dynamic_cast<Tool::Brush*>(curr_tool_);
+            // ImGui::ColorEdit4("brush_col", brs->col_, ImGuiColorEditFlags_AlphaBar);
+            ImGui::DragIntRange2("brush_size", &brs->size_min_, &brs->size_max_, 1, 0, 100);
         }
+        
         ImGui::End();
     }
 
+    ImGui::SetNextWindowPos({1, window_info_.height - 1.0f}, 0, {0.0f, 1.0f});
     {
-        if (ImGui::Begin("scene tab", nullptr, ImGuiWindowFlags_NoTitleBar)) {
+        if (ImGui::Begin("scene tab", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize)) {
             for (auto ite = scenes_.begin(); ite != scenes_.end(); ite++)
             {
                 if (ImGui::Selectable(ite->first.c_str())) {
@@ -151,7 +163,8 @@ void Application::init_window(HINSTANCE _instance, HINSTANCE _prev_instance, cha
     window_ = CreateWindowEx(0,
                              wnd_class.lpszClassName, 
                              "DOON", 
-                             WS_OVERLAPPEDWINDOW | WS_VISIBLE, 
+                             WS_OVERLAPPEDWINDOW | WS_VISIBLE | WS_THICKFRAME, 
+                            //  WS_SIZEBOX | WS_VISIBLE | WS_CAPTION | WS_SYSMENU, 
                              CW_USEDEFAULT, 
                              CW_USEDEFAULT,
                              800, 

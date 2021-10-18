@@ -6,7 +6,9 @@ namespace Tool
 {
 Brush::Brush(Application* _app) 
 :   app_(_app),
-    col_{1,1,1,1}
+    col_{0xff,0xff,0xff,0xff},
+    size_min_(1),
+    size_max_(20)
 {
     DLOG_TRACE("brush constructed");
 }
@@ -57,25 +59,24 @@ void Brush::on_pointer(Input::PointerInfo _info, int _x, int _y) {
         int half_width  = (int)(0.5f * img->info_.width);
         int half_height = (int)(0.5f * img->info_.height);
         
-        unsigned int brush_size = ((float)_info.pen_info.pressure / 1024.0f) * 20 + 5;
-        unsigned int cr, cg, cb, ca = 0;
-        cr = (unsigned int)(col_[0] * 255);
-        cg = (unsigned int)(col_[1] * 255);
-        cb = (unsigned int)(col_[2] * 255);
-        ca = (unsigned int)(col_[3] * 255);
+        unsigned int brush_size = ((float)_info.pen_info.pressure / 1024.0f) * (size_max_ - (size_min_)) + size_min_;
+        // unsigned int cr, cg, cb, ca = 0;
+        // cr = (unsigned int)(col_[0] * 255);
+        // cg = (unsigned int)(col_[1] * 255);
+        // cb = (unsigned int)(col_[2] * 255);
+        // ca = (unsigned int)(col_[3] * 255);
 
-        unsigned int ucol = 0;
-        ucol |= (cr << 24);
-        ucol |= (cg << 16);
-        ucol |= (cb <<  8);
-        ucol |= (ca <<  0);
+        // unsigned int ucol = 0;
+        // ucol |= (cr << 24);
+        // ucol |= (cg << 16);
+        // ucol |= (cb <<  8);
+        // ucol |= (ca <<  0);
 
-        draw_circle((int)cs_pos.x + half_width, -(int)cs_pos.y + half_height, brush_size, ucol);
-
+        draw_circle((int)cs_pos.x + half_width, -(int)cs_pos.y + half_height, brush_size);
     }
 }
 
-void Brush::draw_circle(int _x, int _y, int _r, unsigned int _col) {
+void Brush::draw_circle(int _x, int _y, int _r) {
     Image* img = &app_->curr_scene_->image_;
 
     if (_x < -_r || _x > img->info_.width + _r || _y < -_r || _y > img->info_.height + _r )
@@ -107,21 +108,21 @@ void Brush::draw_circle(int _x, int _y, int _r, unsigned int _col) {
 
         for (int j = 0; j < scan_length; j++)
         {
-            char* col = (char*)&_col;
+            // char* col = (char*)&_col;
             char* pix = (char*)((int*)img->pixels_ + start + j);
             
             int check = 0x00ffffff;
 
             if (*((char*)&check) == 0x00) {
-                pix[0] = col[0];
-                pix[1] = col[1];
-                pix[2] = col[2];
-                pix[3] = col[3];
+                pix[0] = col_.r;
+                pix[1] = col_.g;
+                pix[2] = col_.b;
+                pix[3] = col_.a;
             } else {
-                pix[0] = col[3];
-                pix[1] = col[2];
-                pix[2] = col[1];
-                pix[3] = col[0];
+                pix[0] = col_.a;
+                pix[1] = col_.g;
+                pix[2] = col_.b;
+                pix[3] = col_.r;
             }
         }
     }
