@@ -37,10 +37,12 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     // scenes_["anji"]  = make_unique<Scene>("./res/textures/anji.png");
     // scenes_["alp"]   = make_unique<Scene>("./res/textures/alp.png");
     // scenes_["test"]   = make_unique<Scene>("./res/textures/test.png");
+    // scenes_["void2"]  = make_unique<Scene>(512, 512, Col_RGBA{0x00, 0x00, 0x00, 0x00});
+    // scenes_["void1"]  = make_unique<Scene>(2048, 2048, Col_RGBA{0x00, 0x00, 0x00, 0x00});
 
     if (scenes_.size() == 0) {
-        // scenes_["void"]  = make_unique<Scene>(512, 512, Col_RGBA{0x00, 0x00, 0xff, 0xff});
-        scenes_["void"]  = make_unique<Scene>(512, 512, Col_RGBA{0x00, 0x00, 0x00, 0x00});
+        // scenes_["void"]  = make_unique<Scene>(2048, 2048, Col_RGBA{0xff, 0x00, 0x00, 0x77});
+        scenes_["void"]  = make_unique<Scene>(2048, 2048, Col_RGBA{0x00, 0x00, 0x00, 0x00});
     }
     
     curr_scene_ = scenes_.begin()->second.get();
@@ -88,28 +90,51 @@ void Application::render_ui() {
     ImGuiIO& io = ImGui::GetIO();
 
     ImGui::NewFrame();
+    {
     if (ImGui::Begin("panel")) {
-        float cam_region = 0.5f * glm::max(curr_scene_->image_.info_.width, curr_scene_->image_.info_.height);
-        ImGui::DragFloat2("cam_pos", (float*)&cam->position_, 1.0f, -cam_region, cam_region);
-        ImGui::DragFloat("cam_size", &cam->size_, 0.1f, 0.1f, 10.0f);
-        if (dynamic_cast<Tool::Brush*>(curr_tool_)) {
-            Tool::Brush* brs = dynamic_cast<Tool::Brush*>(curr_tool_);
-            static float bcol[4] = {1.0f,1.0f,1.0f,1.0f};
-            ImGui::ColorEdit4("brush_col", bcol, ImGuiColorEditFlags_AlphaBar);
-            brs->col_.r = (unsigned char)(bcol[0] * 0xff);
-            brs->col_.g = (unsigned char)(bcol[1] * 0xff);
-            brs->col_.b = (unsigned char)(bcol[2] * 0xff);
-            brs->col_.a = (unsigned char)(bcol[3] * 0xff);
-            ImGui::DragIntRange2("brush_size", &brs->size_min_, &brs->size_max_, 1, 0, 8000);
+        if (ImGui::CollapsingHeader("cam")) {
+            float cam_region = 0.5f * glm::max(curr_scene_->image_.info_.width, curr_scene_->image_.info_.height);
+            ImGui::DragFloat2("cam_pos", (float*)&cam->position_, 1.0f, -cam_region, cam_region);
+            ImGui::DragFloat("cam_size", &cam->size_, 0.1f, 0.1f, 10.0f);
         }
-        
+
+        if (ImGui::CollapsingHeader("tool")) {
+            if (dynamic_cast<Tool::Brush*>(curr_tool_)) {
+                Tool::Brush* brs = dynamic_cast<Tool::Brush*>(curr_tool_);
+                static float bcol[4] = {1.0f,1.0f,1.0f,1.0f};
+                ImGui::ColorEdit4("brush_col", bcol, ImGuiColorEditFlags_AlphaBar);
+                brs->col_.r = (unsigned char)(bcol[0] * 0xff);
+                brs->col_.g = (unsigned char)(bcol[1] * 0xff);
+                brs->col_.b = (unsigned char)(bcol[2] * 0xff);
+                brs->col_.a = (unsigned char)(bcol[3] * 0xff);
+                ImGui::DragIntRange2("brush_size", &brs->size_min_, &brs->size_max_, 1, 0, 8000);
+            }
+        }
+
+        if (ImGui::CollapsingHeader("scene")) {
+            ImGui::BeginGroup();
+            for (auto ite = curr_scene_->layers_.rbegin(); ite != curr_scene_->layers_.rend(); ite++)
+            {
+                if (curr_scene_->curr_layer_ == ite->get()) {
+                    ImGui::Bullet();
+                    ImGui::SameLine();
+                }
+                if (ImGui::Button(ite->get()->info_.name.c_str())) {
+                    curr_scene_->curr_layer_ = ite->get();
+                }
+            }
+            ImGui::EndGroup();
+
+            // static char buf[128];
+            // ImGui::InputText("name", buf, 128);
+            if (ImGui::Button("add layer")) {
+                curr_scene_->add_layer(Col_RGBA{0x00, 0x00, 0x00, 0x00});
+            }
+
+        }
+
         ImGui::End();
     }
-
-    if (ImGui::Begin("scene")) {
-        // for (curr_scene_->layers_.size()) {
-        // }
-        ImGui::End();
     }
 
     ImGui::SetNextWindowPos({1, window_info_.height - 1.0f}, 0, {0.0f, 1.0f});

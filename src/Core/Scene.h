@@ -23,6 +23,7 @@ public:
     Scene(uint32_t _width, uint32_t _height, Col_RGBA _col);
     ~Scene();
 
+    void add_layer(Col_RGBA _col, const std::string& _name);
     void add_layer(Col_RGBA _col);
 
     void update(RectInt _region);
