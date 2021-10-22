@@ -1,11 +1,13 @@
 ﻿#pragma once
+
+#include "GLShader.h"
+#include "GLBuffer.h"
+
 #include <glad/glad.h>
 #include <vector>
 #include <unordered_map>
 #include <initializer_list>
 #include <string>
-#include "GLShader.h"
-#include "GLBuffer.h"
 
 namespace DGL
 {
@@ -21,7 +23,6 @@ struct Attribute {
 class GeoBatch {
 public:
     GeoBatch();
-    // GeoBatch(std::initializer_list<Attribute> _attribs);
 
     void init(std::initializer_list<Attribute> _attribs);
     void draw_batch();

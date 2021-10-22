@@ -1,80 +1,90 @@
 ﻿#include "GLShader.h"
 #include <fstream>
 #include <stdlib.h>
-#include "DoveLog.hpp"
 #include <assert.h>
+#include <DGLCore/DGLBase.h>
 
-static char* read_file(const char* _path) {
-	std::ifstream file(_path);
-	if (!file.good()) {
-		DLOG_ERROR("failed to read file: \"%s\"", _path);
-#ifdef DEBUG
-		assert(true);
-#else
-		return nullptr;
-#endif
-	}
-	file.seekg(0, std::ios::end);
-	size_t size = file.tellg();
+static char* read_file(const char* _path, int* _size = nullptr) {
+    std::ifstream file(_path);
 
-	char* buf = new char[size]();
-	// memset(buf, 0, size);
-	file.seekg(0, std::ios::beg);
-	file.read(buf, size);
-	file.close();
-	
-	return buf;
-}
+    if (!file.good())
+        throw DGL::DGLERROR::FILE_NOT_EXIST;
+    
+    file.seekg(0, std::ios::end);
+    size_t size = file.tellg();
 
-static GLint compile_shader(GLuint _shader) {
-	glCompileShader(_shader);
-	GLint compile_tag_frag = 0;
-	glGetShaderiv(_shader, GL_COMPILE_STATUS, &compile_tag_frag);
-	if (compile_tag_frag == GL_FALSE)
-	{
-		GLint maxLength = 0;
-		glGetShaderiv(_shader, GL_INFO_LOG_LENGTH, &maxLength);
+    char* buf = new char[size]();
+    file.seekg(0, std::ios::beg);
+    file.read(buf, size);
+    file.close();
 
-		char* infoLog = (char*)malloc(maxLength);
-		glGetShaderInfoLog(_shader, maxLength, &maxLength, &infoLog[0]);
-
-		glDeleteShader(_shader);
-
-		DLOG_ERROR("%s", infoLog);
-		free(infoLog);
-	}
-	return compile_tag_frag;
+    if (_size != nullptr) *_size = size;
+    
+    return buf;
 }
 
 namespace DGL {
-bool Shader::load(const std::string _vert_path, const std::string _frag_path) {
-	char* vert_src = read_file(_vert_path.c_str());
-	char* frag_src = read_file(_frag_path.c_str());
+Shader::Shader() 
+:   id_(0),
+    inited_(false)
+{}
 
-	GLuint vert_shader = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vert_shader, 1, &vert_src, 0);
-	GLuint frag_shader = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(frag_shader, 1, &frag_src, 0);
-
-	GLint compile_tag_vert = compile_shader(vert_shader);
-	GLint compile_tag_frag = compile_shader(frag_shader);
-	
-	if (!compile_tag_vert || !compile_tag_frag) return false;
-
-	GLuint shader_prog;
-	shader_prog = glCreateProgram();
-	glAttachShader(shader_prog, vert_shader);
-	glAttachShader(shader_prog, frag_shader);
-
-	glLinkProgram(shader_prog);
-	glUseProgram(shader_prog);
-	glDeleteShader(vert_shader);
-	glDeleteShader(frag_shader);
-
-	delete [] vert_src;
-	delete [] frag_src;
-
-	id_ = shader_prog;
-	return true;
+Shader::Shader(const std::string& _path, ShaderType _type, std::string* _msg) 
+:   id_(0),
+    inited_(false)
+{
+    init(_type);
+    load(_path, _msg);
 }
+
+Shader::~Shader() {
+    if (!inited_) {
+        glDeleteShader(id_);
+    }
+}
+void Shader::init(ShaderType _type) {
+    assert(!inited_&&"this shader has been initialized");
+    id_ = glCreateShader(static_cast<GLenum>(_type));
+    if (!id_) throw DGLERROR::CREATION_FAILED;
+
+    type_   = _type;
+    inited_ = true;
+}
+
+bool Shader::load(const std::string& _path, std::string* _compile_msg) {
+    assert(inited_&&"shader has to be initialized before being loaded");
+
+    char* src = read_file(_path.c_str());
+    glShaderSource(id_, 1, &src, 0);
+
+    bool result = compile(src, _compile_msg);
+
+    delete [] src;
+    return result;
+}
+
+bool Shader::compile(const std::string& _src, std::string* _compile_msg) {
+    glCompileShader(id_);
+    GLint compile_tag = 0;
+    glGetShaderiv(id_, GL_COMPILE_STATUS, &compile_tag);
+    if (compile_tag == GL_FALSE)
+    {
+        GLint maxLength = 0;
+        glGetShaderiv(id_, GL_INFO_LOG_LENGTH, &maxLength);
+
+        char* infoLog = (char*)malloc(maxLength);
+        glGetShaderInfoLog(id_, maxLength, &maxLength, &infoLog[0]);
+        if (_compile_msg != nullptr) {
+            _compile_msg->clear();
+            *_compile_msg = infoLog;
+        }
+        glDeleteShader(id_);
+        free(infoLog);
+
+        throw DGLERROR::SHADER_COMPILING_FAILED;
+    }
+
+    return compile_tag;
+}
+
 }

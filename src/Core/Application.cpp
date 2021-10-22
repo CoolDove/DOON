@@ -104,7 +104,6 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     glShaderSource(compute_shader, 1, &shader_src, 0);
     delete [] shader_src;
 
-    // glCompileShader(compute_shader);
     assert(compile_shader(compute_shader) && "failed to compile compute shader");
 
 	GLuint compute_programe;

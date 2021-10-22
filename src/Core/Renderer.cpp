@@ -3,6 +3,9 @@
 #include <gl/GL.h>
 #include "DoveLog.hpp"
 #include <DGLCore/GLDebugger.h>
+#include <DGLCore/GLShader.h>
+
+using namespace DGL;
 
 Renderer::Renderer(Application* _app) {
     app_ = _app;
@@ -12,8 +15,16 @@ Renderer::Renderer(Application* _app) {
 void Renderer::init() {
     batch_.init({{DGL::Attribute::POSITION, 3}, { DGL::Attribute::UV, 2 }});
 
-    shader_canvas_.load("./res/shaders/canvas.vert", "./res/shaders/canvas.frag");
-    shader_base_.load("./res/shaders/base.vert", "./res/shaders/base.frag");
+    std::string msg_canvas_vert;
+    std::string msg_canvas_frag;
+
+    Shader canvas_vert("./res/shaders/canvas.vert", ShaderType::VERTEX_SHADER, &msg_canvas_vert);
+    Shader canvas_frag("./res/shaders/canvas.frag", ShaderType::FRAGMENT_SHADER, &msg_canvas_frag);
+    shader_canvas_.link({ &canvas_vert, &canvas_frag });
+
+    Shader base_vert("./res/shaders/base.vert", ShaderType::VERTEX_SHADER);
+    Shader base_frag("./res/shaders/base.frag", ShaderType::FRAGMENT_SHADER);
+    shader_base_.link({ &base_vert, &base_frag });
 
     create_gl_image();
 }
@@ -45,7 +56,7 @@ void Renderer::create_gl_image() {
                             img->pixels_);
 
         glBindTextureUnit(0, img_id);
-        glUniform1i(glGetUniformLocation(shader_canvas_.get_id(), "_tex"), 0);
+        glUniform1i(glGetUniformLocation(shader_canvas_.get_glid(), "_tex"), 0);
 
         batch_.clear();
         batch_.add_quad((float)width, (float)height, "canvas");
@@ -103,11 +114,11 @@ void Renderer::render() {
 
     {// draw base
         shader_base_.bind();
-        int uid_view_matrix = glGetUniformLocation(shader_base_.get_id(), "_view");
-        int uid_proj_matrix = glGetUniformLocation(shader_base_.get_id(), "_proj");
+        int uid_view_matrix = glGetUniformLocation(shader_base_.get_glid(), "_view");
+        int uid_proj_matrix = glGetUniformLocation(shader_base_.get_glid(), "_proj");
 
-        int uid_size  = glGetUniformLocation(shader_base_.get_id(), "_size");
-        int uid_scale = glGetUniformLocation(shader_base_.get_id(), "_scale");
+        int uid_size  = glGetUniformLocation(shader_base_.get_glid(), "_size");
+        int uid_scale = glGetUniformLocation(shader_base_.get_glid(), "_scale");
 
         glUniformMatrix4fv(uid_view_matrix, 1, false, &view[0][0]);
         glUniformMatrix4fv(uid_proj_matrix, 1, false, &proj[0][0]);
@@ -123,8 +134,8 @@ void Renderer::render() {
     }
     {// draw canvas
         shader_canvas_.bind();
-        int uid_view_matrix = glGetUniformLocation(shader_canvas_.get_id(), "_view");
-        int uid_proj_matrix = glGetUniformLocation(shader_canvas_.get_id(), "_proj");
+        int uid_view_matrix = glGetUniformLocation(shader_canvas_.get_glid(), "_view");
+        int uid_proj_matrix = glGetUniformLocation(shader_canvas_.get_glid(), "_proj");
 
         int width  = app_->window_info_.width;
         int height = app_->window_info_.height;
@@ -134,9 +145,9 @@ void Renderer::render() {
 
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        // glBindTextureUnit(0, img_id);
-        glBindTextureUnit(0, app_->buf_tex_);
-        glUniform1i(glGetUniformLocation(shader_canvas_.get_id(), "_tex"), 0);
+        glBindTextureUnit(0, img_id);
+        // glBindTextureUnit(0, app_->buf_tex_);
+        glUniform1i(glGetUniformLocation(shader_canvas_.get_glid(), "_tex"), 0);
 
         batch_.draw_batch();
     }
