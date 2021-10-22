@@ -63,6 +63,13 @@ public:// window
         int height;
     } window_info_;
 
+public:
+    // struct {
+    //     GLuint src0;
+    //     GLuint src1;
+    //     GLuint dst;
+    // } imgs_ = {0};
+    GLuint buf_tex_;
 private:
     void init_dlog();
     void init_window(HINSTANCE _instance, HINSTANCE _prev_instance, char* _cmd_line, int _show_code);

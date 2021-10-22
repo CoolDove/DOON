@@ -2,6 +2,7 @@
 #include <Core/Image.h>
 #include <gl/GL.h>
 #include "DoveLog.hpp"
+#include <DGLCore/GLDebugger.h>
 
 Renderer::Renderer(Application* _app) {
     app_ = _app;
@@ -44,7 +45,6 @@ void Renderer::create_gl_image() {
                             img->pixels_);
 
         glBindTextureUnit(0, img_id);
-
         glUniform1i(glGetUniformLocation(shader_canvas_.get_id(), "_tex"), 0);
 
         batch_.clear();
@@ -60,7 +60,6 @@ void Renderer::render() {
 
     Scene* scn = app_->curr_scene_;
     Image* img = &app_->curr_scene_->image_;
-    // Image* img = &app_->curr_scene_->layers_.front()->img_;
 
     if (scn->region_.width != 0 && scn->region_.height != 0) {
         // upload the modified region row by row
@@ -88,7 +87,6 @@ void Renderer::render() {
                                 GL_UNSIGNED_BYTE,
                                 img->pixels_ + i * 4 * scn->info_.width + scn->region_.posx * 4);
         }
-        // DLOG_TRACE("B %ld ms", std::clock() - time);
         memset(&scn->region_, 0, sizeof(RectInt));
     };
 
@@ -135,6 +133,10 @@ void Renderer::render() {
         glUniformMatrix4fv(uid_proj_matrix, 1, false, &proj[0][0]);
 
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        // glBindTextureUnit(0, img_id);
+        glBindTextureUnit(0, app_->buf_tex_);
+        glUniform1i(glGetUniformLocation(shader_canvas_.get_id(), "_tex"), 0);
 
         batch_.draw_batch();
     }
@@ -199,6 +201,9 @@ void Renderer::init_opengl() {
             wglMakeCurrent(device_context_, modern_glrc);
             gl_context_ = modern_glrc;
         }
+#ifdef DEBUG
+        gl_debug_init();
+#endif
     }
 
 }

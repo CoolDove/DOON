@@ -36,8 +36,6 @@ void Scene::update(RectInt _region) {
         Col_RGBA* dst = (Col_RGBA*)&image_.pixels_[byte_index];
         Col_RGBA* src = (Col_RGBA*)&layers_.front().get()->img_.pixels_[byte_index];
         memcpy(dst, src, _region.width * 4);
-
-        DLOG_TRACE("update %d %d %d %d", _region.posx, _region.posy, _region.width, _region.height);
     }
 
     if (layers_.size() == 1) {

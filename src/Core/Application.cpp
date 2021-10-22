@@ -14,6 +14,9 @@
 #include <glad/glad.h>
 #include <gl/GL.h>
 
+//temp
+#include <fstream>
+
 using wglCreateContextAttribsARB_t = HGLRC (WINAPI *) (HDC hDC, HGLRC hshareContext, const int *attribList);
 
 Application* Application::instance_ = nullptr;
@@ -57,6 +60,84 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     curr_tool_->on_activate();
 
     renderer_->init();
+
+    /*-------some compute shader experiments here-------*/
+    auto read_file = [](const char* _path) -> char* {
+    	std::ifstream file(_path);
+    	if (!file.good()) {
+    		DLOG_ERROR("failed to read file: \"%s\"", _path);
+    	}
+    	file.seekg(0, std::ios::end);
+    	size_t size = file.tellg();
+
+    	char* buf = new char[size]();
+
+    	file.seekg(0, std::ios::beg);
+    	file.read(buf, size);
+    	file.close();
+    	
+    	return buf;
+    };
+
+    auto compile_shader = [](GLuint _shader) {
+    	glCompileShader(_shader);
+    	GLint compile_tag_frag = 0;
+    	glGetShaderiv(_shader, GL_COMPILE_STATUS, &compile_tag_frag);
+    	if (compile_tag_frag == GL_FALSE)
+    	{
+    		GLint maxLength = 0;
+    		glGetShaderiv(_shader, GL_INFO_LOG_LENGTH, &maxLength);
+
+    		char* infoLog = (char*)malloc(maxLength);
+    		glGetShaderInfoLog(_shader, maxLength, &maxLength, &infoLog[0]);
+
+    		glDeleteShader(_shader);
+
+    		DLOG_ERROR("%s", infoLog);
+    		free(infoLog);
+    	}
+    	return compile_tag_frag;
+    };
+
+    char* shader_src = read_file("./res/shaders/Test.comp");
+    GLuint compute_shader = glCreateShader(GL_COMPUTE_SHADER);
+    glShaderSource(compute_shader, 1, &shader_src, 0);
+    delete [] shader_src;
+
+    // glCompileShader(compute_shader);
+    assert(compile_shader(compute_shader) && "failed to compile compute shader");
+
+	GLuint compute_programe;
+	compute_programe = glCreateProgram();
+	glAttachShader(compute_programe, compute_shader);
+
+	glLinkProgram(compute_programe);
+	glUseProgram(compute_programe);
+	glDeleteShader(compute_shader);
+    // *******!!!!COMPUTE SHADER DONE!!!!*******
+
+    glCreateTextures(GL_TEXTURE_BUFFER, 3, &buf_tex_);
+
+    DGL::Buffer buf;
+    buf.init();
+    buf.allocate(16 * 16 * 4, DGL::BufferFlag::DYNAMIC_STORAGE_BIT|DGL::BufferFlag::MAP_READ_BIT);
+    glTextureBuffer(buf_tex_, GL_RGBA8, buf.get_id());
+    glBindImageTexture(0, buf_tex_, 0, false, 0, GL_READ_WRITE, GL_RGBA8UI);
+
+    /*********try using texture buffer object**********/
+    void* pix = glMapNamedBuffer(buf.get_id(), GL_READ_ONLY);
+    memset(pix, 0xfa, 16 * 16 * 4);
+    glUnmapNamedBuffer(buf.get_id());
+
+    glDispatchCompute(16, 1, 1);
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+    pix = glMapNamedBuffer(buf.get_id(), GL_READ_ONLY);
+
+    glUnmapNamedBuffer(buf.get_id());
+    pix = nullptr;
+
+    /*-------some compute shader experiments here-------*/
 }
 
 Application::~Application() {
@@ -71,6 +152,12 @@ void Application::run() {
             DispatchMessage(&msg);
             render_ui();
             renderer_->render();
+
+
+            /*-------some compute shader experiments here-------*/
+
+            /*-------some compute shader experiments here-------*/
+            
         } else {
             break;
         }
@@ -125,8 +212,6 @@ void Application::render_ui() {
             }
             ImGui::EndGroup();
 
-            // static char buf[128];
-            // ImGui::InputText("name", buf, 128);
             if (ImGui::Button("add layer")) {
                 curr_scene_->add_layer(Col_RGBA{0x00, 0x00, 0x00, 0x00});
             }
@@ -151,6 +236,7 @@ void Application::render_ui() {
     }
 
     ImGui::SetNextWindowPos({1, 1});
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, {0.4f, 0.4f, 0.4f, 0.3f});
     if (ImGui::Begin("info", nullptr, 
                      ImGuiWindowFlags_NoInputs|
                      ImGuiWindowFlags_NoTitleBar|
@@ -166,6 +252,7 @@ void Application::render_ui() {
 
         ImGui::End();
     }
+    ImGui::PopStyleColor(1);
 
     ImGui::EndFrame();
 

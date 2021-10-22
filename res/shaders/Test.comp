@@ -1,0 +1,10 @@
+﻿#version 450 core
+
+layout (local_size_x = 16, local_size_y = 16) in;
+
+layout (rgba8ui, binding = 0) uniform uimageBuffer dst;
+
+void main(void) {
+    uvec4 col = imageLoad(dst, int(gl_LocalInvocationIndex));
+    imageStore(dst, int(gl_LocalInvocationIndex), uvec4(0xee, 0xee, 0xee, 0xee));
+}
