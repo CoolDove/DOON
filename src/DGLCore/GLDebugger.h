@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <Glad/glad.h>
 #include <DoveLog.hpp>
+#include <assert.h>
 
 #ifdef DEBUG
 
@@ -70,3 +71,31 @@ gl_debug_proc(GLenum source,
 inline void gl_debug_init() {
 }
 #endif
+
+/*──────────┐
+│ EXCEPTION │
+└──────────*/
+namespace DGL::EXCEPTION
+{
+
+#define EXCEPTION_CLASS(name) class name : DGLException {\
+public:name(std::string _msg):DGLException(_msg) {};name():DGLException(){};};\
+    
+class DGLException {
+public: 
+    DGLException(const std::string& _msg)
+    :   msg(_msg){}
+    DGLException()
+    :   msg("--"){}
+    std::string msg;
+};
+
+EXCEPTION_CLASS(CREATION_FAILED)
+EXCEPTION_CLASS(FILE_NOT_EXIST)
+EXCEPTION_CLASS(SHADER_COMPILING_FAILED)
+EXCEPTION_CLASS(SHADER_MULTI_ATTACHMENT)
+EXCEPTION_CLASS(LINK_UNINITED_SHADER)
+EXCEPTION_CLASS(BUFFER_MAPPING_FAILED)
+EXCEPTION_CLASS(NO_UNIFORM_LOCATION_FOUND)
+
+}

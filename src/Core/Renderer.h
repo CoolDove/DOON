@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "Core/Application.h"
 #include <Windows.h>
-#include <DGLCore/GLProgram.h>
+#include <DGLCore/DGLCore.h>
 
 class Renderer {
 public:
@@ -25,14 +25,13 @@ private://GL
     HDC   device_context_;
     HGLRC gl_context_;
 
-    DGL::Program shader_canvas_;
-    DGL::Program shader_base_;
+    DGL::Program program_canvas_;
+    DGL::Program program_base_;
 
+    DGL::GLTexture2D tex_img_;
     DGL::GeoBatch batch_;
-    // DGL::GeoBatch base_;// we dont need this actually, just render the batch_ twice
 
     GLuint img_id;
-
 private:// private func
     void init_opengl();
 };

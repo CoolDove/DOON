@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <glad/glad.h>
 #include "BitMaskEnum.h"
+#include "GLEnums.h"
 #include <stdint.h>
 
 namespace DGL
@@ -30,12 +31,6 @@ enum class BufType : uint32_t {
     TRANSFORM_FEEDBACK_BUFFER = 0x8C8E
 };
 
-enum class MapAcc : uint32_t {
-    READ_ONLY  = 0x88B8,
-    WRITE_ONLY = 0x88B9,
-    READ_WRITE = 0x88BA
-};
-
 class Buffer {
 public:
     void allocate(size_t _size_b, BufFlag _flag);
@@ -48,8 +43,8 @@ public:
 
     void    init();
 
-    void*   map(MapAcc _access);
-    void*   map_range(MapAcc _access, long long _offset_b, long long _size_b);
+    void*   map(Access _access);
+    void*   map_range(Access _access, long long _offset_b, long long _size_b);
     void    unmap();
 
     int     get_id()        const { return id_; }

@@ -20,40 +20,31 @@ void Renderer::init() {
 
     Shader canvas_vert("./res/shaders/canvas.vert", ShaderType::VERTEX_SHADER, &msg_canvas_vert);
     Shader canvas_frag("./res/shaders/canvas.frag", ShaderType::FRAGMENT_SHADER, &msg_canvas_frag);
-    shader_canvas_.link({ &canvas_vert, &canvas_frag });
+    program_canvas_.link(2, &canvas_vert, &canvas_frag);
 
     Shader base_vert("./res/shaders/base.vert", ShaderType::VERTEX_SHADER);
     Shader base_frag("./res/shaders/base.frag", ShaderType::FRAGMENT_SHADER);
-    shader_base_.link({ &base_vert, &base_frag });
+    program_base_.link(2, &base_vert, &base_frag);
 
     create_gl_image();
 }
 
 void Renderer::create_gl_image() {
     if (app_->curr_scene_ && app_->curr_scene_->image_.pixels_) {
-        if (glIsTexture(img_id)) {
-            glDeleteTextures(1, &img_id);
-        }
+        if (tex_img_.get_inited()) tex_img_.release();
 
         Image* img = &app_->curr_scene_->image_;
         int width  = app_->curr_scene_->image_.info_.width;
         int height = app_->curr_scene_->image_.info_.height;
 
-        glCreateTextures(GL_TEXTURE_2D, 1, &img_id);
-        glTextureStorage2D(img_id, 1, GL_RGBA8, width, height);
+        tex_img_.init();
+        tex_img_.alloc(1, SizedInternalFormat::RGBA8, width, height);
+        tex_img_.upload(0, 0, 0, width, height, PixFormat::BGRA, PixType::UNSIGNED_BYTE, img->pixels_);
 
-        glTextureParameteri(img_id, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-        glTextureParameteri(img_id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTextureParameteri(img_id, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTextureParameteri(img_id, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-        glTextureSubImage2D(img_id, 0,
-                            0, 0,
-                            width,
-                            height,
-                            GL_RGBA,
-                            GL_UNSIGNED_BYTE,
-                            img->pixels_);
+        tex_img_.param_mag_filter(TexFilter::NEAREST);
+        tex_img_.param_min_filter(TexFilter::NEAREST);
+        tex_img_.param_wrap_r(TexWrap::CLAMP_TO_EDGE);
+        tex_img_.param_wrap_s(TexWrap::CLAMP_TO_EDGE);
 
         batch_.clear();
         batch_.add_quad((float)width, (float)height, "canvas");
@@ -62,7 +53,7 @@ void Renderer::create_gl_image() {
 }
 
 void Renderer::render() {
-    shader_canvas_.bind();
+    program_canvas_.bind();
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
@@ -70,31 +61,11 @@ void Renderer::render() {
     Image* img = &app_->curr_scene_->image_;
 
     if (scn->region_.width != 0 && scn->region_.height != 0) {
-        // upload the modified region row by row
-        // test
-        // long time = std::clock();
-        // glTextureSubImage2D(img_id, 0,
-        //                     scn->region_.posx, 
-        //                     scn->region_.posy, 
-        //                     scn->region_.width, 
-        //                     scn->region_.height, 
-        //                     GL_RGBA,
-        //                     GL_UNSIGNED_BYTE,
-        //                     img->pixels_);
-        // DLOG_TRACE("A %ld ms", std::clock() - time);
-        // test
-
-        // time = std::clock();
-
         for (int i = scn->region_.posy; i < scn->region_.posy + scn->region_.height; i++) {
-            glTextureSubImage2D(img_id, 0,
-                                scn->region_.posx, 
-                                i,
-                                scn->region_.width, 
-                                1,
-                                GL_RGBA,
-                                GL_UNSIGNED_BYTE,
-                                img->pixels_ + i * 4 * scn->info_.width + scn->region_.posx * 4);
+            tex_img_.upload(0, scn->region_.posx, i,
+                            scn->region_.width, 1,
+                            PixFormat::BGRA, PixType::UNSIGNED_BYTE,
+                            img->pixels_ + i * 4 * scn->info_.width + scn->region_.posx * 4);
         }
         memset(&scn->region_, 0, sizeof(RectInt));
     };
@@ -111,41 +82,26 @@ void Renderer::render() {
     glm::mat4 proj = cam->calc_proj(width, height);
 
     {// draw base
-        shader_base_.bind();
-        int uid_view_matrix = glGetUniformLocation(shader_base_.get_glid(), "_view");
-        int uid_proj_matrix = glGetUniformLocation(shader_base_.get_glid(), "_proj");
-
-        int uid_size  = glGetUniformLocation(shader_base_.get_glid(), "_size");
-        int uid_scale = glGetUniformLocation(shader_base_.get_glid(), "_scale");
-
-        glUniformMatrix4fv(uid_view_matrix, 1, false, &view[0][0]);
-        glUniformMatrix4fv(uid_proj_matrix, 1, false, &proj[0][0]);
-
-        glUniform2f(uid_size, (float)img->info_.width, (float)img->info_.height);
+        program_base_.bind();
 
         float cam_size = (10.0f - cam->size_)/10.0f;
         int cell_scale = (int)((cam_size * cam_size * cam_size) * 30 + 1);
 
-        glUniform1i(uid_scale, cell_scale);
+        program_base_.uniform_mat("_view", 4, &view[0][0]);
+        program_base_.uniform_mat("_proj", 4, &proj[0][0]);
+        program_base_.uniform_f("_size", (float)img->info_.width, (float)img->info_.height);
+        program_base_.uniform_i("_scale", cell_scale);
 
         batch_.draw_batch();
     }
     {// draw canvas
-        shader_canvas_.bind();
-        int uid_view_matrix = glGetUniformLocation(shader_canvas_.get_glid(), "_view");
-        int uid_proj_matrix = glGetUniformLocation(shader_canvas_.get_glid(), "_proj");
+        program_canvas_.bind();
 
-        int width  = app_->window_info_.width;
-        int height = app_->window_info_.height;
+        program_canvas_.uniform_mat("_view", 4, &view[0][0]);
+        program_canvas_.uniform_mat("_proj", 4, &proj[0][0]);
 
-        glUniformMatrix4fv(uid_view_matrix, 1, false, &view[0][0]);
-        glUniformMatrix4fv(uid_proj_matrix, 1, false, &proj[0][0]);
-
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-        glBindTextureUnit(0, img_id);
-        // glBindTextureUnit(0, app_->buf_tex_);
-        glUniform1i(glGetUniformLocation(shader_canvas_.get_glid(), "_tex"), 0);
+        tex_img_.bind(0);
+        program_canvas_.uniform_i("_tex", 0);
 
         batch_.draw_batch();
     }

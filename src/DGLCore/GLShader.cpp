@@ -2,13 +2,13 @@
 #include <fstream>
 #include <stdlib.h>
 #include <assert.h>
-#include "DGLBase.h"
+#include "GLDebugger.h"
 
 static char* read_file(const char* _path, int* _size = nullptr) {
     std::ifstream file(_path);
 
     if (!file.good())
-        throw DGL::DGLERROR::FILE_NOT_EXIST;
+        throw DGL::EXCEPTION::FILE_NOT_EXIST(_path);
     
     file.seekg(0, std::ios::end);
     size_t size = file.tellg();
@@ -45,7 +45,7 @@ Shader::~Shader() {
 void Shader::init(ShaderType _type) {
     assert(!inited_&&"this shader has been initialized");
     id_ = glCreateShader(static_cast<GLenum>(_type));
-    if (!id_) throw DGLERROR::CREATION_FAILED;
+    if (!id_) throw DGL::EXCEPTION::CREATION_FAILED();
 
     type_   = _type;
     inited_ = true;
@@ -78,10 +78,11 @@ bool Shader::compile(const std::string& _src, std::string* _compile_msg) {
             _compile_msg->clear();
             *_compile_msg = infoLog;
         }
+        std::string log = infoLog;
         glDeleteShader(id_);
         free(infoLog);
 
-        throw DGLERROR::SHADER_COMPILING_FAILED;
+        throw DGL::EXCEPTION::SHADER_COMPILING_FAILED(log);
     }
 
     return compile_tag;

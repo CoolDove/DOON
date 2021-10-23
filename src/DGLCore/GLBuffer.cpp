@@ -1,7 +1,7 @@
 ﻿#include "GLBuffer.h"
 #include "DoveLog.hpp"
 #include <assert.h>
-#include "DGLBase.h"
+#include "GLDebugger.h"
 
 namespace DGL
 {
@@ -37,31 +37,37 @@ void Buffer::bind(BufType _target) {
     type_ = _target;
 }
 
-void* Buffer::map(MapAcc _access) {
-    if (_access == MapAcc::READ_ONLY)
+void* Buffer::map(Access _access) {
+    if (_access == Access::READ_ONLY)
         assert((uint32_t)(flag_&BufFlag::MAP_READ_BIT)&&"the buffer doesn't have MAP_READ_BIT on");
-    else if (_access == MapAcc::WRITE_ONLY)
+    else if (_access == Access::WRITE_ONLY)
         assert((uint32_t)(flag_&BufFlag::MAP_WRITE_BIT)&&"the buffer doesn't have MAP_WRITE_BIT on");
-    else if (_access == MapAcc::READ_WRITE)
+    else if (_access == Access::READ_WRITE)
         assert((uint32_t)(flag_&BufFlag::MAP_WRITE_BIT)&&(uint32_t)(flag_&BufFlag::MAP_READ_BIT)&&"the buffer doesn't have MAP_WRITE_BIT MAP_READ_BIT and on");
 
     void* ptr = glMapNamedBuffer(id_, (GLenum)_access);
-    if (!ptr) throw DGLERROR::BUFFER_MAPPING_FAILED;
+    if (!ptr) throw DGL::EXCEPTION::BUFFER_MAPPING_FAILED();
     mapping_ = true;
     return ptr;
 }
 
-void* Buffer::map_range(MapAcc _access, long long _offset, long long _size) {
-    if (_access == MapAcc::READ_ONLY)
+void* Buffer::map_range(Access _access, long long _offset, long long _size) {
+    if (_access == Access::READ_ONLY)
         assert((uint32_t)(flag_&BufFlag::MAP_READ_BIT)&&"the buffer doesn't have MAP_READ_BIT on");
-    else if (_access == MapAcc::WRITE_ONLY)
+    else if (_access == Access::WRITE_ONLY)
         assert((uint32_t)(flag_&BufFlag::MAP_WRITE_BIT)&&"the buffer doesn't have MAP_WRITE_BIT on");
-    else if (_access == MapAcc::READ_WRITE)
+    else if (_access == Access::READ_WRITE)
         assert((uint32_t)(flag_&BufFlag::MAP_WRITE_BIT)&&(uint32_t)(flag_&BufFlag::MAP_READ_BIT)&&"the buffer doesn't have MAP_WRITE_BIT MAP_READ_BIT and on");
 
     void* ptr = glMapNamedBufferRange(id_, _offset, _size, (GLenum)_access);
-    if (!ptr) throw DGLERROR::BUFFER_MAPPING_FAILED;
+    if (!ptr) throw DGL::EXCEPTION::BUFFER_MAPPING_FAILED();
     mapping_ = false;
     return ptr;
 }
+
+void Buffer::unmap() {
+    assert(mapping_&&"cannot unmap because this buffer is not mapping");
+    glUnmapNamedBuffer(id_);
+}
+
 }
