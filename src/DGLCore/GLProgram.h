@@ -19,7 +19,7 @@ public:
     void bind();
 
 public:
-    uint32_t get_glid() const { return id_; };
+    uint32_t get_glid()   const { return id_; };
     bool     get_inited() const { return inited_; };
     
 private:

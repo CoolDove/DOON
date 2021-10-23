@@ -119,7 +119,7 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
 
     DGL::Buffer buf;
     buf.init();
-    buf.allocate(16 * 16 * 4, DGL::BufferFlag::DYNAMIC_STORAGE_BIT|DGL::BufferFlag::MAP_READ_BIT);
+    buf.allocate(16 * 16 * 4, DGL::BufFlag::DYNAMIC_STORAGE_BIT|DGL::BufFlag::MAP_READ_BIT);
     glTextureBuffer(buf_tex_, GL_RGBA8, buf.get_id());
     glBindImageTexture(0, buf_tex_, 0, false, 0, GL_READ_WRITE, GL_RGBA8UI);
 

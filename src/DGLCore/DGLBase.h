@@ -18,6 +18,7 @@ enum class DGLERROR : unsigned int{
     SHADER_COMPILING_FAILED,
     SHADER_MULTI_ATTACHMENT,
     LINK_UNINITED_SHADER,
+    BUFFER_MAPPING_FAILED,
 };
 
 std::string error_to_string(DGLERROR _err);

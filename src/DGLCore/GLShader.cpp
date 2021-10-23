@@ -2,7 +2,7 @@
 #include <fstream>
 #include <stdlib.h>
 #include <assert.h>
-#include <DGLCore/DGLBase.h>
+#include "DGLBase.h"
 
 static char* read_file(const char* _path, int* _size = nullptr) {
     std::ifstream file(_path);

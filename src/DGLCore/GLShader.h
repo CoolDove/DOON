@@ -20,20 +20,21 @@ public:
     Shader(const std::string& _path, ShaderType _type, std::string* _msg = nullptr);
     ~Shader();
 
-    // true means successfully compiled, false means not
     void init(ShaderType _type);
+    // true means successfully compiled; false means not, should checkout the compile message
     bool load(const std::string& _path, std::string* _compile_msg = nullptr);
     bool compile(const std::string& _src, std::string* _compile_msg = nullptr);
 
     void bind() { glUseProgram(id_); }
+
 public:
-    uint32_t   get_glid() const { return id_; }
-    ShaderType get_type() const { return type_; }
+    uint32_t   get_glid()   const { return id_; }
+    ShaderType get_type()   const { return type_; }
     bool       get_inited() const { return inited_; }
 
 private:
-    GLuint      id_;
-    bool        inited_;
-    ShaderType  type_;
+    GLuint     id_;
+    bool       inited_;
+    ShaderType type_;
 };
 }

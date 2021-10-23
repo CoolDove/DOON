@@ -55,9 +55,6 @@ void Renderer::create_gl_image() {
                             GL_UNSIGNED_BYTE,
                             img->pixels_);
 
-        glBindTextureUnit(0, img_id);
-        glUniform1i(glGetUniformLocation(shader_canvas_.get_glid(), "_tex"), 0);
-
         batch_.clear();
         batch_.add_quad((float)width, (float)height, "canvas");
         batch_.upload();
@@ -88,6 +85,7 @@ void Renderer::render() {
         // test
 
         // time = std::clock();
+
         for (int i = scn->region_.posy; i < scn->region_.posy + scn->region_.height; i++) {
             glTextureSubImage2D(img_id, 0,
                                 scn->region_.posx, 

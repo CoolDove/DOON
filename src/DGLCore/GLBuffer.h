@@ -7,51 +7,61 @@ namespace DGL
 {
 extern bool gl_inited;
 
-enum class BufferFlag : uint32_t {
+enum class BufFlag : uint32_t {
     DYNAMIC_STORAGE_BIT = 0x0100,
     MAP_READ_BIT        = 0x0001,
     MAP_WRITE_BIT       = 0x0002,
-    MAP_PERSISTENT_BIT  = 0x0040,
-    MAP_COHERENT_BIT    = 0x0080,
+    MAP_PERSISTENT_BIT  = 0x0040,  // haven't figure out how to use this
+    MAP_COHERENT_BIT    = 0x0080,  // haven't figure out how to use this
     CLIENT_STORAGE_BIT  = 0x0200
 };
-BIT_MASK_ENUM(BufferFlag)
+BIT_MASK_ENUM(BufFlag)
 
-enum class BufferType : uint32_t {
-    VERTEX_BUFFER             = 0x8892,     // GL_ARRAY_BUFFER              0x8892
-    COPY_READ_BUFFER          = 0x8F36,     // GL_COPY_READ_BUFFER          0x8F36
-    COPY_WRITE_BUFFER         = 0x8F37,     // GL_COPY_WRITE_BUFFER         0x8F37
-    DRAW_INDIRECT_BUFFER      = 0x8F3F,     // GL_DRAW_INDIRECT_BUFFER      0x8F3F
-    ELEMENT_INDEX_BUFFER      = 0x8893,     // GL_ELEMENT_ARRAY_BUFFER      0x8893
-    PIXEL_PACK_BUFFER         = 0x88EB,     // GL_PIXEL_PACK_BUFFER         0x88EB
-    PIXEL_UNPACK_BUFFER       = 0x88EC,     // GL_PIXEL_UNPACK_BUFFER       0x88EC
-    TEXTURE_BUFFER            = 0x8C2A,     // GL_TEXTURE_BUFFER            0x8C2A
-    UNIFORM_BUFFER            = 0x8A11,     // GL_UNIFORM_BUFFER            0x8A11
-    TRANSFORM_FEEDBACK_BUFFER = 0x8C8E      // GL_TRANSFORM_FEEDBACK_BUFFER 0x8C8E
-//  here should be a TRANSFORM_FEEDBACK_BUFFER
+enum class BufType : uint32_t {
+    VERTEX_BUFFER             = 0x8892,
+    COPY_READ_BUFFER          = 0x8F36,
+    COPY_WRITE_BUFFER         = 0x8F37,
+    DRAW_INDIRECT_BUFFER      = 0x8F3F,
+    ELEMENT_INDEX_BUFFER      = 0x8893,
+    PIXEL_PACK_BUFFER         = 0x88EB,
+    PIXEL_UNPACK_BUFFER       = 0x88EC,
+    TEXTURE_BUFFER            = 0x8C2A,
+    UNIFORM_BUFFER            = 0x8A11,
+    TRANSFORM_FEEDBACK_BUFFER = 0x8C8E
+};
+
+enum class MapAcc : uint32_t {
+    READ_ONLY  = 0x88B8,
+    WRITE_ONLY = 0x88B9,
+    READ_WRITE = 0x88BA
 };
 
 class Buffer {
 public:
-    void allocate(size_t _size, BufferFlag _flag);
-    void upload_data(size_t _size, size_t _offset, void* _data);
+    void allocate(size_t _size_b, BufFlag _flag);
+    void upload(size_t _size_b, size_t _offset_b, void* _data);
 
-    void bind(BufferType _target);
+    void bind(BufType _target);
 public:
     Buffer();
     ~Buffer();
 
-    void        init();
+    void    init();
 
-    int         get_id()        { return id_; }
-    size_t      get_size()      { return size_; }
-    size_t      get_capacity()  { return capacity_; }
-    BufferType  get_type()      { return type_; }
+    void*   map(MapAcc _access);
+    void*   map_range(MapAcc _access, long long _offset_b, long long _size_b);
+    void    unmap();
+
+    int     get_id()        const { return id_; }
+    size_t  get_size()      const { return size_; }
+    BufType get_type()      const { return type_; }
+    BufFlag get_flag()      const { return flag_; }
+    bool    is_mapping()    const { return mapping_; }
 private:
-    GLuint id_;
-    size_t size_;
-    size_t capacity_;
-    BufferType type_;
-    unsigned int flag_; 
+    GLuint  id_;
+    size_t  size_;
+    BufType type_;
+    BufFlag flag_; 
+    bool    mapping_;
 };
 }

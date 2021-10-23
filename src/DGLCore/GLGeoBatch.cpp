@@ -78,12 +78,12 @@ void GeoBatch::clear() {
 
 void GeoBatch::upload() {
     int	vert_size = sizeof(float) * vertices_.size();
-    vertex_buf_.allocate(vert_size, BufferFlag::DYNAMIC_STORAGE_BIT | BufferFlag::MAP_READ_BIT);
-    vertex_buf_.upload_data(vert_size, 0, vertices_.data());
+    vertex_buf_.allocate(vert_size, BufFlag::DYNAMIC_STORAGE_BIT | BufFlag::MAP_READ_BIT);
+    vertex_buf_.upload(vert_size, 0, vertices_.data());
 
     int	elem_size = sizeof(unsigned int) * indices_.size();
-    index_buf_.allocate(elem_size, BufferFlag::DYNAMIC_STORAGE_BIT | BufferFlag::MAP_READ_BIT);
-    index_buf_.upload_data(elem_size, 0, indices_.data());
+    index_buf_.allocate(elem_size, BufFlag::DYNAMIC_STORAGE_BIT | BufFlag::MAP_READ_BIT);
+    index_buf_.upload(elem_size, 0, indices_.data());
 }
 
 void GeoBatch::draw_batch() {
