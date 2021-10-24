@@ -2,8 +2,13 @@
 
 layout (local_size_x = 16, local_size_y = 16) in;
 
-layout (rgba8ui, binding = 0) uniform uimageBuffer dst;
+layout (rgba8ui, binding = 0) uniform uimageBuffer src;
+layout (rgba8ui, binding = 1) uniform uimageBuffer dst;
 
 void main(void) {
-    imageStore(dst, int(gl_LocalInvocationIndex), uvec4(0xee, 0xee, 0xee, 0xee));
+    uvec4 col_src = imageLoad(src, int(gl_LocalInvocationIndex));
+    uvec4 col_dst = imageLoad(dst, int(gl_LocalInvocationIndex));
+    uvec4 col = col_src + col_dst;
+
+    imageStore(dst, int(gl_LocalInvocationIndex), col);
 }

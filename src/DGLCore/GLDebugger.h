@@ -78,7 +78,7 @@ inline void gl_debug_init() {
 namespace DGL::EXCEPTION
 {
 
-#define EXCEPTION_CLASS(name) class name : DGLException {\
+#define EXCEPTION_CLASS(name) class name : public DGLException {\
 public:name(std::string _msg):DGLException(_msg) {};name():DGLException(){};};\
     
 class DGLException {

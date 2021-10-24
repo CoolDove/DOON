@@ -64,9 +64,9 @@ void Brush::on_pointer(Input::PointerInfo _info, int _x, int _y) {
 }
 
 void Brush::draw_circle(int _x, int _y, int _r) {
-    assert(app_->curr_scene_->curr_layer_ && "no current layer selected");
+    // assert(app_->curr_scene_->curr_layer_ && "no current layer selected");
 
-    Image* img = &app_->curr_scene_->curr_layer_->img_;
+    const Image* img = &app_->curr_scene_->get_curr_layer()->img_;
 
     if (_x < -_r || _x > img->info_.width + _r || _y < -_r || _y > img->info_.height + _r )
         return;

@@ -12,7 +12,6 @@ GLTexture::GLTexture()
 GLTexture::~GLTexture() {
     if (inited_) 
         glDeleteTextures(1, &id_);
-
 }
 
 void GLTexture::init() {
@@ -68,7 +67,8 @@ void GLTexture2D::bind_image(uint32_t _unit, uint32_t _level, bool _layered, int
 │ texture buffer │
 └───────────────*/
 GLTextureBuffer::GLTextureBuffer()
-:   GLTexture()
+:   GLTexture(),
+    attached_(false)
 {
     type_ = TexType::TEXTURE_BUFFER;
 }
@@ -84,7 +84,7 @@ void GLTextureBuffer::init() {
 void GLTextureBuffer::allocate(size_t _size_b, BufFlag _flag, SizedInternalFormat _format) {
     assert(inited_);
 
-    if (attached_) {
+    if (!attached_) {
         buffer_ = std::make_unique<Buffer>();
         buffer_->init();
         buffer_->allocate(_size_b, _flag);
@@ -99,7 +99,5 @@ void GLTextureBuffer::bind_image(uint32_t _unit, Access _acc, ImageUnitFormat _f
     assert(inited_&&attached_);
     glBindImageTexture(_unit, id_, 0, false, 0, (GLenum)_acc, (GLenum)_format);
 }
-
-
 
 }

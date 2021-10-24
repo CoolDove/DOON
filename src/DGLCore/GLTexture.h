@@ -157,8 +157,6 @@ public:
 public:
     std::unique_ptr<Buffer> buffer_;
 private:
-    // void attach(const Buffer* _buffer, SizedInternalFormat _format);
-
     bool attached_;
 };
 

@@ -42,8 +42,7 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     // scenes_["void1"]  = make_unique<Scene>(2048, 2048, Col_RGBA{0x00, 0x00, 0x00, 0x00});
 
     if (scenes_.size() == 0) {
-        // scenes_["void"]  = make_unique<Scene>(2048, 2048, Col_RGBA{0xff, 0x00, 0x00, 0x77});
-        scenes_["void"]  = make_unique<Scene>(2048, 2048, Col_RGBA{0x00, 0x00, 0x00, 0x00});
+        scenes_["void"]  = make_unique<Scene>(16, 16, Col_RGBA{0xff, 0xff, 0x00, 0x00});
     }
     
     curr_scene_ = scenes_.begin()->second.get();
@@ -146,12 +145,13 @@ void Application::render_ui() {
             ImGui::BeginGroup();
             for (auto ite = curr_scene_->layers_.rbegin(); ite != curr_scene_->layers_.rend(); ite++)
             {
-                if (curr_scene_->curr_layer_ == ite->get()) {
+                if (curr_scene_->get_curr_layer() == ite->get()) {
                     ImGui::Bullet();
                     ImGui::SameLine();
                 }
                 if (ImGui::Button(ite->get()->info_.name.c_str())) {
-                    curr_scene_->curr_layer_ = ite->get();
+                    curr_scene_->change_layer(ite->get());
+                    // curr_scene_->curr_layer_ = ite->get();
                 }
             }
             ImGui::EndGroup();
@@ -159,9 +159,7 @@ void Application::render_ui() {
             if (ImGui::Button("add layer")) {
                 curr_scene_->add_layer(Col_RGBA{0x00, 0x00, 0x00, 0x00});
             }
-
         }
-
         ImGui::End();
     }
     }

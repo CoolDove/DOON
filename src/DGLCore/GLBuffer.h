@@ -12,9 +12,10 @@ enum class BufFlag : uint32_t {
     DYNAMIC_STORAGE_BIT = 0x0100,
     MAP_READ_BIT        = 0x0001,
     MAP_WRITE_BIT       = 0x0002,
+    // MAP_READ_WRITE_BIT  = 0x0003,  // dove defined
     MAP_PERSISTENT_BIT  = 0x0040,  // haven't figure out how to use this
     MAP_COHERENT_BIT    = 0x0080,  // haven't figure out how to use this
-    CLIENT_STORAGE_BIT  = 0x0200
+    CLIENT_STORAGE_BIT  = 0x0200,
 };
 BIT_MASK_ENUM(BufFlag)
 

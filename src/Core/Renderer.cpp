@@ -60,15 +60,22 @@ void Renderer::render() {
     Scene* scn = app_->curr_scene_;
     Image* img = &app_->curr_scene_->image_;
 
-    if (scn->region_.width != 0 && scn->region_.height != 0) {
-        for (int i = scn->region_.posy; i < scn->region_.posy + scn->region_.height; i++) {
-            tex_img_.upload(0, scn->region_.posx, i,
-                            scn->region_.width, 1,
-                            PixFormat::BGRA, PixType::UNSIGNED_BYTE,
-                            img->pixels_ + i * 4 * scn->info_.width + scn->region_.posx * 4);
-        }
-        memset(&scn->region_, 0, sizeof(RectInt));
-    };
+    /***********update part of the scene image to render texture*************/
+    // if (scn->region_.width != 0 && scn->region_.height != 0) {
+    //     for (int i = scn->region_.posy; i < scn->region_.posy + scn->region_.height; i++) {
+    //         tex_img_.upload(0, scn->region_.posx, i,
+    //                         scn->region_.width, 1,
+    //                         PixFormat::BGRA, PixType::UNSIGNED_BYTE,
+    //                         img->pixels_ + i * 4 * scn->info_.width + scn->region_.posx * 4);
+    //     }
+    //     memset(&scn->region_, 0, sizeof(RectInt));
+    // };
+    /***********update part of the scene image to render texture*************/
+
+    // TMP: for now, we upload the whole image for convenience
+    tex_img_.upload(0, 0, 0, scn->info_.width, scn->info_.height,
+                    PixFormat::BGRA, PixType::UNSIGNED_BYTE, img->pixels_);
+    // TMP: for now, we upload the whole image for convenience
 
     glEnable(GL_BLEND);
     glBlendEquation(GL_FUNC_ADD);

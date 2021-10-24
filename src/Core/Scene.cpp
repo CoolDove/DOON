@@ -2,6 +2,7 @@
 #include "stb_image/stb_image.h"
 #include <Core/Sampler.h>
 #include <DoveLog.hpp>
+#include <DGLCore/GLDebugger.h>
 
 // Scene::Scene(const char* _image_path)
 // :   image_(_image_path, 0)
@@ -24,88 +25,215 @@ Scene::Scene(unsigned int _width, unsigned int _height, Col_RGBA _col)
     info_.width  = image_.info_.width;
     info_.height = image_.info_.height;
 
+    DGL::BufFlag flag = DGL::BufFlag::DYNAMIC_STORAGE_BIT|
+                        DGL::BufFlag::MAP_READ_BIT|
+                        DGL::BufFlag::MAP_WRITE_BIT;
+    cache_up_.init();
+    cache_up_.allocate(info_.width * info_.height * sizeof(Col_RGBA), flag, DGL::SizedInternalFormat::RGBA8UI);
+    cache_down_.init();
+    cache_down_.allocate(info_.width * info_.height * sizeof(Col_RGBA), flag, DGL::SizedInternalFormat::RGBA8UI);
+
+    try
+    {
+        DGL::Shader comp_shader("./res/shaders/Test.comp", DGL::ShaderType::COMPUTE_SHADER);
+        composition_cshader_.init();
+        composition_cshader_.link(1, &comp_shader);
+    }
+    catch(const DGL::EXCEPTION::SHADER_COMPILING_FAILED& err)
+    {
+        DLOG_ERROR("compute shader compiling failed: %s", err.msg.c_str());
+        assert(1);
+    }
+
     add_layer(_col);
     update({0, 0, info_.width, info_.height});
+
+}
+
+
+void Scene::composite_cache() {
+    // composite the unselected layers to cache after switching layer or changing the order
+    using namespace DGL;
+
+    size_t  byte_size = info_.width * info_.height * sizeof(Col_RGBA);
+    BufFlag bflag_readwrite = BufFlag::DYNAMIC_STORAGE_BIT|
+                              BufFlag::MAP_READ_BIT|
+                              BufFlag::MAP_WRITE_BIT;
+    SizedInternalFormat internal_format = SizedInternalFormat::RGBA8UI; 
+
+    auto ite = layers_.begin();
+    uint32_t count = 0;
+    // composite cache_down
+    while(1) {
+        if (ite == curr_layer_ite_) {
+            if (count == 0) {
+                void* ptr = cache_down_.buffer_->map(Access::READ_WRITE);
+                memset(ptr, 0x00, byte_size);
+                cache_down_.buffer_->unmap();
+            }
+            break;
+        } else {
+            if (count == 0) {
+                void* ptr = cache_down_.buffer_->map(Access::READ_WRITE);
+                memcpy(ptr, ite->get()->img_.pixels_, byte_size);
+                cache_down_.buffer_->unmap();
+            } else {
+                // composition
+                GLTextureBuffer* dst = &cache_down_;
+                GLTextureBuffer src;
+                src.init();
+                src.allocate(byte_size, bflag_readwrite, internal_format);
+
+                void* src_data = src.buffer_->map(Access::READ_WRITE);
+                memcpy(src_data, ite->get()->img_.pixels_, byte_size);
+                src.buffer_->unmap();
+
+                composition_cshader_.bind();
+                src.bind_image(0, Access::READ_WRITE, ImageUnitFormat::RGBA8UI);
+                dst->bind_image(1, Access::READ_WRITE, ImageUnitFormat::RGBA8UI);
+
+                /*********** for debugging ***********/
+                void* dbg_ptr = cache_down_.buffer_->map(Access::READ_ONLY);
+                cache_down_.buffer_->unmap();
+                /*********** for debugging ***********/
+
+                glDispatchCompute(info_.width * info_.height / 16, 1, 1);
+                glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+            }
+        }
+        ite++;
+        count++;
+    }
+    ite++;  // skip current layer
+    // composite cache_up
+    count = 0;
+    while(1) {
+        if (ite == layers_.end()) {
+            if (count == 0) {
+                void* ptr = cache_up_.buffer_->map(Access::READ_WRITE);
+                memset(ptr, 0x00, byte_size);
+                cache_up_.buffer_->unmap();
+            }
+            break;
+        } else {
+            if (count == 0) {
+                void* ptr = cache_up_.buffer_->map(Access::READ_WRITE);
+                memcpy(ptr, ite->get()->img_.pixels_, byte_size);
+                cache_up_.buffer_->unmap();
+            } else {
+                // composition
+                GLTextureBuffer* dst = &cache_up_;
+                GLTextureBuffer src;
+                src.init();
+                src.allocate(byte_size, bflag_readwrite, internal_format);
+
+                void* src_data = src.buffer_->map(Access::READ_WRITE);
+                memcpy(src_data, ite->get()->img_.pixels_, byte_size);
+                src.buffer_->unmap();
+
+                composition_cshader_.bind();
+                src.bind_image(0, Access::READ_WRITE, ImageUnitFormat::RGBA8UI);
+                dst->bind_image(1, Access::READ_WRITE, ImageUnitFormat::RGBA8UI);
+
+                /*********** for debugging ***********/
+                void* dbg_ptr = cache_up_.buffer_->map(Access::READ_ONLY);
+                cache_up_.buffer_->unmap();
+                /*********** for debugging ***********/
+                
+                glDispatchCompute(info_.width * info_.height / 16, 1, 1);
+                glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+            }
+        }
+        ite++;
+        count++;
+    }
+    // composite up part
+    // ...
+}
+
+void Scene::composite_region(RectInt _region) {
+    // composite the cache_up and cache_down and current-layer-image to image_
+    if (_region.width == 0 || _region.height == 0) return;
+    using namespace DGL;
+    DLOG_TRACE("update region: pos:(%d, %d) width: %d height: %d",
+               _region.posx, _region.posy, _region.width, _region.height);
+
+    if (layers_.size() <= 1) {
+        Col_RGBA* ptr_src = (Col_RGBA*)layers_.front().get()->img_.pixels_;
+        Col_RGBA* ptr_dst = (Col_RGBA*)image_.pixels_;
+        for (size_t i = _region.posy; i < _region.posy + _region.height; i++)
+        {
+            long src_offset = i * info_.width + _region.posx;
+            memcpy(ptr_dst + src_offset, ptr_src  + src_offset, _region.width * sizeof(Col_RGBA));
+        }
+        return;
+    }
+    
+    long byte_size_region = _region.width * _region.height * sizeof(Col_RGBA);
+    BufFlag bflag_readwrite = BufFlag::MAP_READ_BIT|BufFlag::MAP_WRITE_BIT|BufFlag::DYNAMIC_STORAGE_BIT;
+
+    GLTextureBuffer tbuf_down;
+    tbuf_down.init();
+    tbuf_down.allocate(byte_size_region, bflag_readwrite, SizedInternalFormat::RGBA8UI);
+    GLTextureBuffer tbuf_up;
+    tbuf_up.init();
+    tbuf_up.allocate(byte_size_region, bflag_readwrite, SizedInternalFormat::RGBA8UI);
+    GLTextureBuffer tbuf_layer;
+    tbuf_layer.init();
+    tbuf_layer.allocate(byte_size_region, bflag_readwrite, SizedInternalFormat::RGBA8UI);
+    
+    Col_RGBA* buf_ptr_down  = (Col_RGBA*)tbuf_down.buffer_->map(Access::READ_WRITE);
+    Col_RGBA* buf_ptr_up    = (Col_RGBA*)tbuf_up.buffer_->map(Access::READ_WRITE);
+    Col_RGBA* buf_ptr_layer = (Col_RGBA*)tbuf_layer.buffer_->map(Access::READ_WRITE);
+
+    Col_RGBA* src_down  = (Col_RGBA*)cache_down_.buffer_->map(Access::READ_WRITE);
+    Col_RGBA* src_up    = (Col_RGBA*)cache_up_.buffer_->map(Access::READ_WRITE);
+    Col_RGBA* src_layer = (Col_RGBA*)get_curr_layer()->img_.pixels_;
+
+    // // put the pixel data into buffer
+    for (size_t i = _region.posy; i < _region.posy + _region.height; i++)
+    {
+        long src_offset = i * info_.width + _region.posx;
+        memcpy(buf_ptr_down  + _region.width * i, src_down  + src_offset, _region.width * sizeof(Col_RGBA));
+        memcpy(buf_ptr_up    + _region.width * i, src_up    + src_offset, _region.width * sizeof(Col_RGBA));
+        memcpy(buf_ptr_layer + _region.width * i, src_layer + src_offset, _region.width * sizeof(Col_RGBA));
+    }
+
+    tbuf_down.buffer_->unmap();
+    tbuf_up.buffer_->unmap();
+    tbuf_layer.buffer_->unmap();
+
+    cache_down_.buffer_->unmap();
+    cache_up_.buffer_->unmap();
+
+    // composition_cshader_.bind();
+    // tbuf_layer.bind_image(0, Access::READ_WRITE, ImageUnitFormat::RGBA8UI); // to src
+    // tbuf_down.bind_image(1, Access::READ_WRITE, ImageUnitFormat::RGBA8UI);  // to dst
+
+    // glDispatchCompute(_region.width / 16, 1, 1);
+    // glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+    // tbuf_up.bind_image(0, Access::READ_WRITE, ImageUnitFormat::RGBA8UI); // to src
+    // tbuf_down.bind_image(1, Access::READ_WRITE, ImageUnitFormat::RGBA8UI);  // to dst
+
+    // glDispatchCompute(_region.width / 16, 1, 1);
+    // glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+    // // compute shader done, the result is in tbuf_down
+
+    // Col_RGBA* result = (Col_RGBA*)tbuf_down.buffer_->map(Access::READ_WRITE);
+    // for (size_t i = _region.posy; i < _region.posy + _region.height; i++)
+    // {
+    //     long src_offset = i * info_.width + _region.posx;
+    //     memcpy(src_layer + src_offset, result + _region.width * i, _region.width * sizeof(Col_RGBA));
+    // }
+    // tbuf_down.buffer_->unmap();
+
+    // TODO: here we should have a "region_merge" instead of "region_replace"
+    region_ = _region;
 }
 
 void Scene::update(RectInt _region) {
-    // update the datas
-    for (uint32_t iy = _region.posy; iy < _region.posy + _region.height; iy++) {
-        uint32_t byte_index = (iy * info_.width + _region.posx) * 4;
-
-        Col_RGBA* dst = (Col_RGBA*)&image_.pixels_[byte_index];
-        Col_RGBA* src = (Col_RGBA*)&layers_.front().get()->img_.pixels_[byte_index];
-        memcpy(dst, src, _region.width * 4);
-    }
-
-    if (layers_.size() == 1) {
-        region_ = _region;
-        return;
-    }
-
-    for (uint32_t iy = _region.posy; iy < _region.posy + _region.height; iy++) {
-        for (uint32_t ix = _region.posx; ix < _region.posx + _region.width; ix++) {
-            uint32_t byte_index = (iy * info_.width + ix) * 4;
-            // Col_RGBA dcol = {1};
-            Col_RGBA dcol = *(Col_RGBA*)&layers_.front().get()->img_.pixels_[byte_index];
-
-            auto byte2float = [](uint32_t _in)->float{return (float)_in / 255;};
-            auto float2byte = [](float _in)->char{return _in * 255;};
-
-            for (auto ite = (++layers_.cbegin()); ite != layers_.cend(); ite++)
-            {
-                if (ite == layers_.cbegin()) {
-                    continue;
-                }
-
-                Col_RGBA* layer_pix = (Col_RGBA*)ite->get()->img_.pixels_;
-                layer_pix += info_.width * iy + ix;
-
-                switch (ite->get()->info_.blend_mode)
-                {
-                case BlendMode::NORMAL:
-                {
-                    float srgb = byte2float(layer_pix->a);
-                    float sa   = byte2float(layer_pix->a);
-                    float drgb = 1 - byte2float(layer_pix->a);
-                    float da   = 1 - byte2float(layer_pix->a);
-
-                    float src[4] = {
-                        byte2float(layer_pix->r),
-                        byte2float(layer_pix->g),
-                        byte2float(layer_pix->b),
-                        byte2float(layer_pix->a)
-                    };
-
-                    float dst[4] = {
-                        byte2float(dcol.r),
-                        byte2float(dcol.g),
-                        byte2float(dcol.b),
-                        byte2float(dcol.a)
-                    };
-
-                    dcol.r = float2byte(src[0] * srgb + dst[0] * drgb);
-                    dcol.g = float2byte(src[1] * srgb + dst[1] * drgb);
-                    dcol.b = float2byte(src[2] * srgb + dst[2] * drgb);
-                    dcol.a = float2byte(src[3] * sa   + dst[3] * da  );
-                    
-                } break;
-                case BlendMode::LIGHTEN:
-                {
-                    dcol = {0xff, 0x00, 0xff, 0xff};
-                } break;
-                default:
-                    break;
-                }
-            }
-
-            Col_RGBA* target_pix = (Col_RGBA*)&image_.pixels_[byte_index];
-            *target_pix = dcol;
-        }
-    }
-
-    // assign a updated region
-    region_ = _region;
+    composite_region(_region);
 }
 
 void Scene::comfirm_update() {
@@ -118,6 +246,8 @@ void Scene::add_layer(Col_RGBA _col) {
     } else {
         add_layer(_col, "layer" + std::to_string(layers_.size() - 1));
     }
+    
+    composite_cache();
 }
 void Scene::add_layer(Col_RGBA _col, const std::string& _name) {
     layers_.emplace_back(std::make_unique<Layer>(
@@ -127,7 +257,46 @@ void Scene::add_layer(Col_RGBA _col, const std::string& _name) {
         _col
     ));
     
-    curr_layer_ = (--layers_.end())->get();
+    curr_layer_ite_ = --layers_.end();
+
+    composite_cache();
+}
+
+void Scene::change_layer(const std::string& _name) {
+    // to be done
+
+    composite_cache();
+}
+
+void Scene::change_layer(Layer* _layer) {
+    for (auto ite = layers_.begin(); ite != layers_.end(); ite++)
+    {
+        if (ite->get() == _layer) {
+            curr_layer_ite_ = ite;
+            
+            composite_cache();
+        }
+    }
+    assert("you have to input a Layer* that is in the layers_ list");
+}
+
+bool Scene::next_layer() {
+    LayerIte ite = curr_layer_ite_;
+    if (++ite != layers_.end()) {
+        curr_layer_ite_ = ite;
+        composite_cache();
+        return true;
+    } else {
+        return false;
+    }
+}
+bool Scene::previous_layer() {
+    if (curr_layer_ite_ != layers_.begin()) {
+        curr_layer_ite_--;
+        composite_cache();
+        return true;
+    }
+    return false;
 }
 
 Scene::~Scene() {
