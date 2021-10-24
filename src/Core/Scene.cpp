@@ -146,8 +146,6 @@ void Scene::composite_cache() {
         ite++;
         count++;
     }
-    // composite up part
-    // ...
 }
 
 void Scene::composite_region(RectInt _region) {
@@ -202,6 +200,9 @@ void Scene::composite_region(RectInt _region) {
 
     cache_up_.bind_image(0, Access::READ_WRITE, ImageUnitFormat::RGBA8UI);
     tbuf_down.bind_image(1, Access::READ_WRITE, ImageUnitFormat::RGBA8UI);
+
+    glDispatchCompute(info_.width * info_.height / 16, 1, 1);
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
     Col_RGBA* result = (Col_RGBA*)tbuf_down.buffer_->map(Access::READ_WRITE);
 

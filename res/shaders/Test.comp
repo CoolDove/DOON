@@ -1,15 +1,20 @@
 ﻿#version 450 core
 
-layout (local_size_x = 16, local_size_y = 16) in;
+layout (local_size_x = 16) in;
 
 layout (rgba8ui, binding = 0) uniform uimageBuffer src;
 layout (rgba8ui, binding = 1) uniform uimageBuffer dst;
 
 void main(void) {
-    uvec4 col_src = imageLoad(src, int(gl_LocalInvocationIndex));
-    uvec4 col_dst = imageLoad(dst, int(gl_LocalInvocationIndex));
-    // uvec4 col = col_src + col_dst;
-    uvec4 col = col_src + col_dst;
+    int pix_id = int(gl_WorkGroupID.x * 16 + gl_LocalInvocationID.x);
+    uvec4 col_src = imageLoad(src, pix_id);
+    uvec4 col_dst = imageLoad(dst, pix_id);
 
-    imageStore(dst, int(gl_LocalInvocationIndex), col);
+    float src_a = float(col_src.a) / float(0xff);
+    uvec4 col = uvec4(col_src * src_a + col_dst * (1 - src_a));
+    col.a = col_src.a + col_dst.a;
+
+    // col = uvec4(gl_LocalInvocationID, 0xff);
+
+    imageStore(dst, pix_id, col);
 }
