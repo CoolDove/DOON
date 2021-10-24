@@ -37,7 +37,7 @@ GLTexture2D::GLTexture2D()
     type_ = TexType::TEXTURE_2D;
 }
 
-void GLTexture2D::alloc(uint32_t _levels, SizedInternalFormat _format, int _width, int _height) {
+void GLTexture2D::allocate(uint32_t _levels, SizedInternalFormat _format, int _width, int _height) {
     assert(inited_);
     glTextureStorage2D(id_, _levels, (GLenum)_format, _width, _height);
     levels_count_ = _levels;
@@ -73,14 +73,33 @@ GLTextureBuffer::GLTextureBuffer()
     type_ = TexType::TEXTURE_BUFFER;
 }
 
-void GLTextureBuffer::attach(const Buffer* _buffer, SizedInternalFormat _format) {
+void GLTextureBuffer::init() {
+    assert(!inited_);
+    glCreateTextures((GLenum)type_, 1, &id_);
+
+    if (!id_) throw DGL::EXCEPTION::CREATION_FAILED();
+    inited_ = true;
+}
+
+void GLTextureBuffer::allocate(size_t _size_b, BufFlag _flag, SizedInternalFormat _format) {
     assert(inited_);
-    glTextureBuffer(id_, (GLenum)_format, _buffer->get_id());
+
+    if (attached_) {
+        buffer_ = std::make_unique<Buffer>();
+        buffer_->init();
+        buffer_->allocate(_size_b, _flag);
+        glTextureBuffer(id_, (GLenum)_format, buffer_->get_id());
+        attached_ = true;
+    } else {
+        buffer_->allocate(_size_b, _flag);
+    }
 }
 
 void GLTextureBuffer::bind_image(uint32_t _unit, Access _acc, ImageUnitFormat _format) {
-    assert(inited_);
+    assert(inited_&&attached_);
     glBindImageTexture(_unit, id_, 0, false, 0, (GLenum)_acc, (GLenum)_format);
 }
+
+
 
 }

@@ -66,30 +66,25 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     compute_program.bind();
     // *******!!!!COMPUTE SHADER DONE!!!!*******
 
-
     DGL::GLTextureBuffer tex;
     tex.init();
+    tex.allocate(16 * 16 * 4,
+                 DGL::BufFlag::DYNAMIC_STORAGE_BIT|DGL::BufFlag::MAP_READ_BIT,
+                 DGL::SizedInternalFormat::RGBA8UI);
 
-    // glCreateTextures(GL_TEXTURE_BUFFER, 3, &buf_tex_);
-    DGL::Buffer buf;
-    buf.init();
-    buf.allocate(16 * 16 * 4, DGL::BufFlag::DYNAMIC_STORAGE_BIT|DGL::BufFlag::MAP_READ_BIT);
-    
-    tex.attach(&buf, DGL::SizedInternalFormat::RGBA8);
     tex.bind_image(0, DGL::Access::READ_WRITE, DGL::ImageUnitFormat::RGBA8UI);
 
     /*********try using texture buffer object**********/
-    void* pix = buf.map(DGL::Access::READ_ONLY);
+    void* pix = tex.buffer_->map(DGL::Access::READ_ONLY);
     memset(pix, 0xfa, 16 * 16 * 4);
-    buf.unmap();
+    tex.buffer_->unmap();
     pix = nullptr;
 
     glDispatchCompute(16, 1, 1);
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-    pix = buf.map(DGL::Access::READ_ONLY);
-
-    buf.unmap();
+    pix = tex.buffer_->map(DGL::Access::READ_ONLY);
+    tex.buffer_->unmap();
     pix = nullptr;
 
     /*-------some compute shader experiments here-------*/

@@ -4,6 +4,7 @@
 #include "GLEnums.h"
 #include "GLBuffer.h"
 #include <assert.h>
+#include <memory>
 
 namespace DGL
 {
@@ -134,7 +135,7 @@ class GLTexture2D : public GLTexture{
 public:
     GLTexture2D();
 
-    void alloc(uint32_t _levels, SizedInternalFormat _format, int _width, int _height);
+    void allocate(uint32_t _levels, SizedInternalFormat _format, int _width, int _height);
     void upload(uint32_t _level, int _offset_x, int _offset_y,
                 int _width, int _height, PixFormat _format, PixType _type, void* _data);
     void bind(uint32_t _unit);
@@ -150,8 +151,15 @@ class GLTextureBuffer : public GLTexture{
 public:
     GLTextureBuffer();
 
-    void attach(const Buffer* _buffer, SizedInternalFormat _format);
+    void init();
+    void allocate(size_t _size_b, BufFlag _flag, SizedInternalFormat _format);
     void bind_image(uint32_t _unit, Access _acc, ImageUnitFormat _format);
+public:
+    std::unique_ptr<Buffer> buffer_;
+private:
+    // void attach(const Buffer* _buffer, SizedInternalFormat _format);
+
+    bool attached_;
 };
 
 }

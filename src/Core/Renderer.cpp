@@ -38,7 +38,7 @@ void Renderer::create_gl_image() {
         int height = app_->curr_scene_->image_.info_.height;
 
         tex_img_.init();
-        tex_img_.alloc(1, SizedInternalFormat::RGBA8, width, height);
+        tex_img_.allocate(1, SizedInternalFormat::RGBA8, width, height);
         tex_img_.upload(0, 0, 0, width, height, PixFormat::BGRA, PixType::UNSIGNED_BYTE, img->pixels_);
 
         tex_img_.param_mag_filter(TexFilter::NEAREST);
