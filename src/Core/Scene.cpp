@@ -50,7 +50,6 @@ Scene::Scene(unsigned int _width, unsigned int _height, Col_RGBA _col)
 
 }
 
-
 void Scene::composite_cache() {
     // composite the unselected layers to cache after switching layer or changing the order
     using namespace DGL;
@@ -168,66 +167,47 @@ void Scene::composite_region(RectInt _region) {
         }
         return;
     }
-    
-    long byte_size_region = _region.width * _region.height * sizeof(Col_RGBA);
-    BufFlag bflag_readwrite = BufFlag::MAP_READ_BIT|BufFlag::MAP_WRITE_BIT|BufFlag::DYNAMIC_STORAGE_BIT;
 
+    int     byte_size = info_.width * info_.height * sizeof(Col_RGBA);
+    BufFlag bflag_read_write = BufFlag::MAP_READ_BIT|BufFlag::MAP_WRITE_BIT|BufFlag::DYNAMIC_STORAGE_BIT;
+
+    // use this texbuffer as dst for all srcs
     GLTextureBuffer tbuf_down;
     tbuf_down.init();
-    tbuf_down.allocate(byte_size_region, bflag_readwrite, SizedInternalFormat::RGBA8UI);
-    GLTextureBuffer tbuf_up;
-    tbuf_up.init();
-    tbuf_up.allocate(byte_size_region, bflag_readwrite, SizedInternalFormat::RGBA8UI);
+    tbuf_down.allocate(byte_size, bflag_read_write, SizedInternalFormat::RGBA8UI);
+
     GLTextureBuffer tbuf_layer;
     tbuf_layer.init();
-    tbuf_layer.allocate(byte_size_region, bflag_readwrite, SizedInternalFormat::RGBA8UI);
-    
-    Col_RGBA* buf_ptr_down  = (Col_RGBA*)tbuf_down.buffer_->map(Access::READ_WRITE);
-    Col_RGBA* buf_ptr_up    = (Col_RGBA*)tbuf_up.buffer_->map(Access::READ_WRITE);
-    Col_RGBA* buf_ptr_layer = (Col_RGBA*)tbuf_layer.buffer_->map(Access::READ_WRITE);
+    tbuf_layer.allocate(byte_size, bflag_read_write, SizedInternalFormat::RGBA8UI);
+
+    Col_RGBA* ptr_down  = (Col_RGBA*)tbuf_down.buffer_->map(Access::READ_WRITE);
+    Col_RGBA* ptr_layer = (Col_RGBA*)tbuf_layer.buffer_->map(Access::READ_WRITE);
 
     Col_RGBA* src_down  = (Col_RGBA*)cache_down_.buffer_->map(Access::READ_WRITE);
-    Col_RGBA* src_up    = (Col_RGBA*)cache_up_.buffer_->map(Access::READ_WRITE);
-    Col_RGBA* src_layer = (Col_RGBA*)get_curr_layer()->img_.pixels_;
+    Col_RGBA* src_layer = (Col_RGBA*)curr_layer_ite_->get()->img_.pixels_;
 
-    // // put the pixel data into buffer
-    for (size_t i = _region.posy; i < _region.posy + _region.height; i++)
-    {
-        long src_offset = i * info_.width + _region.posx;
-        memcpy(buf_ptr_down  + _region.width * i, src_down  + src_offset, _region.width * sizeof(Col_RGBA));
-        memcpy(buf_ptr_up    + _region.width * i, src_up    + src_offset, _region.width * sizeof(Col_RGBA));
-        memcpy(buf_ptr_layer + _region.width * i, src_layer + src_offset, _region.width * sizeof(Col_RGBA));
-    }
+    memcpy(ptr_down, src_down, byte_size);
+    memcpy(ptr_layer, src_layer, byte_size);
 
     tbuf_down.buffer_->unmap();
-    tbuf_up.buffer_->unmap();
     tbuf_layer.buffer_->unmap();
-
     cache_down_.buffer_->unmap();
-    cache_up_.buffer_->unmap();
 
-    // composition_cshader_.bind();
-    // tbuf_layer.bind_image(0, Access::READ_WRITE, ImageUnitFormat::RGBA8UI); // to src
-    // tbuf_down.bind_image(1, Access::READ_WRITE, ImageUnitFormat::RGBA8UI);  // to dst
+    composition_cshader_.bind();
+    tbuf_layer.bind_image(0, Access::READ_WRITE, ImageUnitFormat::RGBA8UI); // src
+    tbuf_down.bind_image(1, Access::READ_WRITE, ImageUnitFormat::RGBA8UI);  // dst
 
-    // glDispatchCompute(_region.width / 16, 1, 1);
-    // glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+    glDispatchCompute(info_.width * info_.height / 16, 1, 1);
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-    // tbuf_up.bind_image(0, Access::READ_WRITE, ImageUnitFormat::RGBA8UI); // to src
-    // tbuf_down.bind_image(1, Access::READ_WRITE, ImageUnitFormat::RGBA8UI);  // to dst
+    cache_up_.bind_image(0, Access::READ_WRITE, ImageUnitFormat::RGBA8UI);
+    tbuf_down.bind_image(1, Access::READ_WRITE, ImageUnitFormat::RGBA8UI);
 
-    // glDispatchCompute(_region.width / 16, 1, 1);
-    // glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-    // // compute shader done, the result is in tbuf_down
+    Col_RGBA* result = (Col_RGBA*)tbuf_down.buffer_->map(Access::READ_WRITE);
 
-    // Col_RGBA* result = (Col_RGBA*)tbuf_down.buffer_->map(Access::READ_WRITE);
-    // for (size_t i = _region.posy; i < _region.posy + _region.height; i++)
-    // {
-    //     long src_offset = i * info_.width + _region.posx;
-    //     memcpy(src_layer + src_offset, result + _region.width * i, _region.width * sizeof(Col_RGBA));
-    // }
-    // tbuf_down.buffer_->unmap();
-
+    memcpy(image_.pixels_, result, byte_size);
+    tbuf_down.buffer_->unmap();
+    
     // TODO: here we should have a "region_merge" instead of "region_replace"
     region_ = _region;
 }

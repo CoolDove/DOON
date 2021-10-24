@@ -8,6 +8,7 @@ layout (rgba8ui, binding = 1) uniform uimageBuffer dst;
 void main(void) {
     uvec4 col_src = imageLoad(src, int(gl_LocalInvocationIndex));
     uvec4 col_dst = imageLoad(dst, int(gl_LocalInvocationIndex));
+    // uvec4 col = col_src + col_dst;
     uvec4 col = col_src + col_dst;
 
     imageStore(dst, int(gl_LocalInvocationIndex), col);

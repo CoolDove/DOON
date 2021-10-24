@@ -8,7 +8,8 @@ namespace DGL
 
 Buffer::Buffer() 
 :	id_(0),
-    size_(0)
+    size_(0),
+    mapping_(false)
 {
 }
 
@@ -38,12 +39,14 @@ void Buffer::bind(BufType _target) {
 }
 
 void* Buffer::map(Access _access) {
+    assert(!mapping_);
     if (_access == Access::READ_ONLY)
         assert((uint32_t)(flag_&BufFlag::MAP_READ_BIT)&&"the buffer doesn't have MAP_READ_BIT on");
     else if (_access == Access::WRITE_ONLY)
         assert((uint32_t)(flag_&BufFlag::MAP_WRITE_BIT)&&"the buffer doesn't have MAP_WRITE_BIT on");
     else if (_access == Access::READ_WRITE)
         assert((uint32_t)(flag_&BufFlag::MAP_WRITE_BIT)&&(uint32_t)(flag_&BufFlag::MAP_READ_BIT)&&"the buffer doesn't have MAP_WRITE_BIT MAP_READ_BIT and on");
+
 
     void* ptr = glMapNamedBuffer(id_, (GLenum)_access);
     if (!ptr) throw DGL::EXCEPTION::BUFFER_MAPPING_FAILED();
@@ -68,6 +71,7 @@ void* Buffer::map_range(Access _access, long long _offset, long long _size) {
 void Buffer::unmap() {
     assert(mapping_&&"cannot unmap because this buffer is not mapping");
     glUnmapNamedBuffer(id_);
+    mapping_ = false;
 }
 
 }
