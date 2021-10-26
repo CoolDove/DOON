@@ -37,7 +37,8 @@ GLTexture2D::GLTexture2D()
 }
 
 void GLTexture2D::allocate(uint32_t _levels, SizedInternalFormat _format, int _width, int _height) {
-    assert(inited_);
+    assert(inited_ && "texture haven't been initialized");
+    assert(_levels > 0 && "_levels should be at least '1'");
     glTextureStorage2D(id_, _levels, (GLenum)_format, _width, _height);
     levels_count_ = _levels;
 }

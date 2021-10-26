@@ -42,7 +42,7 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     // scenes_["void1"]  = make_unique<Scene>(2048, 2048, Col_RGBA{0x00, 0x00, 0x00, 0x00});
 
     if (scenes_.size() == 0) {
-        scenes_["void"]  = make_unique<Scene>(512, 512, Col_RGBA{0x00, 0x00, 0x00, 0x00});
+        scenes_["void"] = make_unique<Scene>(5120, 5120, Col_RGBA{0x00, 0x00, 0x00, 0x00});
     }
     
     curr_scene_ = scenes_.begin()->second.get();
@@ -57,36 +57,6 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     curr_tool_->on_activate();
 
     renderer_->init();
-
-    /*-------some compute shader experiments here-------*/
-    DGL::Shader compute_shader("./res/shaders/Test.comp", DGL::ShaderType::COMPUTE_SHADER);
-    DGL::Program compute_program;
-    compute_program.link(1, &compute_shader);
-    compute_program.bind();
-    // *******!!!!COMPUTE SHADER DONE!!!!*******
-
-    DGL::GLTextureBuffer tex;
-    tex.init();
-    tex.allocate(16 * 16 * 4,
-                 DGL::BufFlag::DYNAMIC_STORAGE_BIT|DGL::BufFlag::MAP_READ_BIT,
-                 DGL::SizedInternalFormat::RGBA8UI);
-
-    tex.bind_image(0, DGL::Access::READ_WRITE, DGL::ImageUnitFormat::RGBA8UI);
-
-    /*********try using texture buffer object**********/
-    void* pix = tex.buffer_->map(DGL::Access::READ_ONLY);
-    memset(pix, 0xfa, 16 * 16 * 4);
-    tex.buffer_->unmap();
-    pix = nullptr;
-
-    glDispatchCompute(16, 1, 1);
-    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-    pix = tex.buffer_->map(DGL::Access::READ_ONLY);
-    tex.buffer_->unmap();
-    pix = nullptr;
-
-    /*-------some compute shader experiments here-------*/
 }
 
 Application::~Application() {

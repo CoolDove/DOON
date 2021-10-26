@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <string>
 #include <Core/Image.h>
+#include <DGLCore/GLTexture.h>
 #include "Core/Color.h"
 
 enum class BlendMode : unsigned char {
@@ -18,4 +19,7 @@ public:
         std::string name;
         BlendMode   blend_mode;
     } info_;
+
+    DGL::GLTexture2D tex_;
+
 };

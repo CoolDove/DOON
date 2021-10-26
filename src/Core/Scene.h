@@ -23,7 +23,6 @@ public:
     Scene(uint32_t _width, uint32_t _height, Col_RGBA _col);
     ~Scene();
 
-
     void update(RectInt _region);
     void comfirm_update();
 
@@ -34,7 +33,7 @@ public:
     void change_layer(Layer* _layer);
     bool next_layer();
     bool previous_layer();
-    const Layer* get_curr_layer() const { return curr_layer_ite_->get(); };
+    Layer* get_curr_layer() { return curr_layer_ite_->get(); };
 
 public:
     DGL::Camera camera_;
@@ -49,14 +48,11 @@ public:
     } info_;
 
 private:
-    // Layer*      curr_layer_;
     LayerIte    curr_layer_ite_;
     
-    
-private:
+public:
     // shouldnt belong here
     DGL::Program composition_cshader_;
-    DGL::GLTextureBuffer cache_up_;
     DGL::GLTextureBuffer cache_down_;
 
     void composite_region(RectInt _region);

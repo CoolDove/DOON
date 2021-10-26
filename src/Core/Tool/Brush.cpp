@@ -1,6 +1,7 @@
 ﻿#include "Brush.h"
 #include "DoveLog.hpp"
-#include "Core/Application.h"
+#include <Core/Application.h>
+#include <Core/Space.h>
 
 namespace Tool
 {
@@ -42,8 +43,9 @@ void Brush::on_pointer(Input::PointerInfo _info, int _x, int _y) {
         DGL::Camera* cam = &app_->curr_scene_->camera_;
         Image* img = &app_->curr_scene_->image_;
 
-        glm::mat4 matrix = cam->calc_proj(wnd_width, wnd_height) * cam->calc_view();
-        matrix = glm::inverse(matrix);
+        // glm::mat4 matrix = cam->calc_proj(wnd_width, wnd_height) * cam->calc_view();
+        // matrix = glm::inverse(matrix);
+        glm::mat4 matrix = Space::mat_ndc_world(cam, wnd_width, wnd_height);
         glm::vec4 ws_pos = glm::vec4(_x, _y, 1, 1);
 
         ws_pos.x = glm::clamp(ws_pos.x, 0.0f, (float)wnd_width);

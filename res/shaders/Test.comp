@@ -11,10 +11,14 @@ void main(void) {
     uvec4 col_dst = imageLoad(dst, pix_id);
 
     float src_a = float(col_src.a) / float(0xff);
-    uvec4 col = uvec4(col_src * src_a + col_dst * (1 - src_a));
-    col.a = col_src.a + col_dst.a;
 
-    // col = uvec4(gl_LocalInvocationID, 0xff);
+    uvec4 col = uvec4(col_src * src_a + col_dst * (1 - src_a));
+
+    if (col_dst.a == 0x00) {
+        col.a = col_src.a;
+    } else {
+        col.a = col_src.a + col_dst.a * int(1 - src_a);
+    }
 
     imageStore(dst, pix_id, col);
 }

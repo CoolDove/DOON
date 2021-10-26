@@ -61,20 +61,22 @@ void Renderer::render() {
     Image* img = &app_->curr_scene_->image_;
 
     /***********update part of the scene image to render texture*************/
-    // if (scn->region_.width != 0 && scn->region_.height != 0) {
-    //     for (int i = scn->region_.posy; i < scn->region_.posy + scn->region_.height; i++) {
-    //         tex_img_.upload(0, scn->region_.posx, i,
-    //                         scn->region_.width, 1,
-    //                         PixFormat::BGRA, PixType::UNSIGNED_BYTE,
-    //                         img->pixels_ + i * 4 * scn->info_.width + scn->region_.posx * 4);
-    //     }
-    //     memset(&scn->region_, 0, sizeof(RectInt));
-    // };
+    DLOG_TRACE("region: %d %d %d %d", scn->region_.posx, scn->region_.posy, scn->region_.width, scn->region_.height);
+
+    if (scn->region_.width != 0 && scn->region_.height != 0) {
+        for (int i = scn->region_.posy; i < scn->region_.posy + scn->region_.height; i++) {
+            scn->get_curr_layer()->tex_.upload(0, scn->region_.posx, i,
+                            scn->region_.width, 1,
+                            PixFormat::RGBA, PixType::UNSIGNED_BYTE,
+                            scn->get_curr_layer()->img_.pixels_ + i * 4 * scn->info_.width + scn->region_.posx * 4);
+        }
+        memset(&scn->region_, 0, sizeof(RectInt));
+    };
     /***********update part of the scene image to render texture*************/
 
     // TMP: for now, we upload the whole image for convenience
-    tex_img_.upload(0, 0, 0, scn->info_.width, scn->info_.height,
-                    PixFormat::RGBA, PixType::UNSIGNED_BYTE, img->pixels_);
+    // scn->get_curr_layer()->tex_.upload(0, 0, 0, scn->info_.width, scn->info_.height,
+    //                                    PixFormat::RGBA, PixType::UNSIGNED_BYTE, scn->get_curr_layer()->img_.pixels_);
     // TMP: for now, we upload the whole image for convenience
 
     glEnable(GL_BLEND);
@@ -101,17 +103,27 @@ void Renderer::render() {
 
         batch_.draw_batch();
     }
-    {// draw canvas
-        program_canvas_.bind();
+    /********draw canvas for every canvas********/
 
-        program_canvas_.uniform_mat("_view", 4, &view[0][0]);
-        program_canvas_.uniform_mat("_proj", 4, &proj[0][0]);
+    program_canvas_.bind();
+    program_canvas_.uniform_mat("_view", 4, &view[0][0]);
+    program_canvas_.uniform_mat("_proj", 4, &proj[0][0]);
 
-        tex_img_.bind(0);
-        program_canvas_.uniform_i("_tex", 0);
+    // draw layers above current layer
+    bool start = true;
+    auto ite = scn->layers_.begin();
+    for (auto ite = scn->layers_.begin(); ite != scn->layers_.end(); ite++) {
+        if (ite->get() == scn->get_curr_layer()) {
+            start = true;
+        }
+        if (start) {
+            ite->get()->tex_.bind(0);
+            program_canvas_.uniform_i("_tex", 0);
 
-        batch_.draw_batch();
+            batch_.draw_batch();
+        }
     }
+    /********draw canvas for every canvas********/
 }
 
 void Renderer::init_opengl() {
