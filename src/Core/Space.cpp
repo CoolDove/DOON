@@ -43,17 +43,13 @@ glm::mat4 Space::mat_ndc_world(const DGL::Camera* _cam, int _width, int _height)
 }
 
 // glm::mat4 Space::mat_texture_uv(int _width, int _height) {
-
 // }
 
 // glm::mat4 Space::mat_uv_texture(int _width, int _height) {
-
 // }
 
 // glm::mat4 Space::mat_brush_world(int _width, int _height) {
-
 // }
 
 // glm::mat4 Space::mat_world_brush(int _width, int _height) {
-
 // }

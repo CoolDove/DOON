@@ -43,8 +43,6 @@ void Brush::on_pointer(Input::PointerInfo _info, int _x, int _y) {
         DGL::Camera* cam = &app_->curr_scene_->camera_;
         Image* img = &app_->curr_scene_->image_;
 
-        // glm::mat4 matrix = cam->calc_proj(wnd_width, wnd_height) * cam->calc_view();
-        // matrix = glm::inverse(matrix);
         glm::mat4 matrix = Space::mat_ndc_world(cam, wnd_width, wnd_height);
         glm::vec4 ws_pos = glm::vec4(_x, _y, 1, 1);
 
@@ -66,8 +64,6 @@ void Brush::on_pointer(Input::PointerInfo _info, int _x, int _y) {
 }
 
 void Brush::draw_circle(int _x, int _y, int _r) {
-    // assert(app_->curr_scene_->curr_layer_ && "no current layer selected");
-
     const Image* img = &app_->curr_scene_->get_curr_layer()->img_;
 
     if (_x < -_r || _x > img->info_.width + _r || _y < -_r || _y > img->info_.height + _r )

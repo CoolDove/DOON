@@ -1,7 +1,8 @@
 ﻿#pragma once
+
 #include "Core/Application.h"
-#include <Windows.h>
 #include <DGLCore/DGLCore.h>
+#include <Windows.h>
 
 class Renderer {
 public:
@@ -19,9 +20,13 @@ public:
         string shading_lang_version;
     } gl_info_;
 private:
+    void set_blend_func();
+    void init_opengl();
+
+private:
     Application* app_   = nullptr;
 
-private://GL
+    //-------GL--------
     HDC   device_context_;
     HGLRC gl_context_;
 
@@ -32,6 +37,4 @@ private://GL
     DGL::GeoBatch batch_;
 
     GLuint img_id;
-private:// private func
-    void init_opengl();
 };

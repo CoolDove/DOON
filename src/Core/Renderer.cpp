@@ -1,7 +1,9 @@
 ﻿#include "Renderer.h"
-#include <Core/Image.h>
-#include <gl/GL.h>
 #include "DoveLog.hpp"
+
+#include "Image.h"
+#include "Space.h"
+#include <gl/GL.h>
 #include <DGLCore/GLDebugger.h>
 #include <DGLCore/GLShader.h>
 
@@ -74,21 +76,16 @@ void Renderer::render() {
     };
     /***********update part of the scene image to render texture*************/
 
-    // TMP: for now, we upload the whole image for convenience
-    // scn->get_curr_layer()->tex_.upload(0, 0, 0, scn->info_.width, scn->info_.height,
-    //                                    PixFormat::RGBA, PixType::UNSIGNED_BYTE, scn->get_curr_layer()->img_.pixels_);
-    // TMP: for now, we upload the whole image for convenience
-
     glEnable(GL_BLEND);
     glBlendEquation(GL_FUNC_ADD);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    int width  = app_->window_info_.width;
-    int height = app_->window_info_.height;
+    int wnd_width  = app_->window_info_.width;
+    int wnd_height = app_->window_info_.height;
 
     DGL::Camera* cam = &app_->curr_scene_->camera_;
-    glm::mat4 view = cam->calc_view();
-    glm::mat4 proj = cam->calc_proj(width, height);
+    glm::mat4 view = Space::mat_world_camera(&app_->curr_scene_->camera_);
+    glm::mat4 proj = Space::mat_camproj(&app_->curr_scene_->camera_, wnd_width, wnd_height);
 
     {// draw base
         program_base_.bind();
