@@ -26,5 +26,6 @@ private:
     void draw_circle(int _x, int _y, int _r);
 private:
     Application* app_;
+    bool         holding_;
 };
 }

@@ -7,6 +7,7 @@ namespace Tool
 {
 Brush::Brush(Application* _app) 
 :   app_(_app),
+    holding_(false),
     col_{0xff,0xff,0xff,0xff},
     size_min_(10),
     size_max_(20)
@@ -28,18 +29,26 @@ void Brush::on_deactivate() {
 }
 
 void Brush::on_pointer_down(Input::PointerInfo _info, int _x, int _y) {
-    DLOG_TRACE("brush down");
+    if (!holding_) {
+        DLOG_TRACE("brush down");
+        holding_ = true;
+    }
 }
+    
 void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
-    DLOG_TRACE("brush up");
+    if (holding_) {
+        holding_ = false;
+        DLOG_TRACE("brush up");
+    }
 }
 
-// TODO: mouse default pressure
 void Brush::on_pointer(Input::PointerInfo _info, int _x, int _y) {
-    // DLOG_TRACE("mouse button state left: %d -- pen pressure: %u", _info.btn_state.mouse_l, _info.pen_info.pressure);
+    if (!holding_) return;
 
     if (_info.btn_state.mouse_l || _info.pen_info.pressure > 0)
     {
+        float pressure = _info.pen_info.pressure ? (float)_info.pen_info.pressure : 1024.0f;
+
         int wnd_width = app_->window_info_.width;
         int wnd_height = app_->window_info_.height;
 
@@ -60,7 +69,7 @@ void Brush::on_pointer(Input::PointerInfo _info, int _x, int _y) {
         int half_width  = (int)(0.5f * img->info_.width);
         int half_height = (int)(0.5f * img->info_.height);
 
-        unsigned int brush_size = ((float)_info.pen_info.pressure / 1024.0f) * (size_max_ - (size_min_)) + size_min_;
+        unsigned int brush_size = (unsigned int)((pressure / 1024.0f) * (size_max_ - (size_min_)) + size_min_);
 
         draw_circle((int)cs_pos.x + half_width, -(int)cs_pos.y + half_height, brush_size);
     }

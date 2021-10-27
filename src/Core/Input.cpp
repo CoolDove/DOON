@@ -108,7 +108,6 @@ LRESULT CALLBACK wnd_proc(HWND _window, UINT _message, WPARAM _wparam, LPARAM _l
                 }
             }
         } break;
-        // TODO: apply rules on RBUTTON_CLICK and MBUTTON_CLICK and POINTERUPDATE
         case WM_RBUTTONDOWN:
         {
             if (!app->curr_tool_) break;
@@ -200,6 +199,7 @@ LRESULT CALLBACK wnd_proc(HWND _window, UINT _message, WPARAM _wparam, LPARAM _l
                 // mouse move outside the tool region
                 // if any mouse button is holding, corresponding pointer_up() should be called
                 if (input_context.mouse_down_l) {
+                    input_context.mouse_down_l = false;
                     pen_info = {0};
                     PointerInfo info = {0};
                     info.pen_info = pen_info;
@@ -209,6 +209,7 @@ LRESULT CALLBACK wnd_proc(HWND _window, UINT _message, WPARAM _wparam, LPARAM _l
                     app->curr_tool_->on_pointer_up(info, mx, my);
                 }
                 if (input_context.mouse_down_r) {
+                    input_context.mouse_down_r = false;
                     pen_info = {0};
                     PointerInfo info = {0};
                     info.pen_info = pen_info;
@@ -218,6 +219,7 @@ LRESULT CALLBACK wnd_proc(HWND _window, UINT _message, WPARAM _wparam, LPARAM _l
                     app->curr_tool_->on_pointer_up(info, mx, my);
                 }
                 if (input_context.mouse_down_m) {
+                    input_context.mouse_down_m = false;
                     pen_info = {0};
                     PointerInfo info = {0};
                     info.pen_info = pen_info;
