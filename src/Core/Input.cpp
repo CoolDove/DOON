@@ -8,6 +8,21 @@ namespace Input {
 InputProcess imgui_proc = nullptr;
 InputContext input_context = {0};
 
+// FIXME: pen did not release after leaving the client region
+// FIXME: when mouse position is outside the client region, imgui cannot be clicked by pen
+
+// check if mouse is in region for tools
+bool is_mouse_position_valid(Application* _app, int _x, int _y) {
+    return !(_x >= _app->window_info_.width || _x <= 0 ||
+             _y >= _app->window_info_.height|| _y <= 0);
+}
+
+// NOTE: |[Mouse Message Rules For Tools]|
+// when mouse position is in tool region, clicking will set the state in 
+// input_context no matter whether imgui is capturing mouse.
+// when you release mouse(imgui capturing or not), or move out tool region,
+// a pointer_up() is called, and the corresponding value in input_context will be set
+// [ button down ] should be blocked by imgui, but [ button up ] should go through
 LRESULT CALLBACK wnd_proc(HWND _window, UINT _message, WPARAM _wparam, LPARAM _lparam) {
     if (imgui_proc) {
         LRESULT rst = imgui_proc(_window, _message, _wparam, _lparam);
@@ -33,12 +48,13 @@ LRESULT CALLBACK wnd_proc(HWND _window, UINT _message, WPARAM _wparam, LPARAM _l
 
             if (app->inited_) 
                 glViewport(0, 0, width, height);
+
         } break;
         case WM_MOVE:
         {
+            // NOTE: this is window move, not mouse move
             app->window_info_.posx = LOWORD(_lparam);
             app->window_info_.posy = HIWORD(_lparam);
-            // DLOG_TRACE("move pos(%d, %d)", app->window_info_.posx, app->window_info_.posy);
         } break;
         case WM_DESTROY:
         {
@@ -56,46 +72,61 @@ LRESULT CALLBACK wnd_proc(HWND _window, UINT _message, WPARAM _wparam, LPARAM _l
         {
             if (!app->curr_tool_) break;
 
-            if (!ImGui::GetIO().WantCaptureMouse) {
-                pen_info = {0};
-                PointerInfo info = {0};
-                info.pen_info = pen_info;
-                info.button = Input::PointerButton::LEFT;
-                Input::parse_to_btnstate_from_wparam(_wparam, &info.btn_state);
-                app->curr_tool_->on_pointer_down(info, LOWORD(_lparam), HIWORD(_lparam));
-            }
+            int mx = LOWORD(_lparam);
+            int my = HIWORD(_lparam);
 
-            input_context.mouse_down_l = true;
+            if (is_mouse_position_valid(app, mx, my)) {
+                input_context.mouse_down_l = true;
+
+                if (!ImGui::GetIO().WantCaptureMouse) {
+                    pen_info = {0};
+                    pen_info.pressure = 1;
+                    PointerInfo info = {0};
+                    info.pen_info = pen_info;
+                    info.button = Input::PointerButton::LEFT;
+                    Input::get_btnstate_from_wparam(_wparam, &info.btn_state);
+                    app->curr_tool_->on_pointer_down(info, mx, my);
+                }
+            }
         } break;
         case WM_LBUTTONUP:
         {
             if (!app->curr_tool_) break;
 
-            if (!ImGui::GetIO().WantCaptureMouse) {
-                pen_info = {0};
-                PointerInfo info = {0};
-                info.pen_info = pen_info;
-                info.button = Input::PointerButton::LEFT;
-                Input::parse_to_btnstate_from_wparam(_wparam, &info.btn_state);
-                app->curr_tool_->on_pointer_up(info, LOWORD(_lparam), HIWORD(_lparam));
-            }
+            int mx = LOWORD(_lparam);
+            int my = HIWORD(_lparam);
+            if (is_mouse_position_valid(app, mx, my) || input_context.mouse_down_l) {
+                input_context.mouse_down_l = false;
 
-            input_context.mouse_down_l = false;
+                if (!ImGui::GetIO().WantCaptureMouse) {
+                    pen_info = {0};
+                    PointerInfo info = {0};
+                    info.pen_info = pen_info;
+                    info.button = Input::PointerButton::LEFT;
+                    Input::get_btnstate_from_wparam(_wparam, &info.btn_state);
+                    app->curr_tool_->on_pointer_up(info, mx, my);
+                }
+            }
         } break;
+        // TODO: apply rules on RBUTTON_CLICK and MBUTTON_CLICK and POINTERUPDATE
         case WM_RBUTTONDOWN:
         {
             if (!app->curr_tool_) break;
 
-            if (!ImGui::GetIO().WantCaptureMouse) {
-                pen_info = {0};
-                PointerInfo info = {0};
-                info.pen_info = pen_info;
-                info.button = Input::PointerButton::RIGHT;
-                Input::parse_to_btnstate_from_wparam(_wparam, &info.btn_state);
-                app->curr_tool_->on_pointer_down(info, LOWORD(_lparam), HIWORD(_lparam));
-            }
+            int mx = LOWORD(_lparam);
+            int my = HIWORD(_lparam);
+            if (is_mouse_position_valid(app, mx, my)) {
+                input_context.mouse_down_r = true;
+                if (!ImGui::GetIO().WantCaptureMouse) {
 
-            input_context.mouse_down_r = true;
+                    pen_info = {0};
+                    PointerInfo info = {0};
+                    info.pen_info = pen_info;
+                    info.button = Input::PointerButton::RIGHT;
+                    Input::get_btnstate_from_wparam(_wparam, &info.btn_state);
+                    app->curr_tool_->on_pointer_down(info, mx, my);
+                }
+            }
         } break;
         case WM_RBUTTONUP:
         {
@@ -106,7 +137,7 @@ LRESULT CALLBACK wnd_proc(HWND _window, UINT _message, WPARAM _wparam, LPARAM _l
                 PointerInfo info = {0};
                 info.pen_info = pen_info;
                 info.button = Input::PointerButton::RIGHT;
-                Input::parse_to_btnstate_from_wparam(_wparam, &info.btn_state);
+                Input::get_btnstate_from_wparam(_wparam, &info.btn_state);
                 app->curr_tool_->on_pointer_up(info, LOWORD(_lparam), HIWORD(_lparam));
             }
 
@@ -121,7 +152,7 @@ LRESULT CALLBACK wnd_proc(HWND _window, UINT _message, WPARAM _wparam, LPARAM _l
                 PointerInfo info = {0};
                 info.pen_info = pen_info;
                 info.button = Input::PointerButton::MIDDLE;
-                Input::parse_to_btnstate_from_wparam(_wparam, &info.btn_state);
+                Input::get_btnstate_from_wparam(_wparam, &info.btn_state);
                 app->curr_tool_->on_pointer_down(info, LOWORD(_lparam), HIWORD(_lparam));
             }
             
@@ -136,28 +167,69 @@ LRESULT CALLBACK wnd_proc(HWND _window, UINT _message, WPARAM _wparam, LPARAM _l
                 PointerInfo info = {0};
                 info.pen_info = pen_info;
                 info.button = Input::PointerButton::MIDDLE;
-                Input::parse_to_btnstate_from_wparam(_wparam, &info.btn_state);
+                Input::get_btnstate_from_wparam(_wparam, &info.btn_state);
                 app->curr_tool_->on_pointer_up(info, LOWORD(_lparam), HIWORD(_lparam));
             }
 
             input_context.mouse_down_m = false;
-        } break;
+        }
         case WM_MOUSEMOVE:
         {
             if (!app->curr_tool_) break;
 
-            if (!ImGui::GetIO().WantCaptureMouse) {
-                pen_info = {0};
-                PointerInfo info = {0};
-                info.pen_info = pen_info;
-                info.button = Input::PointerButton::OTHER;
-                Input::parse_to_btnstate_from_wparam(_wparam, &info.btn_state);
-                app->curr_tool_->on_pointer(info, LOWORD(_lparam), HIWORD(_lparam));
+            int mx = LOWORD(_lparam);
+            int my = HIWORD(_lparam);
+
+            // valid, invoke on_pointer
+            if (is_mouse_position_valid(app, mx, my)) {
+                if (!ImGui::GetIO().WantCaptureMouse) {
+                    pen_info = {0};
+                    PointerInfo info = {0};
+                    info.pen_info = pen_info;
+                    info.button = Input::PointerButton::OTHER;
+                    Input::get_btnstate_from_wparam(_wparam, &info.btn_state);
+                    
+                    app->curr_tool_->on_pointer(info, LOWORD(_lparam), HIWORD(_lparam));
+                }
+            } else {
+                // valid, invoke pointer_up
+                if (!app->curr_tool_) break;
+
+                int mx = LOWORD(_lparam);
+                int my = HIWORD(_lparam);
+                // mouse move outside the tool region
+                // if any mouse button is holding, corresponding pointer_up() should be called
+                if (input_context.mouse_down_l) {
+                    pen_info = {0};
+                    PointerInfo info = {0};
+                    info.pen_info = pen_info;
+                    info.button = Input::PointerButton::LEFT;
+                    Input::get_btnstate_from_wparam(_wparam, &info.btn_state);
+                    info.btn_state.mouse_l = false;
+                    app->curr_tool_->on_pointer_up(info, mx, my);
+                }
+                if (input_context.mouse_down_r) {
+                    pen_info = {0};
+                    PointerInfo info = {0};
+                    info.pen_info = pen_info;
+                    info.button = Input::PointerButton::LEFT;
+                    Input::get_btnstate_from_wparam(_wparam, &info.btn_state);
+                    info.btn_state.mouse_r = false;
+                    app->curr_tool_->on_pointer_up(info, mx, my);
+                }
+                if (input_context.mouse_down_m) {
+                    pen_info = {0};
+                    PointerInfo info = {0};
+                    info.pen_info = pen_info;
+                    info.button = Input::PointerButton::LEFT;
+                    Input::get_btnstate_from_wparam(_wparam, &info.btn_state);
+                    info.btn_state.mouse_m = false;
+                    app->curr_tool_->on_pointer_up(info, mx, my);
+                }
             }
 
             input_context.mouse_pos.x = LOWORD(_lparam);
             input_context.mouse_pos.y = HIWORD(_lparam);
-
         } break;
         case WM_POINTERDOWN:
         {
@@ -194,6 +266,7 @@ LRESULT CALLBACK wnd_proc(HWND _window, UINT _message, WPARAM _wparam, LPARAM _l
         } break;
         case WM_POINTERUP:
         {
+            DLOG_TRACE("receive pointer up");
             if (!app->curr_tool_) break;
 
             if (!ImGui::GetIO().WantCaptureMouse) {
@@ -206,14 +279,26 @@ LRESULT CALLBACK wnd_proc(HWND _window, UINT _message, WPARAM _wparam, LPARAM _l
             }
 
             input_context.pen_down = false;
-
+        } break;
+        case WM_MOUSELEAVE:
+        {
+            DLOG_TRACE("mouse leaved");
         } break;
         default:
         {
             result = DefWindowProc(_window, _message, _wparam, _lparam);
         } break;
-
     }
+
+    // check mouse leaved
+    if (GetCapture() == _window &&
+       (input_context.mouse_pos.x > app->window_info_.width||
+        input_context.mouse_pos.y > app->window_info_.height))
+    {
+        if (input_context.pen_down) 
+            input_context.pen_down = false;
+    }
+
     if (app->inited_) {
         ImGuiIO& io = ImGui::GetIO();
         io.MousePos.x = (float)input_context.mouse_pos.x;
@@ -224,7 +309,8 @@ LRESULT CALLBACK wnd_proc(HWND _window, UINT _message, WPARAM _wparam, LPARAM _l
     }
     return result;
 }
-void parse_to_btnstate_from_wparam(WPARAM _wparam, ButtonState* _state) {
+
+void get_btnstate_from_wparam(WPARAM _wparam, ButtonState* _state) {
     _state->mouse_l = _wparam & MK_LBUTTON;
     _state->mouse_r = _wparam & MK_RBUTTON;
     _state->mouse_m = _wparam & MK_MBUTTON;

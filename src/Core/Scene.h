@@ -9,6 +9,7 @@
 #include <memory>
 
 struct RectInt {
+    // posx and posy is the left-up point
     int posx;
     int posy;
     int width;
@@ -28,19 +29,21 @@ public:
 
     void add_layer(Col_RGBA _col, const std::string& _name);
     void add_layer(Col_RGBA _col);
-    // TODO:...
+
     void change_layer(const std::string& _name);
     void change_layer(Layer* _layer);
     bool next_layer();
     bool previous_layer();
     Layer* get_curr_layer() { return curr_layer_ite_->get(); };
 
+    RectInt get_region() const { return region_; };
+    void merge_region(RectInt _region);
+    void clear_region();
+
 public:
     DGL::Camera camera_;
     Image       image_;
     LayerList   layers_;
-
-    RectInt     region_;// updated region
 
     struct {
         int width;
@@ -48,14 +51,7 @@ public:
     } info_;
 
 private:
+    RectInt     region_;// updated region
     LayerIte    curr_layer_ite_;
     
-public:
-    // shouldnt belong here
-    DGL::Program composition_cshader_;
-    DGL::GLTextureBuffer cache_down_;
-
-    void composite_region(RectInt _region);
-    void composite_cache();
-
 };

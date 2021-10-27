@@ -4,6 +4,7 @@
 *.a
 /.vscode
 /.linecount
+/.trash
 !vendor/
 
 # build sys && IDE

@@ -91,47 +91,46 @@ void Application::render_ui() {
 
     ImGui::NewFrame();
     {
-    if (ImGui::Begin("panel")) {
-        if (ImGui::CollapsingHeader("cam")) {
-            float cam_region = 0.5f * glm::max(curr_scene_->image_.info_.width, curr_scene_->image_.info_.height);
-            ImGui::DragFloat2("cam_pos", (float*)&cam->position_, 1.0f, -cam_region, cam_region);
-            ImGui::DragFloat("cam_size", &cam->size_, 0.1f, 0.1f, 10.0f);
-        }
-
-        if (ImGui::CollapsingHeader("tool")) {
-            if (dynamic_cast<Tool::Brush*>(curr_tool_)) {
-                Tool::Brush* brs = dynamic_cast<Tool::Brush*>(curr_tool_);
-                static float bcol[4] = {1.0f,1.0f,1.0f,1.0f};
-                ImGui::ColorEdit4("brush_col", bcol, ImGuiColorEditFlags_AlphaBar);
-                brs->col_.r = (unsigned char)(bcol[0] * 0xff);
-                brs->col_.g = (unsigned char)(bcol[1] * 0xff);
-                brs->col_.b = (unsigned char)(bcol[2] * 0xff);
-                brs->col_.a = (unsigned char)(bcol[3] * 0xff);
-                ImGui::DragIntRange2("brush_size", &brs->size_min_, &brs->size_max_, 1, 0, 8000);
+        if (ImGui::Begin("panel")) {
+            if (ImGui::CollapsingHeader("cam")) {
+                float cam_region = 0.5f * glm::max(curr_scene_->image_.info_.width, curr_scene_->image_.info_.height);
+                ImGui::DragFloat2("cam_pos", (float*)&cam->position_, 1.0f, -cam_region, cam_region);
+                ImGui::DragFloat("cam_size", &cam->size_, 0.1f, 0.1f, 10.0f);
             }
-        }
 
-        if (ImGui::CollapsingHeader("scene")) {
-            ImGui::BeginGroup();
-            for (auto ite = curr_scene_->layers_.rbegin(); ite != curr_scene_->layers_.rend(); ite++)
-            {
-                if (curr_scene_->get_curr_layer() == ite->get()) {
-                    ImGui::Bullet();
-                    ImGui::SameLine();
-                }
-                if (ImGui::Button(ite->get()->info_.name.c_str())) {
-                    curr_scene_->change_layer(ite->get());
-                    // curr_scene_->curr_layer_ = ite->get();
+            if (ImGui::CollapsingHeader("tool")) {
+                if (dynamic_cast<Tool::Brush*>(curr_tool_)) {
+                    Tool::Brush* brs = dynamic_cast<Tool::Brush*>(curr_tool_);
+                    static float bcol[4] = {1.0f,1.0f,1.0f,1.0f};
+                    ImGui::ColorEdit4("brush_col", bcol, ImGuiColorEditFlags_AlphaBar);
+                    brs->col_.r = (unsigned char)(bcol[0] * 0xff);
+                    brs->col_.g = (unsigned char)(bcol[1] * 0xff);
+                    brs->col_.a = (unsigned char)(bcol[3] * 0xff);
+                    brs->col_.b = (unsigned char)(bcol[2] * 0xff);
+                    ImGui::DragIntRange2("brush_size", &brs->size_min_, &brs->size_max_, 1, 0, 8000);
                 }
             }
-            ImGui::EndGroup();
 
-            if (ImGui::Button("add layer")) {
-                curr_scene_->add_layer(Col_RGBA{0x00, 0x00, 0x00, 0x00});
+            if (ImGui::CollapsingHeader("scene")) {
+                ImGui::BeginGroup();
+                for (auto ite = curr_scene_->layers_.rbegin(); ite != curr_scene_->layers_.rend(); ite++)
+                {
+                    if (curr_scene_->get_curr_layer() == ite->get()) {
+                        ImGui::Bullet();
+                        ImGui::SameLine();
+                    }
+                    if (ImGui::Button(ite->get()->info_.name.c_str())) {
+                        curr_scene_->change_layer(ite->get());
+                    }
+                }
+                ImGui::EndGroup();
+
+                if (ImGui::Button("add layer")) {
+                    curr_scene_->add_layer(Col_RGBA{0x00, 0x00, 0x00, 0x00});
+                }
             }
+            ImGui::End();
         }
-        ImGui::End();
-    }
     }
 
     ImGui::SetNextWindowPos({1, window_info_.height - 1.0f}, 0, {0.0f, 1.0f});

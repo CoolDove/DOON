@@ -20,6 +20,8 @@ public:
     static glm::mat4 mat_world_ndc(const DGL::Camera* _cam, int _width, int _height);
     static glm::mat4 mat_ndc_world(const DGL::Camera* _cam, int _width, int _height);
 
+    // TODO: transformations from window space, used for mouse position mostly
+    // static glm::mat3 mat_window_ndc();
 
     /*
     [texture space]

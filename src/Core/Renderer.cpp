@@ -61,18 +61,19 @@ void Renderer::render() {
 
     Scene* scn = app_->curr_scene_;
     Image* img = &app_->curr_scene_->image_;
+    RectInt updated_region = scn->get_region();
 
     /***********update part of the scene image to render texture*************/
-    DLOG_TRACE("region: %d %d %d %d", scn->region_.posx, scn->region_.posy, scn->region_.width, scn->region_.height);
-
-    if (scn->region_.width != 0 && scn->region_.height != 0) {
-        for (int i = scn->region_.posy; i < scn->region_.posy + scn->region_.height; i++) {
-            scn->get_curr_layer()->tex_.upload(0, scn->region_.posx, i,
-                            scn->region_.width, 1,
-                            PixFormat::RGBA, PixType::UNSIGNED_BYTE,
-                            scn->get_curr_layer()->img_.pixels_ + i * 4 * scn->info_.width + scn->region_.posx * 4);
+    if (updated_region.width != 0 && updated_region.height != 0) {
+        for (int i = updated_region.posy; i < updated_region.posy + updated_region.height; i++) {
+            scn->get_curr_layer()->tex_.upload(
+                0, updated_region.posx, i,
+                updated_region.width, 1,
+                PixFormat::RGBA, PixType::UNSIGNED_BYTE,
+                scn->get_curr_layer()->img_.pixels_ + i * 4 * scn->info_.width + updated_region.posx * 4
+            );
         }
-        memset(&scn->region_, 0, sizeof(RectInt));
+        scn->clear_region();
     };
     /***********update part of the scene image to render texture*************/
 

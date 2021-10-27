@@ -37,7 +37,6 @@ public:
 
     void change_scene(const std::string& _name);
 
-
     Scene* curr_scene_;
     unordered_map<string, unique_ptr<Scene>> scenes_;
 
@@ -64,11 +63,6 @@ public:// window
     } window_info_;
 
 public:
-    // struct {
-    //     GLuint src0;
-    //     GLuint src1;
-    //     GLuint dst;
-    // } imgs_ = {0};
     GLuint buf_tex_;
 private:
     void init_dlog();

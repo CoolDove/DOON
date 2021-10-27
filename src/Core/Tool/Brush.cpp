@@ -28,14 +28,17 @@ void Brush::on_deactivate() {
 }
 
 void Brush::on_pointer_down(Input::PointerInfo _info, int _x, int _y) {
-    
+    DLOG_TRACE("brush down");
 }
 void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
-
+    DLOG_TRACE("brush up");
 }
 
+// TODO: mouse default pressure
 void Brush::on_pointer(Input::PointerInfo _info, int _x, int _y) {
-    if (_info.btn_state.mouse_l || _info.pen_info.pressure > 1) 
+    // DLOG_TRACE("mouse button state left: %d -- pen pressure: %u", _info.btn_state.mouse_l, _info.pen_info.pressure);
+
+    if (_info.btn_state.mouse_l || _info.pen_info.pressure > 0)
     {
         int wnd_width = app_->window_info_.width;
         int wnd_height = app_->window_info_.height;
