@@ -377,7 +377,7 @@ LRESULT CALLBACK wnd_proc(HWND _window, UINT _message, WPARAM _wparam, LPARAM _l
         } break;
         case WM_MOUSEWHEEL:
         {
-            // @temp:
+            // @TEMPCODE:
             // these lines are very temporary, to adjust camera size,
             // should invoke some camera-member-function
             // like- cam->adjust_size(fac);
@@ -385,20 +385,37 @@ LRESULT CALLBACK wnd_proc(HWND _window, UINT _message, WPARAM _wparam, LPARAM _l
             if (wd > 1) wd = 1;
             if (wd < -1) wd = -1;
 
-            DGL::Camera* cam = &app->curr_scene_->camera_;
-            float size_delta = (float)wd * 0.1f;
-            float cam_size_max = 9.0f;
-            float cam_size_min = 0.1f;
-            if (cam->size_ + size_delta <= cam_size_max) {
-                cam->size_ += size_delta;
+            if (!get_uint(input_context.mod_key & ModKey::Ctrl)) {
+                // @AdjustCameraSize:
+                DGL::Camera* cam = &app->curr_scene_->camera_;
+                float size_delta = (float)wd * 0.1f;
+                float cam_size_max = 9.0f;
+                float cam_size_min = 0.1f;
+                if (cam->size_ + size_delta <= cam_size_max) {
+                    cam->size_ += size_delta;
+                } else {
+                    cam->size_ = cam_size_max;
+                }
+                if (cam->size_ + size_delta >= cam_size_min) {
+                    cam->size_ += size_delta;
+                } else {
+                    cam->size_ = cam_size_min;
+                }
             } else {
-                cam->size_ = cam_size_max;
+                // @AdjustBrushSize:
+                Tool::Brush* brush = dynamic_cast<Tool::Brush*>(app->curr_tool_);
+                uint32_t spd = 3;
+                if (brush) {
+                    if (brush->size_max_ + wd * spd >= 7500) {
+                        brush->size_max_ = 7500;
+                    } else if (brush->size_max_ + wd * spd <= 1) {
+                        brush->size_max_ = 1;
+                    } else {
+                        brush->size_max_ += wd;
+                    }
+                }
             }
-            if (cam->size_ + size_delta >= cam_size_min) {
-                cam->size_ += size_delta;
-            } else {
-                cam->size_ = cam_size_min;
-            }
+
 
             DLOG_TRACE("scrolling... %u", input_context.mod_key);
 

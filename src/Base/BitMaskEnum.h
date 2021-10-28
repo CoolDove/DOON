@@ -19,4 +19,6 @@ inline T operator &=(T& _lhs, T _rhs)\
 inline T operator ^=(T& _lhs, T _rhs)\
 	{unsigned int tmp = static_cast<unsigned int>(_lhs);\
 	 tmp ^= static_cast<unsigned int>(_rhs);_lhs = static_cast<T>(tmp);\
-	 return _lhs;}
+	 return _lhs;}\
+inline unsigned int get_uint(const T& _lhs) {\
+	return static_cast<unsigned int>(_lhs);}
