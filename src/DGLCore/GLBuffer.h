@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include <glad/glad.h>
-#include "BitMaskEnum.h"
+#include <Base/BitMaskEnum.h>
 #include "GLEnums.h"
 #include <stdint.h>
 

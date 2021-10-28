@@ -1,5 +1,6 @@
 ﻿#include "Input.h"
 #include <Core/Application.h>
+#include <Core/Tool/Brush.h>
 #include <DoveLog.hpp>
 #include <imgui/imgui.h>
 
@@ -8,8 +9,12 @@ namespace Input {
 InputProcess imgui_proc = nullptr;
 InputContext input_context = {0};
 
-// FIXME: when mouse position is outside the client region, imgui cannot be clicked by pen
 // FIXME: in some unknown situation, brush cannot paint
+
+// TODO: mouse scroll to zoom the camera, middle drag to move the camera
+// TODO: alt-mouse_right drag to adjust the brush size
+// TODO: input to action
+// TODO: load key-action map from the config file
 
 // check if mouse is in region for tools
 bool is_mouse_position_valid(Application* _app, int _x, int _y) {
@@ -44,6 +49,52 @@ void release_mouse_and_pen(Application* _app, int _mx, int _my) {
         info.button = Input::PointerButton::PEN;
         _app->curr_tool_->on_pointer_up(info, _mx, _my);
     }
+}
+
+uint32_t on_key_down(KeyCode _key) {
+    switch (_key)
+    {
+    case VK_MENU:
+        input_context.mod_key |= ModKey::Alt;
+        break;
+    case VK_CONTROL:
+        input_context.mod_key |= ModKey::Ctrl;
+        break;
+    case VK_SHIFT:
+        input_context.mod_key |= ModKey::Shift;
+        break;
+    case VK_SPACE:
+        input_context.mod_key |= ModKey::Space;
+        break;
+    default:
+        break;
+    }
+    return 1;
+}
+
+uint32_t on_key_repeat(KeyCode _key) {
+    return 1;
+}
+
+uint32_t on_key_up(KeyCode _key) {
+    switch (_key)
+    {
+    case VK_MENU:
+        input_context.mod_key &= ~ModKey::Alt;
+        break;
+    case VK_CONTROL:
+        input_context.mod_key &= ~ModKey::Ctrl;
+        break;
+    case VK_SHIFT:
+        input_context.mod_key &= ~ModKey::Shift;
+        break;
+    case VK_SPACE:
+        input_context.mod_key &= ~ModKey::Space;
+        break;
+    default:
+        break;
+    }
+    return 1;
 }
 
 // NOTE: |[Mouse Message Rules For Tools]|
@@ -98,6 +149,18 @@ LRESULT CALLBACK wnd_proc(HWND _window, UINT _message, WPARAM _wparam, LPARAM _l
         case WM_ACTIVATEAPP:
         {
             DLOG_TRACE("activate\n");
+        } break;
+        case WM_KEYDOWN:
+        {
+            bool repeat = 1u<<30 & _lparam;
+
+            if (repeat) on_key_repeat(_wparam);
+            else        on_key_down(_wparam);
+            
+        } break;
+        case WM_KEYUP:
+        {
+            on_key_up(_wparam);
         } break;
         case WM_LBUTTONDOWN:
         {
@@ -311,6 +374,34 @@ LRESULT CALLBACK wnd_proc(HWND _window, UINT _message, WPARAM _wparam, LPARAM _l
         case WM_MOUSELEAVE:
         {
             DLOG_TRACE("mouse leaved");
+        } break;
+        case WM_MOUSEWHEEL:
+        {
+            // @temp:
+            // these lines are very temporary, to adjust camera size,
+            // should invoke some camera-member-function
+            // like- cam->adjust_size(fac);
+            int wd = GET_WHEEL_DELTA_WPARAM(_wparam) / WHEEL_DELTA;
+            if (wd > 1) wd = 1;
+            if (wd < -1) wd = -1;
+
+            DGL::Camera* cam = &app->curr_scene_->camera_;
+            float size_delta = (float)wd * 0.1f;
+            float cam_size_max = 9.0f;
+            float cam_size_min = 0.1f;
+            if (cam->size_ + size_delta <= cam_size_max) {
+                cam->size_ += size_delta;
+            } else {
+                cam->size_ = cam_size_max;
+            }
+            if (cam->size_ + size_delta >= cam_size_min) {
+                cam->size_ += size_delta;
+            } else {
+                cam->size_ = cam_size_min;
+            }
+
+            DLOG_TRACE("scrolling... %u", input_context.mod_key);
+
         } break;
         default:
         {

@@ -1,11 +1,14 @@
 ﻿#pragma once
 #include <windows.h>
+#include <stdint.h>
+#include <Base/BitMaskEnum.h>
 
 namespace Input{
 
-using bool8         = char;
+using bool8         = uint8_t;
 using WPARAM        = unsigned __int64;
 using InputProcess  = LRESULT(CALLBACK*)(HWND _window, UINT _message, WPARAM _wparam, LPARAM _lparam);
+using KeyCode       = unsigned long long;
 
 enum class PointerButton : unsigned char {
     OTHER   = 0,
@@ -27,15 +30,25 @@ struct PointerInfo {
     PointerButton       button;
 };
 
+enum class ModKey : uint32_t {
+    None  = 0u,
+    Shift = 1u<<1,
+    Ctrl  = 1u<<2,
+    Alt   = 1u<<3,
+    Space = 1u<<4,
+};
+BIT_MASK_ENUM(ModKey)
+
 struct InputContext {
     struct {
         int x;
         int y;
     } mouse_pos;
-    bool8 mouse_down_l;
-    bool8 mouse_down_r;
-    bool8 mouse_down_m;
-    bool8 pen_down;
+    bool8  mouse_down_l;
+    bool8  mouse_down_r;
+    bool8  mouse_down_m;
+    bool8  pen_down;
+    ModKey mod_key;
 };
 
 extern InputProcess imgui_proc;

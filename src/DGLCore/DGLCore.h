@@ -1,5 +1,4 @@
 ﻿#pragma once
-#include "BitMaskEnum.h"
 #include "GLBuffer.h"
 #include "GLCamera.h"
 #include "GLGeoBatch.h"
