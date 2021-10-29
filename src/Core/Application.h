@@ -8,6 +8,8 @@
 #include "Scene.h"
 #include "Tool/Tools.h"
 
+#include <Core/Action.h>
+
 #define WGL_CONTEXT_MAJOR_VERSION_ARB           	0x2091
 #define WGL_CONTEXT_MINOR_VERSION_ARB           	0x2092
 #define WGL_CONTEXT_LAYER_PLANE_ARB             	0x2093
@@ -21,7 +23,6 @@
 #define WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB 	0x00000002
 
 using namespace std;
-
 
 class Renderer;
 
@@ -54,6 +55,7 @@ public:// window
     bool    inited_;
     HWND    window_;
     HDC     device_context_;
+    unique_ptr<ActionList> action_list_;
 
     struct WindowInfo {
         int posx;

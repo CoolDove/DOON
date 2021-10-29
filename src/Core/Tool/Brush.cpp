@@ -9,7 +9,7 @@ Brush::Brush(Application* _app)
 :   app_(_app),
     holding_(false),
     col_{0xff,0xff,0xff,0xff},
-    size_min_(0.01f),
+    size_min_scale_(0.01f),
     size_max_(20)
 {
     DLOG_TRACE("brush constructed");
@@ -69,7 +69,7 @@ void Brush::on_pointer(Input::PointerInfo _info, int _x, int _y) {
         int half_width  = (int)(0.5f * img->info_.width);
         int half_height = (int)(0.5f * img->info_.height);
 
-        int size_min = size_min_ * size_max_;
+        int size_min = size_min_scale_ * size_max_;
         unsigned int brush_size = (unsigned int)((pressure / 1024.0f) * (size_max_ - (size_min)) + size_min);
 
         draw_circle((int)cs_pos.x + half_width, -(int)cs_pos.y + half_height, brush_size);

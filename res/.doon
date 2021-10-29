@@ -1,0 +1,18 @@
+﻿normal{
+<a>     : [hello_world]
+
+<l>     : [log:hello dove]
+          [hello_world]
+
+<C-a>   : [reset_camera]
+
+<C-S-a> : [hello_world]
+          [reset_camera]
+
+<d>     : [switch_page:dove]
+}
+
+dove{
+<a>     : [hello_world]
+<s>     : [log:hello dove]
+}

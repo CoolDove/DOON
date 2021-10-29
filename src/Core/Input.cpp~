@@ -13,7 +13,6 @@ InputContext input_context = {0};
 
 // TODO: mouse scroll to zoom the camera, middle drag to move the camera
 // TODO: alt-mouse_right drag to adjust the brush size
-        // currently, ctrl scroll to adjust the brush size
 // TODO: input to action
 // TODO: load key-action map from the config file
 
@@ -416,8 +415,8 @@ LRESULT CALLBACK wnd_proc(HWND _window, UINT _message, WPARAM _wparam, LPARAM _l
                 }
             }
 
+
             DLOG_TRACE("scrolling... %u", input_context.mod_key);
-	    DLOG_TRACE("this is a number line %d", 123);
 
         } break;
         default:

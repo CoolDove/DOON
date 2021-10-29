@@ -19,9 +19,8 @@ public:
     virtual void on_pointer_up  (Input::PointerInfo _info, int _x, int _y);
     virtual void on_pointer     (Input::PointerInfo _info, int _x, int _y);
 public:
-    // int         size_min_;
     int         size_max_;
-    float       size_min_;
+    float       size_min_scale_;
     Col_RGBA    col_;
 private:
     void draw_circle(int _x, int _y, int _r);

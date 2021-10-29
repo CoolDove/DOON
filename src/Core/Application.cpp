@@ -57,6 +57,16 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     curr_tool_->on_activate();
 
     renderer_->init();
+
+    // @ActionList:
+    action_list_ = std::make_unique<ActionList>();
+
+    ActionFunction action = action_list_->get_action({Dove::KeyCode::A, Dove::ModKey::None}).action;
+
+    ActionArgInfo info;
+    info.count = 1;
+    info.types = std::vector<ActionArgType>{};
+    action(info);
 }
 
 Application::~Application() {
@@ -107,9 +117,9 @@ void Application::render_ui() {
                     brs->col_.g = (unsigned char)(bcol[1] * 0xff);
                     brs->col_.a = (unsigned char)(bcol[3] * 0xff);
                     brs->col_.b = (unsigned char)(bcol[2] * 0xff);
-                    // ImGui::DragIntRange2("brush_size", &brs->size_min_, &brs->size_max_, 1, 0, 8000);
+                    // ImGui::DragIntRange2("brush_size", &brs->size_min_scale_, &brs->size_max_, 1, 0, 8000);
                     ImGui::DragInt("brush_size_max", &brs->size_max_, 0.1f, 1, 7000);
-                    ImGui::DragFloat("brush_size_min", &brs->size_min_, 0.01f, 0.0f, 1.0f);
+                    ImGui::DragFloat("brush_size_min", &brs->size_min_scale_, 0.01f, 0.0f, 1.0f);
                 }
             }
 

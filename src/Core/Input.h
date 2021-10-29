@@ -2,8 +2,10 @@
 #include <windows.h>
 #include <stdint.h>
 #include <Base/BitMaskEnum.h>
+#include <Base/Keys.h>
 
 namespace Input{
+using namespace Dove;
 
 using bool8         = uint8_t;
 using WPARAM        = unsigned __int64;
@@ -30,14 +32,14 @@ struct PointerInfo {
     PointerButton       button;
 };
 
-enum class ModKey : uint32_t {
-    None  = 0u,
-    Shift = 1u<<1,
-    Ctrl  = 1u<<2,
-    Alt   = 1u<<3,
-    Space = 1u<<4,
-};
-BIT_MASK_ENUM(ModKey)
+// enum class ModKey : uint32_t {
+//     None  = 0u,
+//     Shift = 1u<<1,
+//     Ctrl  = 1u<<2,
+//     Alt   = 1u<<3,
+//     Space = 1u<<4,
+// };
+// BIT_MASK_ENUM(ModKey)
 
 struct InputContext {
     struct {
@@ -48,7 +50,7 @@ struct InputContext {
     bool8  mouse_down_r;
     bool8  mouse_down_m;
     bool8  pen_down;
-    ModKey mod_key;
+    Dove::ModKey mod_key;
 };
 
 extern InputProcess imgui_proc;
