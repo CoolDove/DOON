@@ -4,6 +4,7 @@
 #include <DGLCore/DGLCore.h>
 
 #include <assert.h>
+#include <ctime>
 #include <time.h>
 
 #include <imgui/imgui.h>
@@ -61,12 +62,7 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     // @ActionList:
     action_list_ = std::make_unique<ActionList>();
 
-    ActionFunction action = action_list_->get_action({Dove::KeyCode::A, Dove::ModKey::None}).action;
-
-    ActionArgInfo info;
-    info.count = 1;
-    info.types = std::vector<ActionArgType>{};
-    action(info);
+    action_list_->invoke({Dove::KeyCode::A, Dove::ModKey::None});
 }
 
 Application::~Application() {

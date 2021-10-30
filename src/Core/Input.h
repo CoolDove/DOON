@@ -32,15 +32,6 @@ struct PointerInfo {
     PointerButton       button;
 };
 
-// enum class ModKey : uint32_t {
-//     None  = 0u,
-//     Shift = 1u<<1,
-//     Ctrl  = 1u<<2,
-//     Alt   = 1u<<3,
-//     Space = 1u<<4,
-// };
-// BIT_MASK_ENUM(ModKey)
-
 struct InputContext {
     struct {
         int x;

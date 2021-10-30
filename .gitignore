@@ -24,3 +24,9 @@ Makefile
 *.vcxproj.user
 *.vcxproj.filters
 /.vs
+
+/compile_commands/
+compile_commands.json
+launch.json
+/.cache/
+build.bat

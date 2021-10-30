@@ -1,4 +1,6 @@
-﻿workspace "Dove"
+﻿require "export-compile-commands"
+
+workspace "Dove"
 	platforms {"Win"}
 	configurations {"Debug", "Release"}
 	architecture "x86_64"

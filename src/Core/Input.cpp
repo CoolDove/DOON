@@ -3,6 +3,7 @@
 #include <Core/Tool/Brush.h>
 #include <DoveLog.hpp>
 #include <imgui/imgui.h>
+#include <Core/Action.h>
 
 #define IMGUI_MONOPOLY_INPUT 0x0010
 namespace Input {
@@ -14,7 +15,7 @@ InputContext input_context = {0};
 // TODO: mouse scroll to zoom the camera, middle drag to move the camera
 // TODO: alt-mouse_right drag to adjust the brush size
         // currently, ctrl scroll to adjust the brush size
-// TODO: input to action
+//xTODO: input to action
 // TODO: load key-action map from the config file
 
 // check if mouse is in region for tools
@@ -70,6 +71,17 @@ uint32_t on_key_down(KeyCode _key) {
     default:
         break;
     }
+
+    if (_key >= 0x41 && _key <= 0x5A) {
+        // is letter key, from A to Z
+        Dove::KeyCode key = static_cast<Dove::KeyCode>(_key - (0x41 - 10u));
+        Application* app = Application::instance_;
+        ActionKey action_key;
+        action_key.key = key;
+        action_key.mod = input_context.mod_key;
+        app->action_list_->invoke(action_key);
+    }
+
     return 1;
 }
 

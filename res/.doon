@@ -14,5 +14,5 @@
 
 dove{
 <a>     : [hello_world]
-<s>     : [log:hello dove]
+<s>     : [log:"hello dove", 12]
 }

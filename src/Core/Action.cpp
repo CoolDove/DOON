@@ -1,10 +1,18 @@
 ﻿#include "Action.h"
+#include <regex>
+#include <DoveLog.hpp>
 
-// @test:
-void func(ActionArgInfo _info, ...) {
-    ActionArgInfo info = _info;
+// TODO: give up actions with args
 
-    int ct = info.count;
+// @Test:
+void press_a() {
+    DLOG_TRACE("congratulations!! you pressed a");
+}
+void press_S_a() {
+    DLOG_TRACE("congratulations!! you pressed shift a");
+}
+void press_C_S_a() {
+    DLOG_TRACE("congratulations!! you pressed ctrl shift a");
 }
 
 ActionList::ActionList()
@@ -12,30 +20,47 @@ ActionList::ActionList()
 {
     // @Temp:build action list in code, will be replaced by .doon parsing
     using namespace Dove;
-    register_key("def", ActionKey{KeyCode::A, ModKey::None}, "hello_dove");
-    register_action("def", "hello_dove", {ActionArgInfo{1, std::vector<ActionArgType>{0}}, func});
+    register_key("def", ActionKey{KeyCode::A, ModKey::None}, "press_a");
+    register_action("def", "press_a", press_a);    
+
+    register_key("def", ActionKey{KeyCode::A, ModKey::Shift}, "press_S_a");
+    register_action("def", "press_S_a", press_S_a);    
+
+    register_key("def", ActionKey{KeyCode::A, ModKey::Shift | ModKey::Ctrl}, "press_C_S_a");
+    register_action("def", "press_C_S_a", press_C_S_a);    
 }
 
 ActionList::~ActionList() {
+}
 
+bool ActionList::invoke(ActionKey _key) {
+    if (call_pages_[curr_page_].find(_key) == call_pages_[curr_page_].end()) {
+        return false;
+    } else {
+        std::string action_name = call_pages_[curr_page_][_key];
+
+        if (action_pages_[curr_page_].find(action_name) == action_pages_[curr_page_].end()) {
+            return false;
+        } else {
+            Action action = action_pages_[curr_page_][action_name];
+            action();
+            return true; 
+        }
+    }
 }
 
 Action ActionList::get_action(ActionKey _key) {
-    ActionCall call = call_pages_[curr_page_][_key];
-    return action_pages_[curr_page_][call.name];
+    std::string action_name = call_pages_[curr_page_][_key];
+    return action_pages_[curr_page_][action_name];
 }
-void ActionList::register_key(const std::string& _page, ActionKey _key, const std::string& _action_string) {
-    // TODO: parse module to check if the action_string is valid
-    ActionCall call;
-    call.name = "hello_dove";
-    call.args = std::vector<std::string>{};
 
+void ActionList::register_key(const std::string& _page, ActionKey _key, const std::string& _action_name) {
     if (call_pages_.find(_page) == call_pages_.end()) {
-        ActionCallMap map;
-        map[_key] = call;
+        ActionNameMap map;
+        map[_key] = _action_name;
         call_pages_[_page] = map;
     } else {
-        call_pages_[_page][_key] = call;
+        call_pages_[_page][_key] = _action_name;
     }
 }
 
