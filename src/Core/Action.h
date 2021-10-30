@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <stdint.h>
 #include <string>
 #include <unordered_map>
 #include <Base/Keys.h>
@@ -23,6 +24,24 @@ struct ActionKey {
     Dove::KeyCode key;
     Dove::ModKey  mod;
 };
+inline std::string to_string(const ActionKey &_key) {
+    using namespace Dove;
+    std::string output = "<";
+    // bool moded = false;
+    uint32_t ukey = (uint32_t)_key.key;
+    uint32_t umod = (uint32_t)_key.mod;
+    if (umod & (uint32_t)ModKey::Alt) output += "Alt-";
+    if (umod & (uint32_t)ModKey::Ctrl) output += "Ctrl-";
+    if (umod & (uint32_t)ModKey::Shift) output += "Shift-";
+    if (umod & (uint32_t)ModKey::Space) output += "Space-";
+
+    if (ukey >= 10u && ukey) {
+        output += (char)('A' + ukey - 10u);
+    }      
+    output += '>';
+    return output;
+}  
+
 inline bool operator==(const ActionKey& _lhs, ActionKey _rhs) {
     return (uint32_t)_lhs.key == (uint32_t)_rhs.key&&
            (uint32_t)_lhs.mod == (uint32_t)_rhs.mod;
@@ -61,8 +80,8 @@ public:
     void register_key(const std::string& _page, ActionKey _key, const std::string& _command);
 
     void load_config();
-private:
 
+public:
     std::string curr_page_;
     std::unordered_map<std::string, ActionNameMap> call_pages_;
     std::unordered_map<std::string, ActionMap>     action_pages_;

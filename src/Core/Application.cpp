@@ -3,6 +3,7 @@
 #include "Renderer.h"
 #include <DGLCore/DGLCore.h>
 
+#include <algorithm>
 #include <assert.h>
 #include <ctime>
 #include <time.h>
@@ -166,6 +167,21 @@ void Application::render_ui() {
 
         ImGui::BeginGroup();
         ImGui::LabelText("canvas size",  "-%d * %d-", curr_scene_->info_.width, curr_scene_->info_.height);
+        ImGui::EndGroup();
+
+        // action list        
+        ImGui::BeginGroup();
+
+        auto* calls = &action_list_->call_pages_["def"];
+        auto* actions = &action_list_->action_pages_["def"];
+
+        for (auto ite = calls->begin(); ite != calls->end(); ite++) {
+            auto action_ite = actions->find(ite->second);
+            if (action_ite != actions->end()) {
+                ImGui::LabelText(action_ite->first.c_str(), to_string(ite->first).c_str());
+            }
+        }
+
         ImGui::EndGroup();
 
         ImGui::End();
