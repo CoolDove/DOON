@@ -19,15 +19,13 @@ ActionList::ActionList()
 :   curr_page_("def")
 {
     // @Temp:build action list in code, will be replaced by .doon parsing
-    using namespace Dove;
-    register_key("def", ActionKey{KeyCode::A, ModKey::None}, "press_a");
-    register_action("def", "press_a", press_a);    
-
-    register_key("def", ActionKey{KeyCode::A, ModKey::Shift}, "press_S_a");
-    register_action("def", "press_S_a", press_S_a);    
-
-    register_key("def", ActionKey{KeyCode::A, ModKey::Shift | ModKey::Ctrl}, "press_C_S_a");
-    register_action("def", "press_C_S_a", press_C_S_a);    
+    // using namespace Dove;
+    // register_key("def", ActionKey{KeyCode::A, ModKey::None}, "press_a");
+    // register_action("def", "press_a", press_a);    
+    // register_key("def", ActionKey{KeyCode::A, ModKey::Shift}, "press_S_a");
+    // register_action("def", "press_S_a", press_S_a);    
+    // register_key("def", ActionKey{KeyCode::A, ModKey::Shift | ModKey::Ctrl}, "press_C_S_a");
+    // register_action("def", "press_C_S_a", press_C_S_a);    
 }
 
 ActionList::~ActionList() {

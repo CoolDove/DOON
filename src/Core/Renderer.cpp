@@ -28,26 +28,15 @@ void Renderer::init() {
     Shader base_frag("./res/shaders/base.frag", ShaderType::FRAGMENT_SHADER);
     program_base_.link(2, &base_vert, &base_frag);
 
-    create_gl_image();
+    recreate_canvas_batch();
 }
 
-void Renderer::create_gl_image() {
+void Renderer::recreate_canvas_batch() {
     if (app_->curr_scene_ && app_->curr_scene_->image_.pixels_) {
-        if (tex_img_.get_inited()) tex_img_.release();
-
         Image* img = &app_->curr_scene_->image_;
         int width  = app_->curr_scene_->image_.info_.width;
         int height = app_->curr_scene_->image_.info_.height;
-
-        tex_img_.init();
-        tex_img_.allocate(1, SizedInternalFormat::RGBA8, width, height);
-        tex_img_.upload(0, 0, 0, width, height, PixFormat::RGBA, PixType::UNSIGNED_BYTE, img->pixels_);
-
-        tex_img_.param_mag_filter(TexFilter::NEAREST);
-        tex_img_.param_min_filter(TexFilter::NEAREST);
-        tex_img_.param_wrap_r(TexWrap::CLAMP_TO_EDGE);
-        tex_img_.param_wrap_s(TexWrap::CLAMP_TO_EDGE);
-
+        // we just need to recreate the batch here, instead of create a new tex_img_, it's abandoned
         batch_.clear();
         batch_.add_quad((float)width, (float)height, "canvas");
         batch_.upload();

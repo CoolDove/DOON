@@ -39,9 +39,9 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     long clock = std::clock();
     // scenes_["anji"]  = make_unique<Scene>("./res/textures/anji.png");
     // scenes_["alp"]   = make_unique<Scene>("./res/textures/alp.png");
-    // scenes_["test"]   = make_unique<Scene>("./res/textures/test.png");
-    // scenes_["void2"]  = make_unique<Scene>(512, 512, Col_RGBA{0x00, 0x00, 0x00, 0x00});
-    // scenes_["void1"]  = make_unique<Scene>(2048, 2048, Col_RGBA{0x00, 0x00, 0x00, 0x00});
+    // scenes_["test"]  = make_unique<Scene>("./res/textures/test.png");
+    // scenes_["void2"] = make_unique<Scene>(512, 512, Col_RGBA{0x00, 0x00, 0x00, 0x00});
+    // scenes_["void1"] = make_unique<Scene>(2048, 2048, Col_RGBA{0x00, 0x00, 0x00, 0x00});
 
     if (scenes_.size() == 0) {
         scenes_["void"] = make_unique<Scene>(5120, 5120, Col_RGBA{0x00, 0x00, 0x00, 0x00});
@@ -198,7 +198,7 @@ void Application::render_ui() {
 void Application::change_scene(const std::string& _name) {
     if (scenes_.find(_name) != scenes_.end()) {
         curr_scene_ = scenes_[_name].get();
-        renderer_->create_gl_image();
+        renderer_->recreate_canvas_batch();
     }
 }
 

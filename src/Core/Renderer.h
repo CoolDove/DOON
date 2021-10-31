@@ -10,7 +10,7 @@ public:
     void init();
     void render();
     void on_ui();
-    void create_gl_image();
+    void recreate_canvas_batch();
 
 public:
     struct OpenGLInfo {
@@ -33,7 +33,7 @@ private:
     DGL::Program program_canvas_;
     DGL::Program program_base_;
 
-    DGL::GLTexture2D tex_img_;
+    // DGL::GLTexture2D tex_img_;
     DGL::GeoBatch batch_;
 
     GLuint img_id;
