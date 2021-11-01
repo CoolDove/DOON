@@ -134,9 +134,9 @@ void Renderer::render() {
 
         if (ite->get() == scn->get_curr_layer() && dynamic_cast<Tool::Brush*>(app_->curr_tool_)) {
             // render the brush layer after current layer renderred
-            // dynamic_cast<Tool::Brush*>(app_->curr_tool_)->get_tex()->bind(0);
-            // program_canvas_.uniform_i("_tex", 0);
-            // batch_.draw_batch();
+            dynamic_cast<Tool::Brush*>(app_->curr_tool_)->get_tex()->bind(0);
+            program_canvas_.uniform_i("_tex", 0);
+            batch_.draw_batch();
         }
     }
     /********draw canvas for every canvas********/

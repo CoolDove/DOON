@@ -7,7 +7,7 @@ Image::Image()
 :   inited_(false),
     info_{0}      
 {
-}    
+}
 
 Image::Image(const char *_path, int _desired_channel)
 :   inited_(false)

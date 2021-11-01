@@ -13,14 +13,12 @@ Brush::Brush(Application* _app)
     holding_(false),
     col_{0xff,0xff,0xff,0xff},
     size_min_scale_(0.01f),
-    size_max_(20),
-    image_(_app->curr_scene_->info_.width, _app->curr_scene_->info_.height, Col_RGBA{ 0x00, 0x00, 0x00, 0x00 })
+    size_max_(20)
 {
     DLOG_TRACE("brush constructed");
 
     // TODO: load compostion shader
     using namespace DGL;
-
     tex_.init();
     resize_image_and_tex();
 }
