@@ -20,6 +20,9 @@ Brush::Brush(Application* _app)
     // TODO: load compostion shader
     using namespace DGL;
     tex_.init();
+    tex_.param_mag_filter(TexFilter::NEAREST);
+    tex_.param_min_filter(TexFilter::NEAREST);
+
     resize_image_and_tex();
 }
 

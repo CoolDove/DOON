@@ -42,25 +42,6 @@ void Renderer::recreate_canvas_batch() {
         batch_.upload();
     }
 }
-void Renderer::recreate_brush_tex_and_img() {
-    GLTexture2D* brush_tex = &app_->curr_scene_->brush_tex_;
-    Image*       brush_img = &app_->curr_scene_->brush_img_;
-    int width  = app_->curr_scene_->info_.width;
-    int height = app_->curr_scene_->info_.height;
-
-    // recreate image
-    brush_img->recreate(width, height, Col_RGBA{ 0x00, 0x00, 0x00, 0x00 });
-
-    // recreate texture
-    // if (brush_tex->get_inited()) brush_tex->release();
-// 
-    // brush_tex->allocate(1, SizedInternalFormat::RGBA8, width, height);
-    // brush_tex->upload(0, 0, 0, width, height, PixFormat::RGBA, PixType::UNSIGNED_BYTE, brush_img->pixels_);
-    // brush_tex->param_mag_filter(TexFilter::NEAREST);
-    // brush_tex->param_min_filter(TexFilter::NEAREST);
-    // brush_tex->param_wrap_r(TexWrap::CLAMP_TO_EDGE);
-    // brush_tex->param_wrap_s(TexWrap::CLAMP_TO_EDGE);
-}
 
 void Renderer::render() {
     program_canvas_.bind();
@@ -70,29 +51,6 @@ void Renderer::render() {
     Scene* scn = app_->curr_scene_;
     Image* img = &app_->curr_scene_->image_;
     RectInt updated_region = scn->get_region();
-
-    /***********update part of the scene image to render texture*************/
-    // TODO: move these things to Scene::on_update(); and invoke from application
-    // if (updated_region.width != 0 && updated_region.height != 0) {
-        // for (int i = updated_region.posy; i < updated_region.posy + updated_region.height; i++) {
-            // scn->get_curr_layer()->tex_.upload(
-                // 0, updated_region.posx, i,
-                // updated_region.width, 1,
-                // PixFormat::RGBA, PixType::UNSIGNED_BYTE,
-                // scn->get_curr_layer()->img_.pixels_ + i * 4 * scn->info_.width + updated_region.posx * 4
-            // );
-        // }
-        // scn->clear_region();
-    // };
-    
-    // update brush texture
-    // Image* brush_img = &scn->brush_img_;
-    // scn->brush_tex_.upload(0, 0, 0,
-                           // brush_img->info_.width, brush_img->info_.height,
-                           // PixFormat::RGBA, PixType::UNSIGNED_BYTE,
-                           // brush_img->pixels_);
-
-    /***********update part of the scene image to render texture*************/
 
     glEnable(GL_BLEND);
     glBlendEquation(GL_FUNC_ADD);
@@ -119,13 +77,10 @@ void Renderer::render() {
         batch_.draw_batch();
     }
     /********draw canvas for every canvas********/
-
     program_canvas_.bind();
     program_canvas_.uniform_mat("_view", 4, &view[0][0]);
     program_canvas_.uniform_mat("_proj", 4, &proj[0][0]);
 
-    // draw layers above current layer
-    // bool start = true;
     auto ite = scn->layers_.begin();
     for (auto ite = scn->layers_.begin(); ite != scn->layers_.end(); ite++) {
         ite->get()->tex_.bind(0);

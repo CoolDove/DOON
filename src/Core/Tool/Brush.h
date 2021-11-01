@@ -5,6 +5,10 @@
 #include <DGLCore/GLTexture.h>
 #include <Core/Image.h>
 
+// NOTE: brush image and texture is here,
+// should them belong to Brush class?
+// or they should be treated as a brush layer?
+
 using namespace DGL;
 class Application;
 namespace Tool

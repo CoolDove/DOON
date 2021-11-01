@@ -217,7 +217,6 @@ void Application::change_scene(const std::string& _name) {
         curr_scene_ = scenes_[_name].get();
 
         renderer_->recreate_canvas_batch();
-        renderer_->recreate_brush_tex_and_img();
     }
 }
 

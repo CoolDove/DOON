@@ -11,8 +11,6 @@ public:
     void render();
     void on_ui();
     void recreate_canvas_batch();
-    void recreate_brush_tex_and_img();
-
 public:
     struct OpenGLInfo {
         string version;
