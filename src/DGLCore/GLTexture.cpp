@@ -9,6 +9,7 @@ GLTexture::GLTexture()
     type_(TexType::UNKNOWN)
 {
 }
+
 GLTexture::~GLTexture() {
     if (inited_) 
         glDeleteTextures(1, &id_);

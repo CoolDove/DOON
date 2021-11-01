@@ -11,6 +11,7 @@ public:
     void render();
     void on_ui();
     void recreate_canvas_batch();
+    void recreate_brush_tex_and_img();
 
 public:
     struct OpenGLInfo {
@@ -30,11 +31,10 @@ private:
     HDC   device_context_;
     HGLRC gl_context_;
 
-    DGL::Program program_canvas_;
-    DGL::Program program_base_;
+    Program program_canvas_;
+    Program program_base_;
 
-    // DGL::GLTexture2D tex_img_;
-    DGL::GeoBatch batch_;
+    GeoBatch batch_;
 
     GLuint img_id;
 };

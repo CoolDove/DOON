@@ -3,7 +3,6 @@
 #include <DoveLog.hpp>
 
 // TODO: give up actions with args
-
 // @Test:
 void press_a() {
     DLOG_TRACE("congratulations!! you pressed a");
@@ -18,7 +17,7 @@ void press_C_S_a() {
 ActionList::ActionList()
 :   curr_page_("def")
 {
-    // @Temp:build action list in code, will be replaced by .doon parsing
+    // @Temp: build action list in code, will be replaced by .doon parsing
     // using namespace Dove;
     // register_key("def", ActionKey{KeyCode::A, ModKey::None}, "press_a");
     // register_action("def", "press_a", press_a);    

@@ -16,5 +16,8 @@ public:
     virtual void on_keyboard_down() {}
     virtual void on_keyboard_up() {}
     virtual void on_keyboard() {}
+
+    virtual void on_update() {}
+    virtual void on_render() {}
 };
 }

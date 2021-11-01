@@ -1,14 +1,15 @@
 ﻿#include "Renderer.h"
 #include "DoveLog.hpp"
 
-#include "Image.h"
-#include "Space.h"
 #include <gl/GL.h>
 #include <DGLCore/GLDebugger.h>
 #include <DGLCore/GLShader.h>
 
-using namespace DGL;
+#include "Image.h"
+#include "Space.h"
+#include "Color.h"
 
+using namespace DGL;
 Renderer::Renderer(Application* _app) {
     app_ = _app;
     init_opengl();
@@ -33,14 +34,32 @@ void Renderer::init() {
 
 void Renderer::recreate_canvas_batch() {
     if (app_->curr_scene_ && app_->curr_scene_->image_.pixels_) {
-        Image* img = &app_->curr_scene_->image_;
-        int width  = app_->curr_scene_->image_.info_.width;
-        int height = app_->curr_scene_->image_.info_.height;
-        // we just need to recreate the batch here, instead of create a new tex_img_, it's abandoned
+        int width  = app_->curr_scene_->info_.width;
+        int height = app_->curr_scene_->info_.height;
+
         batch_.clear();
         batch_.add_quad((float)width, (float)height, "canvas");
         batch_.upload();
     }
+}
+void Renderer::recreate_brush_tex_and_img() {
+    GLTexture2D* brush_tex = &app_->curr_scene_->brush_tex_;
+    Image*       brush_img = &app_->curr_scene_->brush_img_;
+    int width  = app_->curr_scene_->info_.width;
+    int height = app_->curr_scene_->info_.height;
+
+    // recreate image
+    brush_img->recreate(width, height, Col_RGBA{ 0x00, 0x00, 0x00, 0x00 });
+
+    // recreate texture
+    // if (brush_tex->get_inited()) brush_tex->release();
+// 
+    // brush_tex->allocate(1, SizedInternalFormat::RGBA8, width, height);
+    // brush_tex->upload(0, 0, 0, width, height, PixFormat::RGBA, PixType::UNSIGNED_BYTE, brush_img->pixels_);
+    // brush_tex->param_mag_filter(TexFilter::NEAREST);
+    // brush_tex->param_min_filter(TexFilter::NEAREST);
+    // brush_tex->param_wrap_r(TexWrap::CLAMP_TO_EDGE);
+    // brush_tex->param_wrap_s(TexWrap::CLAMP_TO_EDGE);
 }
 
 void Renderer::render() {
@@ -53,17 +72,26 @@ void Renderer::render() {
     RectInt updated_region = scn->get_region();
 
     /***********update part of the scene image to render texture*************/
-    if (updated_region.width != 0 && updated_region.height != 0) {
-        for (int i = updated_region.posy; i < updated_region.posy + updated_region.height; i++) {
-            scn->get_curr_layer()->tex_.upload(
-                0, updated_region.posx, i,
-                updated_region.width, 1,
-                PixFormat::RGBA, PixType::UNSIGNED_BYTE,
-                scn->get_curr_layer()->img_.pixels_ + i * 4 * scn->info_.width + updated_region.posx * 4
-            );
-        }
-        scn->clear_region();
-    };
+    // TODO: move these things to Scene::on_update(); and invoke from application
+    // if (updated_region.width != 0 && updated_region.height != 0) {
+        // for (int i = updated_region.posy; i < updated_region.posy + updated_region.height; i++) {
+            // scn->get_curr_layer()->tex_.upload(
+                // 0, updated_region.posx, i,
+                // updated_region.width, 1,
+                // PixFormat::RGBA, PixType::UNSIGNED_BYTE,
+                // scn->get_curr_layer()->img_.pixels_ + i * 4 * scn->info_.width + updated_region.posx * 4
+            // );
+        // }
+        // scn->clear_region();
+    // };
+    
+    // update brush texture
+    // Image* brush_img = &scn->brush_img_;
+    // scn->brush_tex_.upload(0, 0, 0,
+                           // brush_img->info_.width, brush_img->info_.height,
+                           // PixFormat::RGBA, PixType::UNSIGNED_BYTE,
+                           // brush_img->pixels_);
+
     /***********update part of the scene image to render texture*************/
 
     glEnable(GL_BLEND);
@@ -97,17 +125,18 @@ void Renderer::render() {
     program_canvas_.uniform_mat("_proj", 4, &proj[0][0]);
 
     // draw layers above current layer
-    bool start = true;
+    // bool start = true;
     auto ite = scn->layers_.begin();
     for (auto ite = scn->layers_.begin(); ite != scn->layers_.end(); ite++) {
-        if (ite->get() == scn->get_curr_layer()) {
-            start = true;
-        }
-        if (start) {
-            ite->get()->tex_.bind(0);
-            program_canvas_.uniform_i("_tex", 0);
+        ite->get()->tex_.bind(0);
+        program_canvas_.uniform_i("_tex", 0);
+        batch_.draw_batch();
 
-            batch_.draw_batch();
+        if (ite->get() == scn->get_curr_layer() && dynamic_cast<Tool::Brush*>(app_->curr_tool_)) {
+            // render the brush layer after current layer renderred
+            // dynamic_cast<Tool::Brush*>(app_->curr_tool_)->get_tex()->bind(0);
+            // program_canvas_.uniform_i("_tex", 0);
+            // batch_.draw_batch();
         }
     }
     /********draw canvas for every canvas********/

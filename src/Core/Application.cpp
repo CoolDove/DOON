@@ -28,6 +28,10 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     if (!instance_) 
         instance_ = this;
 
+    // NOTE:
+    // initialization order:
+    // dlog >> window >> render(>>opengl) >> imgui >> tablet >> scene >> tools
+
     init_dlog();
     init_window(_instance, _prev_instance, _cmd_line, _show_code);
     renderer_ = make_unique<Renderer>(this);
@@ -40,11 +44,10 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     // scenes_["anji"]  = make_unique<Scene>("./res/textures/anji.png");
     // scenes_["alp"]   = make_unique<Scene>("./res/textures/alp.png");
     // scenes_["test"]  = make_unique<Scene>("./res/textures/test.png");
-    // scenes_["void2"] = make_unique<Scene>(512, 512, Col_RGBA{0x00, 0x00, 0x00, 0x00});
     // scenes_["void1"] = make_unique<Scene>(2048, 2048, Col_RGBA{0x00, 0x00, 0x00, 0x00});
 
     if (scenes_.size() == 0) {
-        scenes_["void"] = make_unique<Scene>(5120, 5120, Col_RGBA{0x00, 0x00, 0x00, 0x00});
+        scenes_["void"] = make_unique<Scene>(2048, 2048, Col_RGBA{0x00, 0x00, 0x00, 0x00});
     }
     
     curr_scene_ = scenes_.begin()->second.get();
@@ -64,20 +67,33 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     action_list_ = std::make_unique<ActionList>();
 
     action_list_->invoke({Dove::KeyCode::A, Dove::ModKey::None});
+
+    // GLTexture2D tex;
+    // tex.init();
+    // int width  = curr_scene_->info_.width;
+    // int height = curr_scene_->info_.height;
+    // @temp:
+    // Image img(width, height, Col_RGBA{ 0x00, 0x00, 0x00, 0x00 });
+    // tex.allocate(1, SizedInternalFormat::RGBA8, width, height);
+    // tex.upload(0, 0, 0, width, height, PixFormat::RGBA, PixType::UNSIGNED_BYTE, img.pixels_);
 }
 
 Application::~Application() {
-
 }
 
 void Application::run() {
     MSG msg;
     while (BOOL result = GetMessage(&msg, nullptr, 0, 0)) {
         if (result > 0) {
+            // @Update:
             TranslateMessage(&msg);
             DispatchMessage(&msg);
-            render_ui();
+
+            if (curr_scene_) curr_scene_->on_update();
+            if (curr_tool_)  curr_tool_->on_update();
+
             renderer_->render();
+            render_ui();
         } else {
             break;
         }
@@ -114,7 +130,7 @@ void Application::render_ui() {
                     brs->col_.g = (unsigned char)(bcol[1] * 0xff);
                     brs->col_.a = (unsigned char)(bcol[3] * 0xff);
                     brs->col_.b = (unsigned char)(bcol[2] * 0xff);
-                    // ImGui::DragIntRange2("brush_size", &brs->size_min_scale_, &brs->size_max_, 1, 0, 8000);
+
                     ImGui::DragInt("brush_size_max", &brs->size_max_, 0.1f, 1, 7000);
                     ImGui::DragFloat("brush_size_min", &brs->size_min_scale_, 0.01f, 0.0f, 1.0f);
                 }
@@ -178,7 +194,8 @@ void Application::render_ui() {
         for (auto ite = calls->begin(); ite != calls->end(); ite++) {
             auto action_ite = actions->find(ite->second);
             if (action_ite != actions->end()) {
-                ImGui::LabelText(action_ite->first.c_str(), to_string(ite->first).c_str());
+                std::string action_name = to_string(ite->first);
+                ImGui::LabelText(action_ite->first.c_str(), action_name.c_str());
             }
         }
 
@@ -198,7 +215,9 @@ void Application::render_ui() {
 void Application::change_scene(const std::string& _name) {
     if (scenes_.find(_name) != scenes_.end()) {
         curr_scene_ = scenes_[_name].get();
+
         renderer_->recreate_canvas_batch();
+        renderer_->recreate_brush_tex_and_img();
     }
 }
 
@@ -225,7 +244,7 @@ void Application::init_window(HINSTANCE _instance, HINSTANCE _prev_instance, cha
                              wnd_class.lpszClassName, 
                              "DOON", 
                              WS_OVERLAPPEDWINDOW | WS_VISIBLE | WS_THICKFRAME, 
-                            //  WS_SIZEBOX | WS_VISIBLE | WS_CAPTION | WS_SYSMENU, 
+                             // WS_SIZEBOX | WS_VISIBLE | WS_CAPTION | WS_SYSMENU, 
                              CW_USEDEFAULT, 
                              CW_USEDEFAULT,
                              800, 
@@ -266,10 +285,10 @@ void Application::init_imgui() {
     // imgui style
     auto colfom = [](unsigned int _col)->ImVec4{
         unsigned char col[4] = {
-            (_col & 0xff000000)>>24,
-            (_col & 0x00ff0000)>>16,
-            (_col & 0x0000ff00)>> 8,
-            (_col & 0x000000ff)>> 0,
+            (unsigned char)((_col & 0xff000000)>>24),
+            (unsigned char)((_col & 0x00ff0000)>>16),
+            (unsigned char)((_col & 0x0000ff00)>> 8),
+            (unsigned char)((_col & 0x000000ff)>> 0),
         };
         return {(float)col[0]/255.0f, (float)col[1]/255.0f, (float)col[2]/255.0f, (float)col[3]/255.0f};
     };

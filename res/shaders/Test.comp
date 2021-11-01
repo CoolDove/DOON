@@ -5,6 +5,7 @@ layout (local_size_x = 16) in;
 layout (rgba8ui, binding = 0) uniform uimageBuffer src;
 layout (rgba8ui, binding = 1) uniform uimageBuffer dst;
 
+// NOTE: this shader composite the src and dst into dst
 void main(void) {
     int pix_id = int(gl_WorkGroupID.x * 16 + gl_LocalInvocationID.x);
     uvec4 col_src = imageLoad(src, pix_id);

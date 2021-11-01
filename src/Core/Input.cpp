@@ -426,11 +426,8 @@ LRESULT CALLBACK wnd_proc(HWND _window, UINT _message, WPARAM _wparam, LPARAM _l
                         brush->size_max_ += wd;
                     }
                 }
+
             }
-
-            DLOG_TRACE("scrolling... %u", input_context.mod_key);
-	    DLOG_TRACE("this is a number line %d", 123);
-
         } break;
         default:
         {
