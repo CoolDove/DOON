@@ -4,16 +4,6 @@
 
 // TODO: give up actions with args
 // @Test:
-void press_a() {
-    DLOG_TRACE("congratulations!! you pressed a");
-}
-void press_S_a() {
-    DLOG_TRACE("congratulations!! you pressed shift a");
-}
-void press_C_S_a() {
-    DLOG_TRACE("congratulations!! you pressed ctrl shift a");
-}
-
 ActionList::ActionList()
 :   curr_page_("def")
 {
@@ -21,10 +11,10 @@ ActionList::ActionList()
     // using namespace Dove;
     // register_key("def", ActionKey{KeyCode::A, ModKey::None}, "press_a");
     // register_action("def", "press_a", press_a);    
-    // register_key("def", ActionKey{KeyCode::A, ModKey::Shift}, "press_S_a");
-    // register_action("def", "press_S_a", press_S_a);    
-    // register_key("def", ActionKey{KeyCode::A, ModKey::Shift | ModKey::Ctrl}, "press_C_S_a");
-    // register_action("def", "press_C_S_a", press_C_S_a);    
+    // register_key("def", ActionKey{KeyCode::A, ModKey::Shift}, "press_s_a");
+    // register_action("def", "press_s_a", press_s_a);    
+    // register_key("def", ActionKey{KeyCode::A, ModKey::Shift | ModKey::Ctrl}, "press_c_s_a");
+    // register_action("def", "press_c_s_a", press_c_s_a);    
 }
 
 ActionList::~ActionList() {

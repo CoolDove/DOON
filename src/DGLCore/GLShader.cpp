@@ -88,4 +88,9 @@ bool Shader::compile(const std::string& _src, std::string* _compile_msg) {
     return compile_tag;
 }
 
+// void Shader::dispatch(uint32_t _x, uint32_t _y, uint32_t _z) {
+    // assert(type_ == ShaderType::COMPUTE_SHADER && "only compute shader can be dispatched!!!");
+    // bind();
+    // glDispatchCompute(_x, _y, _z);
+// }
 }

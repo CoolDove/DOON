@@ -25,6 +25,8 @@ public:
     bool load(const std::string& _path, std::string* _compile_msg = nullptr);
     bool compile(const std::string& _src, std::string* _compile_msg = nullptr);
 
+    // void dispatch(uint32_t _x, uint32_t _y, uint32_t _z);
+
     void bind() { glUseProgram(id_); }
 
 public:

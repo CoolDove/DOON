@@ -185,7 +185,7 @@ void Application::render_ui() {
         ImGui::LabelText("canvas size",  "-%d * %d-", curr_scene_->info_.width, curr_scene_->info_.height);
         ImGui::EndGroup();
 
-        // action list        
+        // ********** action list ************
         ImGui::BeginGroup();
 
         auto* calls = &action_list_->call_pages_["def"];

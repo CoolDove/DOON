@@ -4,6 +4,7 @@
 #include <Core/Space.h>
 #include <DGLCore/GLDebugger.h>
 #include <DGLCore/GLTexture.h>
+#include <cstring>
 #include <string.h>
 
 namespace Tool
@@ -24,6 +25,17 @@ Brush::Brush(Application* _app)
     tex_.param_min_filter(TexFilter::NEAREST);
 
     resize_image_and_tex();
+
+    try {
+        Shader comp;
+        comp.init(ShaderType::COMPUTE_SHADER);
+        std::string msg;
+        comp.load("./res/shaders/Test.comp", &msg);
+
+        comp_shader_.link(1, &comp);
+    } catch (const EXCEPTION::SHADER_COMPILING_FAILED& exp) {
+        DLOG_ERROR("%s", exp.msg.c_str());
+    }
 }
 
 Brush::~Brush() {
@@ -56,7 +68,44 @@ void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
         holding_ = false;
         DLOG_TRACE("brush up");
         // TODO: brush released, composite brush layer into target layer
+        using namespace DGL;
+        GLTextureBuffer texbuf_src;
+        GLTextureBuffer texbuf_dst;
 
+        // @Temp: composite the whole image for now
+        Layer* curr_layer = app_->curr_scene_->get_curr_layer();
+        int width  = image_.info_.width;
+        int height = image_.info_.height;
+        int size_b = width * height * sizeof(Col_RGBA);
+        BufFlag flag = BufFlag::DYNAMIC_STORAGE_BIT | BufFlag::MAP_READ_BIT | BufFlag::MAP_WRITE_BIT;
+
+        texbuf_src.init();
+        texbuf_src.allocate(size_b, flag, SizedInternalFormat::RGBA8);
+        Col_RGBA* ptr_src = (Col_RGBA*)texbuf_src.buffer_->map(Access::READ_WRITE);
+        memcpy(ptr_src, image_.pixels_, size_b);
+        texbuf_src.buffer_->unmap();
+
+        texbuf_dst.init();
+        texbuf_dst.allocate(size_b, flag, SizedInternalFormat::RGBA8);
+        Col_RGBA* ptr_dst = (Col_RGBA*)texbuf_dst.buffer_->map(Access::READ_WRITE);
+        memcpy(ptr_dst, curr_layer->img_.pixels_, size_b);
+        texbuf_dst.buffer_->unmap();
+        
+        texbuf_src.bind_image(0, Access::READ_WRITE, ImageUnitFormat::RGBA8UI);
+        texbuf_dst.bind_image(1, Access::READ_WRITE, ImageUnitFormat::RGBA8UI);
+
+        // comp_shader_.dispatch(width * height / 16, 1, 1);
+        comp_shader_.bind();
+        glDispatchCompute(width * height / 16, 1, 1);
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+        ptr_dst = (Col_RGBA*)texbuf_dst.buffer_->map(Access::READ_WRITE);
+        memcpy(curr_layer->img_.pixels_, ptr_dst, size_b);
+        texbuf_dst.buffer_->unmap();
+        // clear brush image
+        memset(image_.pixels_, 0x00, size_b);
+
+        // done
     }
 }
 

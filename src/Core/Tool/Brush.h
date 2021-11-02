@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "Tool.h"
 #include <Core/Color.h>
-#include <DGLCore/GLShader.h>
+#include <DGLCore/GLProgram.h>
 #include <DGLCore/GLTexture.h>
 #include <Core/Image.h>
 
@@ -9,7 +9,9 @@
 // should them belong to Brush class?
 // or they should be treated as a brush layer?
 
-using namespace DGL;
+using DGL::GLTexture2D;
+using DGL::Program;
+
 class Application;
 namespace Tool
 {
@@ -50,6 +52,6 @@ private:
 
 private:
     // @temp: doesn't belong here, should be removed someday
-    DGL::Shader* composition_shader_;    
+    Program      comp_shader_;    
 };
 }
