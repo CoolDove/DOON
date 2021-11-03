@@ -5,6 +5,7 @@
 #include <thread>
 #include <Windows.h>
 
+#include <Core/Compositor.h>
 #include "Scene.h"
 #include "Tool/Tools.h"
 
@@ -41,15 +42,15 @@ public:
     Scene* curr_scene_;
     unordered_map<string, unique_ptr<Scene>> scenes_;
 
-/* TOOLS */
+    // @Tools:
     Tool::Tool*             curr_tool_;
     struct {
     unique_ptr<Tool::Brush> brush;
     // ...
     } tools_;
-/* TOOLS */
 
     unique_ptr<Renderer>    renderer_;
+    unique_ptr<Compositor>  compositor_;
 
 public:// window
     bool    inited_;

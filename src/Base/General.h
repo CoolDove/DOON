@@ -1,6 +1,9 @@
 #pragma once
 #include <stdint.h>
 
+#define out__
+#define in__
+
 // TODO: finish this file, uvector things...
 
 namespace Dove {

@@ -37,11 +37,7 @@ Scene::Scene(unsigned int _width, unsigned int _height, Col_RGBA _col)
 
     add_layer(_col);
 
-    // TODO: brush tex and img here is not used, remove them someday
-    // brush_tex_.init();
-    // brush_tex_.allocate(1, SizedInternalFormat::RGBA8, _width, _height);
-    // brush_tex_.upload(0, 0, 0, _width, _height, PixFormat::RGBA, PixType::UNSIGNED_BYTE, brush_img_.pixels_);
-
+    // TODO: compose all the layers into result tex
     // @doing: initialize the result tex
     result_tex_.init();
     result_tex_.allocate(1, SizedInternalFormat::RGBA8, _width, _height);
@@ -83,7 +79,7 @@ void Scene::on_update() {
         for (int i = region_.posy; i < region_.posy + region_.height; i++) {
             tex->upload(0, region_.posx, i, region_.width, 1,
                         PixFormat::RGBA, PixType::UNSIGNED_BYTE,
-                        (Col_RGBA*)img->pixels_ + i * info_.width + region_.posx);
+                        img->pixels_ + i * info_.width + region_.posx);
         }
 
         clear_region();
@@ -93,7 +89,7 @@ void Scene::on_update() {
     Image*       img = &curr_layer_ite_->get()->img_;
     tex->upload(0, 0, 0, info_.width, info_.height,
                 PixFormat::RGBA, PixType::UNSIGNED_BYTE,
-                (Col_RGBA*)img->pixels_);
+                img->pixels_);
 
     #endif
 }

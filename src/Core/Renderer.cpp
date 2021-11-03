@@ -1,5 +1,7 @@
 ﻿#include "Renderer.h"
 #include "Base/General.h"
+#include "DGLCore/GLEnums.h"
+#include "DGLCore/GLTexture.h"
 #include "DoveLog.hpp"
 
 #include <gl/GL.h>
@@ -90,14 +92,25 @@ void Renderer::render() {
 
         if (ite->get() == scn->get_curr_layer() && dynamic_cast<Tool::Brush*>(app_->curr_tool_)) {
             // render the brush layer after current layer renderred
-            // dynamic_cast<Tool::Brush*>(app_->curr_tool_)->get_tex()->bind(0);
-            // @doing: new LayerImage replacement
             dynamic_cast<Tool::Brush*>(app_->curr_tool_)->layer_img_.tex_->bind(0);
             program_canvas_.uniform_i("_tex", 0);
             batch_.draw_batch();
         }
     }
     /********draw canvas for every canvas********/
+
+    // @SubImageTest: test image functions
+    // GLTexture2D test_tex;
+    // test_tex.init();
+    // test_tex.allocate(1, SizedInternalFormat::RGBA8, 512, 512);
+// 
+    // Image sub_img(&app_->curr_scene_->get_curr_layer()->img_, Dove::IRect2D{0, 0, 512, 512});
+// 
+    // test_tex.upload(0, 0, 0, 512, 512,
+                    // PixFormat::RGBA, PixType::UNSIGNED_BYTE, sub_img.pixels_);
+    // test_tex.bind(0);
+    // batch_.draw_batch();
+    // @SubImageTest: test image functions
 }
 
 void Renderer::init_opengl() {
