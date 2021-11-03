@@ -19,7 +19,9 @@ Layer::~Layer() {
 
 }
 
-LayerImage::LayerImage(int _width, int _height, Col_RGBA _col, bool _attach) {
+LayerImage::LayerImage(int _width, int _height, Col_RGBA _col, bool _attach)
+:   gl_attached_(false)
+{
     img_ = std::make_unique<Image>(_width, _height, _col);
 
     if (_attach) {
@@ -35,6 +37,7 @@ LayerImage::~LayerImage() {
 
 void LayerImage::attach_gltex() {
     using namespace DGL;
+    if (gl_attached_) return;
 
     tex_ = std::make_unique<GLTexture2D>();
 
@@ -52,6 +55,8 @@ void LayerImage::attach_gltex() {
 }
 
 void LayerImage::update_tex(bool _whole) {
+    if (!gl_attached_) return;
+
     using namespace DGL;
     int width  = img_->info_.width;
     int height = img_->info_.height;
@@ -66,7 +71,6 @@ void LayerImage::update_tex(bool _whole) {
 }
 
 void LayerImage::mark_dirt(Dove::IRect2D _region) {
-    // IAABBox2D box = rect_to_aabb(_region); 
     dirt_region_ = Dove::merge_rect(_region, dirt_region_);
 }
 

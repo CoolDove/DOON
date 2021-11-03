@@ -25,7 +25,6 @@ public:
     void clear_dirt();
 
     void update_tex(bool _whole);
-
     void attach_gltex();
 
     Dove::IRect2D get_dirt_region()   const { return dirt_region_; };
