@@ -1,4 +1,5 @@
 ﻿#include "Renderer.h"
+#include "Base/General.h"
 #include "DoveLog.hpp"
 
 #include <gl/GL.h>
@@ -50,7 +51,7 @@ void Renderer::render() {
 
     Scene* scn = app_->curr_scene_;
     Image* img = &app_->curr_scene_->image_;
-    RectInt updated_region = scn->get_region();
+    Dove::IRect2D updated_region = scn->get_region();
 
     glEnable(GL_BLEND);
     glBlendEquation(GL_FUNC_ADD);
@@ -89,7 +90,9 @@ void Renderer::render() {
 
         if (ite->get() == scn->get_curr_layer() && dynamic_cast<Tool::Brush*>(app_->curr_tool_)) {
             // render the brush layer after current layer renderred
-            dynamic_cast<Tool::Brush*>(app_->curr_tool_)->get_tex()->bind(0);
+            // dynamic_cast<Tool::Brush*>(app_->curr_tool_)->get_tex()->bind(0);
+            // @doing: new LayerImage replacement
+            dynamic_cast<Tool::Brush*>(app_->curr_tool_)->layer_img_.tex_->bind(0);
             program_canvas_.uniform_i("_tex", 0);
             batch_.draw_batch();
         }

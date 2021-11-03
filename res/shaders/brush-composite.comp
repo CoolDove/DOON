@@ -1,0 +1,49 @@
+#version 450 core
+
+// NOTE: this shader is used to composite a painted brush layer into current layer
+
+layout (local_size_x = 16) in;
+
+// NOTE: src overlapes dst
+layout (rgba8ui, binding = 0) uniform uimageBuffer src;
+layout (rgba8ui, binding = 1) uniform uimageBuffer dst;
+
+vec4 u2f(uvec4 _ucol) {
+    vec4 col;
+    col.r = float(_ucol.r) / float(0xff);
+    col.g = float(_ucol.g) / float(0xff);
+    col.b = float(_ucol.b) / float(0xff);
+    col.a = float(_ucol.a) / float(0xff);
+    return col;
+}
+
+uvec4 f2u(vec4 _fcol) {
+    uvec4 col;
+    col.r = uint(_fcol.r * 0xff);
+    col.g = uint(_fcol.g * 0xff);
+    col.b = uint(_fcol.b * 0xff);
+    col.a = uint(_fcol.a * 0xff);
+    return col;
+}
+
+void main(void) {
+    int pix_id = int(gl_WorkGroupID.x * 16 + gl_LocalInvocationID.x);
+    uvec4 col_src = imageLoad(src, pix_id);
+    uvec4 col_dst = imageLoad(dst, pix_id);
+
+    vec4 colf_src = u2f(col_src);
+    vec4 colf_dst = u2f(col_dst);
+
+    float src_a = float(col_src.a) / float(0xff);
+    float src_b = float(col_src.b) / float(0xff);
+
+    float outa = colf_dst.a + colf_src.a * (1 - col_dst.a);
+    vec4  colf = (colf_dst * colf_dst.a + colf_src * colf_src.a * (1 - colf_dst.a)) / outa;
+    colf.a = outa;
+
+    uvec4 ucol = f2u(colf);
+
+    imageStore(dst, pix_id, ucol);
+}
+
+

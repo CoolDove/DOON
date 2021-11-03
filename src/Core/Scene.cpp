@@ -1,8 +1,10 @@
 ﻿#include "Scene.h"
+#include "Base/General.h"
 #include "stb_image/stb_image.h"
 #include <Core/Sampler.h>
 #include <DoveLog.hpp>
 #include <DGLCore/GLDebugger.h>
+#include <stdint.h>
 
 // Scene::Scene(const char* _image_path)
 // :   image_(_image_path, 0)
@@ -17,8 +19,9 @@
 
 Scene::Scene(unsigned int _width, unsigned int _height, Col_RGBA _col)
 :   image_(_width, _height, _col),
-    region_{0},
-    brush_img_(_width, _height, _col)
+    brush_img_(_width, _height, _col),
+    result_img_(_width, _height, _col),
+    region_{0}
 {
     camera_.position_.x = 0.0f;
     camera_.position_.y = 0.0f;
@@ -34,16 +37,45 @@ Scene::Scene(unsigned int _width, unsigned int _height, Col_RGBA _col)
 
     add_layer(_col);
 
-    brush_tex_.init();
-    brush_tex_.allocate(1, SizedInternalFormat::RGBA8, _width, _height);
-    brush_tex_.upload(0, 0, 0, _width, _height, PixFormat::RGBA, PixType::UNSIGNED_BYTE, brush_img_.pixels_);
+    // TODO: brush tex and img here is not used, remove them someday
+    // brush_tex_.init();
+    // brush_tex_.allocate(1, SizedInternalFormat::RGBA8, _width, _height);
+    // brush_tex_.upload(0, 0, 0, _width, _height, PixFormat::RGBA, PixType::UNSIGNED_BYTE, brush_img_.pixels_);
 
-    merge_region({0, 0, info_.width, info_.height});
+    // @doing: initialize the result tex
+    result_tex_.init();
+    result_tex_.allocate(1, SizedInternalFormat::RGBA8, _width, _height);
+    result_tex_.upload(0, 0, 0, _width, _height, PixFormat::RGBA, PixType::UNSIGNED_BYTE, result_img_.pixels_);
+
+    // @sec: load compose shader(program)
+    DGL::Shader computer;
+    computer.init(DGL::ShaderType::COMPUTE_SHADER);
+
+    try {
+        computer.load("./res/shaders/brush-composite.comp");
+    } catch (const DGL::EXCEPTION::SHADER_COMPILING_FAILED& err) {
+        DLOG_ERROR("shader err: %s", err.msg.c_str());
+        assert(1 && "failed to compile compute shader");
+    }
+    compose_shader_.init();
+    compose_shader_.link(1, &computer);
+
+    Dove::IRect2D region;
+    region.posx = region.posy = 0;
+    region.width = (uint32_t)info_.width;
+    region.height = (uint32_t)info_.height;
+    
+    merge_region(region);
 }
 
 void Scene::on_update() {
-    // TODO: upload the updated region of current layer
+    // #define REGION_UPLOAD
+    // FIXME:
+    // because the brush doesnt correctly setup the updated region after brush released for now.
+    // so we cannot use REGION_UPLOAD, fix this later
     using namespace DGL;
+
+    #ifdef REGION_UPLOAD
     if (region_.width != 0 && region_.height != 0) {
         GLTexture2D* tex = &curr_layer_ite_->get()->tex_;
         Image*       img = &curr_layer_ite_->get()->img_;
@@ -56,6 +88,14 @@ void Scene::on_update() {
 
         clear_region();
     }
+    #else
+    GLTexture2D* tex = &curr_layer_ite_->get()->tex_;
+    Image*       img = &curr_layer_ite_->get()->img_;
+    tex->upload(0, 0, 0, info_.width, info_.height,
+                PixFormat::RGBA, PixType::UNSIGNED_BYTE,
+                (Col_RGBA*)img->pixels_);
+
+    #endif
 }
 
 void Scene::add_layer(Col_RGBA _col) {
@@ -107,17 +147,8 @@ bool Scene::previous_layer() {
     return false;
 }
 
-void Scene::merge_region(RectInt _region) {
-    if (_region.width == 0 || _region.height == 0) {
-        int x = glm::min(_region.posx, region_.posx);
-        int y = glm::min(_region.posy, region_.posy);
-        int w = glm::max(_region.width + _region.posx, region_.width + region_.posx) - x;
-        int h = glm::max(_region.height + _region.posy, region_.height + region_.posy) - y;
-        region_ = {x, y, w, h};
-    }
-    else {
-        region_ = _region;
-    }
+void Scene::merge_region(Dove::IRect2D _region) {
+    region_ = Dove::merge_rect(_region, region_);
 }
 
 void Scene::clear_region() {

@@ -1,4 +1,7 @@
 ﻿#include "Brush.h"
+#include "Base/General.h"
+#include "Core/Color.h"
+#include "Core/Scene.h"
 #include "DoveLog.hpp"
 #include <Core/Application.h>
 #include <Core/Space.h>
@@ -7,6 +10,7 @@
 #include <cstring>
 #include <string.h>
 
+// @doing: remove old img and tex pair
 namespace Tool
 {
 Brush::Brush(Application* _app) 
@@ -14,23 +18,18 @@ Brush::Brush(Application* _app)
     holding_(false),
     col_{0xff,0xff,0xff,0xff},
     size_min_scale_(0.01f),
-    size_max_(20)
+    size_max_(20),
+    layer_img_(_app->curr_scene_->info_.width, _app->curr_scene_->info_.height, Col_RGBA{0x00, 0x00, 0x00, 0x00}, true)
 {
     DLOG_TRACE("brush constructed");
 
-    // TODO: load compostion shader
     using namespace DGL;
-    tex_.init();
-    tex_.param_mag_filter(TexFilter::NEAREST);
-    tex_.param_min_filter(TexFilter::NEAREST);
-
-    resize_image_and_tex();
-
     try {
         Shader comp;
         comp.init(ShaderType::COMPUTE_SHADER);
-        std::string msg;
-        comp.load("./res/shaders/Test.comp", &msg);
+
+        // TODO: correct the blend function
+        comp.load("./res/shaders/brush-composite.comp");
 
         comp_shader_.link(1, &comp);
     } catch (const EXCEPTION::SHADER_COMPILING_FAILED& exp) {
@@ -52,8 +51,7 @@ void Brush::on_deactivate() {
 }
 
 void Brush::on_update() {
-    // upload the whole tex for now, because it ...
-    tex_.upload(0, 0, 0, image_.info_.width, image_.info_.height, PixFormat::RGBA, PixType::UNSIGNED_BYTE, image_.pixels_);
+    layer_img_.update_tex(true);
 }
 
 void Brush::on_pointer_down(Input::PointerInfo _info, int _x, int _y) {
@@ -67,22 +65,22 @@ void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
     if (holding_) {
         holding_ = false;
         DLOG_TRACE("brush up");
-        // TODO: brush released, composite brush layer into target layer
+
         using namespace DGL;
         GLTextureBuffer texbuf_src;
         GLTextureBuffer texbuf_dst;
 
         // @Temp: composite the whole image for now
         Layer* curr_layer = app_->curr_scene_->get_curr_layer();
-        int width  = image_.info_.width;
-        int height = image_.info_.height;
+        int width  = layer_img_.img_->info_.width;
+        int height = layer_img_.img_->info_.height;
         int size_b = width * height * sizeof(Col_RGBA);
         BufFlag flag = BufFlag::DYNAMIC_STORAGE_BIT | BufFlag::MAP_READ_BIT | BufFlag::MAP_WRITE_BIT;
 
         texbuf_src.init();
         texbuf_src.allocate(size_b, flag, SizedInternalFormat::RGBA8);
         Col_RGBA* ptr_src = (Col_RGBA*)texbuf_src.buffer_->map(Access::READ_WRITE);
-        memcpy(ptr_src, image_.pixels_, size_b);
+        memcpy(ptr_src, layer_img_.img_->pixels_, size_b);
         texbuf_src.buffer_->unmap();
 
         texbuf_dst.init();
@@ -94,7 +92,6 @@ void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
         texbuf_src.bind_image(0, Access::READ_WRITE, ImageUnitFormat::RGBA8UI);
         texbuf_dst.bind_image(1, Access::READ_WRITE, ImageUnitFormat::RGBA8UI);
 
-        // comp_shader_.dispatch(width * height / 16, 1, 1);
         comp_shader_.bind();
         glDispatchCompute(width * height / 16, 1, 1);
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
@@ -103,8 +100,7 @@ void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
         memcpy(curr_layer->img_.pixels_, ptr_dst, size_b);
         texbuf_dst.buffer_->unmap();
         // clear brush image
-        memset(image_.pixels_, 0x00, size_b);
-
+        memset(layer_img_.img_->pixels_, 0x00, size_b);
         // done
     }
 }
@@ -139,9 +135,14 @@ void Brush::on_pointer(Input::PointerInfo _info, int _x, int _y) {
         int size_min = (int)(size_min_scale_ * size_max_);
         unsigned int brush_size = (unsigned int)((pressure / 1024.0f) * (size_max_ - (size_min)) + size_min);
 
-        // const Image* tgt_img = &app_->curr_scene_->get_curr_layer()->img_;
-        const Image* tgt_img = &image_;
+        // NOTE: we got three different target layer here:
+        // - current scene layer
+        // - brush layer, in an older way -- splitted tex and img
+        // - brush layer, in an new way -- LayerImage
 
+        // const Image* tgt_img = &app_->curr_scene_->get_curr_layer()->img_;
+        // const Image* tgt_img = &image_;
+        const Image* tgt_img = layer_img_.img_.get();// it's working!! nice
         draw_circle((int)cs_pos.x + half_width, -(int)cs_pos.y + half_height, brush_size, tgt_img);
     }
 }
@@ -180,27 +181,31 @@ void Brush::draw_circle(int _x, int _y, int _r, const Image* _target_img) {
     }
 
     // mark the updated region of current scene
-    RectInt region;
+    Dove::IRect2D region;
     Scene* scn = app_->curr_scene_;
     region.posx   = glm::max(_x - _r, 0);
     region.posy   = glm::max(_y - _r, 0);
     region.width  = glm::min(_x + _r, scn->info_.width) - region.posx;
     region.height = glm::min(_y + _r, scn->info_.height) - region.posy;
 
+    // scn->merge_region(region);
     scn->merge_region(region);
+
+    // @LayerImageInte:
+    layer_img_.mark_dirt(region);
 }
 
-void Brush::resize_image_and_tex() {
-    if (app_->curr_scene_) {
-        Scene* scn = app_->curr_scene_;
-        int width  = scn->info_.width;
-        int height = scn->info_.height;
-
-        image_.recreate(width, height, Col_RGBA{0x00, 0x00, 0x00, 0x00});
-
-        tex_.allocate(1, DGL::SizedInternalFormat::RGBA8, width, height);
-        tex_.upload(0, 0, 0, width, height, PixFormat::RGBA, PixType::UNSIGNED_BYTE, image_.pixels_);
-    }
+void Brush::resize_layer_img() {
+    // if (app_->curr_scene_) {
+        // Scene* scn = app_->curr_scene_;
+        // int width  = scn->info_.width;
+        // int height = scn->info_.height;
+// 
+        // image_.recreate(width, height, Col_RGBA{0x00, 0x00, 0x00, 0x00});
+// 
+        // tex_.allocate(1, DGL::SizedInternalFormat::RGBA8, width, height);
+        // tex_.upload(0, 0, 0, width, height, PixFormat::RGBA, PixType::UNSIGNED_BYTE, image_.pixels_);
+    // }
 }
 
 }

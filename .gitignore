@@ -30,3 +30,4 @@ compile_commands.json
 launch.json
 /.cache/
 build.bat
+update.bat

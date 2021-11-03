@@ -18,3 +18,58 @@ Layer::Layer(unsigned int _width, unsigned int _height, std::string _name, Col_R
 Layer::~Layer() {
 
 }
+
+LayerImage::LayerImage(int _width, int _height, Col_RGBA _col, bool _attach) {
+    img_ = std::make_unique<Image>(_width, _height, _col);
+
+    if (_attach) {
+        attach_gltex();
+    } else {
+        tex_ = nullptr;
+    }
+}
+
+LayerImage::~LayerImage() {
+  
+}
+
+void LayerImage::attach_gltex() {
+    using namespace DGL;
+
+    tex_ = std::make_unique<GLTexture2D>();
+
+    int width  = img_->info_.width;
+    int height = img_->info_.height;
+    tex_->init();
+    tex_->param_mag_filter(DGL::TexFilter::NEAREST);
+    tex_->param_min_filter(DGL::TexFilter::NEAREST);
+    tex_->param_wrap_r(DGL::TexWrap::CLAMP_TO_EDGE);
+    tex_->param_wrap_s(DGL::TexWrap::CLAMP_TO_EDGE);
+    tex_->allocate(1, DGL::SizedInternalFormat::RGBA8, width, height);
+    tex_->upload(0, 0, 0, width, height, PixFormat::RGBA, PixType::UNSIGNED_BYTE, img_->pixels_);
+
+    gl_attached_ = true;
+}
+
+void LayerImage::update_tex(bool _whole) {
+    using namespace DGL;
+    int width  = img_->info_.width;
+    int height = img_->info_.height;
+    
+    if (_whole) {
+        tex_->upload(0, 0, 0, width, height, PixFormat::RGBA, PixType::UNSIGNED_BYTE, img_->pixels_);
+    } else {
+        // TODO: finish this
+        assert(1 && "dont use dirt update for now!!!! it's not done yet");
+    }
+    clear_dirt();
+}
+
+void LayerImage::mark_dirt(Dove::IRect2D _region) {
+    // IAABBox2D box = rect_to_aabb(_region); 
+    dirt_region_ = Dove::merge_rect(_region, dirt_region_);
+}
+
+void LayerImage::clear_dirt() {
+    dirt_region_ = {0};
+}
