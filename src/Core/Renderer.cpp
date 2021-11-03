@@ -98,19 +98,6 @@ void Renderer::render() {
         }
     }
     /********draw canvas for every canvas********/
-
-    // @SubImageTest: test image functions
-    // GLTexture2D test_tex;
-    // test_tex.init();
-    // test_tex.allocate(1, SizedInternalFormat::RGBA8, 512, 512);
-// 
-    // Image sub_img(&app_->curr_scene_->get_curr_layer()->img_, Dove::IRect2D{0, 0, 512, 512});
-// 
-    // test_tex.upload(0, 0, 0, 512, 512,
-                    // PixFormat::RGBA, PixType::UNSIGNED_BYTE, sub_img.pixels_);
-    // test_tex.bind(0);
-    // batch_.draw_batch();
-    // @SubImageTest: test image functions
 }
 
 void Renderer::init_opengl() {
