@@ -29,7 +29,8 @@ Image::Image(unsigned int _width, unsigned int _height, Col_RGBA _base_color)
     recreate(_width, _height, _base_color);
 }
 
-// TODO: optimize this
+// NOTE: this is used to create a sub image
+// TODO: optimize this [special situation][multi-threads][a retained buffer for temp subimage]
 Image::Image(const Image *_src, Dove::IRect2D _region)
 :   inited_(false),
     info_{0}
@@ -54,8 +55,8 @@ Image::Image(const Image *_src, Dove::IRect2D _region)
     info_.height = _region.height;
     pixels_ = (Col_RGBA*)malloc(info_.width * info_.height * sizeof(Col_RGBA));
     Col_RGBA* ptr_dst = pixels_;
-    Col_RGBA* ptr_src = _src->pixels_ + _region.posx;
-    for (int i = _region.posy; i < _region.posy + _region.height; i++) {
+    Col_RGBA* ptr_src = _src->pixels_ + _src->info_.width * _region.posy + _region.posx;
+    for (int i = _region.posy; i < _region.posy + (int)_region.height; i++) {
         memcpy(ptr_dst, ptr_src, _region.width * sizeof(Col_RGBA));
         ptr_dst += _region.width;
         ptr_src += _src->info_.width;
@@ -82,6 +83,7 @@ void Image::recreate(unsigned int _width, unsigned int _height, Col_RGBA _base_c
     inited_ = true;
 }
 
+// FIXME: stupid error!!!
 void Image::set_subimage(const Image *_img, Dove::IVector2D _pos) {
     Dove::IRect2D region_src; // for _img
     Dove::IRect2D region_dst; // for this
@@ -94,7 +96,7 @@ void Image::set_subimage(const Image *_img, Dove::IVector2D _pos) {
         return _v;
     };
 
-    if (_pos.x > info_.width || _pos.y > info_.height) return;
+    if (_pos.x > (int)info_.width || _pos.y > (int)info_.height) return;
     if (_pos.x < -_img->info_.width || _pos.y < -_img->info_.height) return;
 
     if (_pos.x >= 0) {
@@ -124,11 +126,13 @@ void Image::set_subimage(const Image *_img, Dove::IVector2D _pos) {
         region_dst.posy = 0;
         region_dst.height = region_src.height;
     }
+
     // @set:
+    // Col_RGBA* ptr_src = _img->pixels_ + region_src.posy * _img->info_.width + region_src.posx;
     Col_RGBA* ptr_src = _img->pixels_ + region_src.posy * _img->info_.width + region_src.posx;
     Col_RGBA* ptr_dst = pixels_ + region_dst.posy * info_.width + region_dst.posx;
 
-    for (int i = 0; i < region_src.height; i++) {
+    for (int i = 0; i < (int)region_src.height; i++) {
         memcpy(ptr_dst, ptr_src, region_src.width * sizeof(Col_RGBA));
         ptr_src += _img->info_.width;
         ptr_dst += info_.width;
