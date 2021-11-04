@@ -180,6 +180,7 @@ void Application::render_ui() {
                      ImGuiWindowFlags_NoTitleBar|
                      ImGuiWindowFlags_AlwaysAutoResize)) 
     {
+        ImGui::LabelText("render interval", "delt: %3.1fms \tFPS: %.0f", io.DeltaTime * 1000.0f, 1.0f / io.DeltaTime);
         ImGui::LabelText("mouse pos", "[%.0f, %.0f] ", io.MousePos.x, io.MousePos.y);
         ImGui::Selectable("imgui capturing mouse", io.WantCaptureMouse);
         ImGui::Selectable("imgui capturing keyboard", io.WantCaptureKeyboard);

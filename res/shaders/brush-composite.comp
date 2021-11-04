@@ -1,7 +1,6 @@
 #version 450 core
 
 // NOTE: this shader is used to composite a painted brush layer into current layer
-
 layout (local_size_x = 16) in;
 
 // NOTE: src overlapes dst
@@ -37,13 +36,12 @@ void main(void) {
     float src_a = float(col_src.a) / float(0xff);
     float src_b = float(col_src.b) / float(0xff);
 
-    float outa = colf_dst.a + colf_src.a * (1 - col_dst.a);
-    vec4  colf = (colf_dst * colf_dst.a + colf_src * colf_src.a * (1 - colf_dst.a)) / outa;
+    float outa = colf_src.a + colf_dst.a * (1 - colf_src.a);
+    vec4  colf = (colf_src * colf_src.a + colf_dst * colf_dst.a * (1 - colf_src.a)) / outa;
     colf.a = outa;
 
     uvec4 ucol = f2u(colf);
 
     imageStore(dst, pix_id, ucol);
+    // imageStore(dst, pix_id, f2u(colf_src * colf_dst));
 }
-
-

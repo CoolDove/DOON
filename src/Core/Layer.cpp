@@ -68,6 +68,8 @@ void LayerImage::update_tex(bool _whole) {
         tex_->upload(0, 0, 0, width, height, PixFormat::RGBA, PixType::UNSIGNED_BYTE, img_->pixels_);
     } else {
         Dove::IRect2D rect = dirt_region_;
+        if (!rect.width || !rect.height) return;
+
         Col_RGBA* ptr = img_->pixels_ + rect.posy * img_->info_.width + rect.posx;
         for (int i = rect.posy; i < rect.posy + rect.height; i++) {
             tex_->upload(0, rect.posx, i,

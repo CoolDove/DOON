@@ -59,7 +59,6 @@ void Brush::on_update() {
 
 void Brush::on_pointer_down(Input::PointerInfo _info, int _x, int _y) {
     if (!holding_) {
-        painting_region_ = {0};
         DLOG_TRACE("brush down");
         holding_ = true;
     }
@@ -76,7 +75,7 @@ void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
         GLTextureBuffer texbuf_src;
         GLTextureBuffer texbuf_dst;
 
-        // @TempComposition: composite the whole image for now
+        // @Composition: composite the whole image for now
         Layer* curr_layer = app_->curr_scene_->get_curr_layer();
         Dove::IRect2D* p_region = &painting_region_;
         int width  = p_region->width;
@@ -118,15 +117,22 @@ void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
         curr_layer->img_.set_subimage(&dst_sub, p_region->position);
         texbuf_dst.buffer_->unmap();
 
-        // clear brush layer
+
+        // TODO: record brush command into commands history
+        // ...
+        
+        // @Clear:
+        // clear brush layer, then mark the whole brush layer image as dirty,
+        // so that next rendering it will be blank
         uint32_t layer_w = brush_layer_img_.img_->info_.width;
         uint32_t layer_h = brush_layer_img_.img_->info_.height;
         uint32_t layer_s = layer_w * layer_h * sizeof(Col_RGBA);
         memset(brush_layer_img_.img_->pixels_, 0x00, layer_s);
-
         brush_layer_img_.mark_dirt(*p_region);
+        // mark the scene layer img to be dirty, let it recompose all the needed layers
         app_->curr_scene_->merge_region(*p_region);
 
+        // clear painting_region
         painting_region_ = {0};
         // done
     }
