@@ -54,7 +54,7 @@ void Brush::on_deactivate() {
 }
 
 void Brush::on_update() {
-    brush_layer_img_.update_tex(true);
+    brush_layer_img_.update_tex(false);
 }
 
 void Brush::on_pointer_down(Input::PointerInfo _info, int _x, int _y) {
@@ -123,7 +123,8 @@ void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
         uint32_t layer_h = brush_layer_img_.img_->info_.height;
         uint32_t layer_s = layer_w * layer_h * sizeof(Col_RGBA);
         memset(brush_layer_img_.img_->pixels_, 0x00, layer_s);
-        brush_layer_img_.mark_dirt(Dove::IRect2D{0, 0, layer_w, layer_h});
+
+        brush_layer_img_.mark_dirt(*p_region);
         app_->curr_scene_->merge_region(*p_region);
 
         painting_region_ = {0};
@@ -136,6 +137,7 @@ void Brush::on_pointer(Input::PointerInfo _info, int _x, int _y) {
 
     if (_info.btn_state.mouse_l || _info.pen_info.pressure > 0)
     {
+        // TODO: paint multiple brush ink dots
         float pressure = _info.pen_info.pressure ? (float)_info.pen_info.pressure : 1024.0f;
 
         int wnd_width = app_->window_info_.width;
@@ -161,15 +163,12 @@ void Brush::on_pointer(Input::PointerInfo _info, int _x, int _y) {
         int size_min = (int)(size_min_scale_ * size_max_);
         unsigned int brush_size = (unsigned int)((pressure / 1024.0f) * (size_max_ - (size_min)) + size_min);
 
-        // NOTE: we got three different target layer here:
-        // - current scene layer
-        // - brush layer, in an older way -- splitted tex and img
-        // - brush layer, in an new way -- LayerImage
         const Image* tgt_img = brush_layer_img_.img_.get();
         Dove::IRect2D step_region = draw_circle((int)cs_pos.x + half_width, -(int)cs_pos.y + half_height, brush_size, tgt_img);
-        painting_region_ = Dove::merge_rect(painting_region_, step_region);
 
+        painting_region_ = Dove::merge_rect(painting_region_, step_region);
         brush_layer_img_.mark_dirt(step_region);
+
         app_->curr_scene_->merge_region(step_region);
     }
 }

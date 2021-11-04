@@ -1,4 +1,7 @@
 ﻿#include "Layer.h"
+#include "Base/General.h"
+#include "Core/Color.h"
+#include "DGLCore/GLTexture.h"
 
 Layer::Layer(unsigned int _width, unsigned int _height, std::string _name, Col_RGBA _col) 
 :   img_(_width, _height, _col)
@@ -64,8 +67,14 @@ void LayerImage::update_tex(bool _whole) {
     if (_whole) {
         tex_->upload(0, 0, 0, width, height, PixFormat::RGBA, PixType::UNSIGNED_BYTE, img_->pixels_);
     } else {
-        // TODO: finish this
-        assert(1 && "dont use dirt update for now!!!! it's not done yet");
+        Dove::IRect2D rect = dirt_region_;
+        Col_RGBA* ptr = img_->pixels_ + rect.posy * img_->info_.width + rect.posx;
+        for (int i = rect.posy; i < rect.posy + rect.height; i++) {
+            tex_->upload(0, rect.posx, i,
+                         rect.width, 1,
+                         PixFormat::RGBA, PixType::UNSIGNED_BYTE, ptr);
+            ptr += img_->info_.width;
+        }
     }
     clear_dirt();
 }
