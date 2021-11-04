@@ -33,7 +33,6 @@ enum class SizedInternalFormat : uint32_t {
     RGBA4          = 0x8056,
     RGB5_A1        = 0x8057,
 
-
     RGBA8          = 0x8058,
     RGBA8_SNORM    = 0x8F97,
 

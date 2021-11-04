@@ -39,9 +39,10 @@ public:
     Col_RGBA   col_;
 
 public:
-    LayerImage layer_img_;
+    LayerImage    brush_layer_img_;
+    Dove::IRect2D painting_region_;
 private:
-    void draw_circle(int _x, int _y, int _r, const Image* _target_img);
+    Dove::IRect2D draw_circle(int _x, int _y, int _r, const Image* _target_img);
 
     Application* app_;
     bool         holding_;

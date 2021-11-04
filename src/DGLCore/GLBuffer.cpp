@@ -9,7 +9,8 @@ namespace DGL
 Buffer::Buffer() 
 :	id_(0),
     size_(0),
-    mapping_(false)
+    mapping_(false),
+    allocated_(false)
 {
 }
 
@@ -26,6 +27,7 @@ void Buffer::allocate(size_t _size, BufFlag _flag) {
 
     flag_ = _flag;
     size_ = _size;
+    allocated_ = true;
 }
 
 void Buffer::upload(size_t _size, size_t _offset, void* _data) {
@@ -39,14 +41,15 @@ void Buffer::bind(BufType _target) {
 }
 
 void* Buffer::map(Access _access) {
-    assert(!mapping_);
+    assert(id_ && "the buffer has not been initialized");
+    assert(!mapping_ && "the buffer is under mapping");
+    assert(allocated_ && "please allocate the buffer before mapping");
     if (_access == Access::READ_ONLY)
         assert((uint32_t)(flag_&BufFlag::MAP_READ_BIT)&&"the buffer doesn't have MAP_READ_BIT on");
     else if (_access == Access::WRITE_ONLY)
         assert((uint32_t)(flag_&BufFlag::MAP_WRITE_BIT)&&"the buffer doesn't have MAP_WRITE_BIT on");
     else if (_access == Access::READ_WRITE)
         assert((uint32_t)(flag_&BufFlag::MAP_WRITE_BIT)&&(uint32_t)(flag_&BufFlag::MAP_READ_BIT)&&"the buffer doesn't have MAP_WRITE_BIT MAP_READ_BIT and on");
-
 
     void* ptr = glMapNamedBuffer(id_, (GLenum)_access);
     if (!ptr) throw DGL::EXCEPTION::BUFFER_MAPPING_FAILED();

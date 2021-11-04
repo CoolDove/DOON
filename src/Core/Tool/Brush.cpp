@@ -2,12 +2,14 @@
 #include "Base/General.h"
 #include "Core/Color.h"
 #include "Core/Scene.h"
+#include "DGLCore/GLEnums.h"
 #include "DoveLog.hpp"
 #include <Core/Application.h>
 #include <Core/Space.h>
 #include <DGLCore/GLDebugger.h>
 #include <DGLCore/GLTexture.h>
 #include <cstring>
+#include <stdint.h>
 #include <string.h>
 
 // @doing: remove old img and tex pair
@@ -18,8 +20,9 @@ Brush::Brush(Application* _app)
     holding_(false),
     col_{0xff,0xff,0xff,0xff},
     size_min_scale_(0.01f),
+    painting_region_{0},
     size_max_(20),
-    layer_img_(_app->curr_scene_->info_.width, _app->curr_scene_->info_.height, Col_RGBA{0x00, 0x00, 0x00, 0x00}, true)
+    brush_layer_img_(_app->curr_scene_->info_.width, _app->curr_scene_->info_.height, Col_RGBA{0x00, 0x00, 0x00, 0x00}, true)
 {
     DLOG_TRACE("brush constructed");
 
@@ -51,17 +54,20 @@ void Brush::on_deactivate() {
 }
 
 void Brush::on_update() {
-    layer_img_.update_tex(true);
+    brush_layer_img_.update_tex(true);
 }
 
 void Brush::on_pointer_down(Input::PointerInfo _info, int _x, int _y) {
     if (!holding_) {
+        painting_region_ = {0};
         DLOG_TRACE("brush down");
         holding_ = true;
     }
 }
     
 void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
+    if (!painting_region_.width || !painting_region_.height) return;
+
     if (holding_) {
         holding_ = false;
         DLOG_TRACE("brush up");
@@ -70,23 +76,33 @@ void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
         GLTextureBuffer texbuf_src;
         GLTextureBuffer texbuf_dst;
 
-        // @Temp: composite the whole image for now
+        // @TempComposition: composite the whole image for now
         Layer* curr_layer = app_->curr_scene_->get_curr_layer();
-        int width  = layer_img_.img_->info_.width;
-        int height = layer_img_.img_->info_.height;
-        int size_b = width * height * sizeof(Col_RGBA);
+        Dove::IRect2D* p_region = &painting_region_;
+        int width  = p_region->width;
+        int height = p_region->height;
+        int size_b = width * height * sizeof(Col_RGBA); // region byte size 
         BufFlag flag = BufFlag::DYNAMIC_STORAGE_BIT | BufFlag::MAP_READ_BIT | BufFlag::MAP_WRITE_BIT;
 
-        texbuf_src.init();
-        texbuf_src.allocate(size_b, flag, SizedInternalFormat::RGBA8);
-        Col_RGBA* ptr_src = (Col_RGBA*)texbuf_src.buffer_->map(Access::READ_WRITE);
-        memcpy(ptr_src, layer_img_.img_->pixels_, size_b);
-        texbuf_src.buffer_->unmap();
+        // NOTE: subimage that stores the data to be composed
+        Image src_sub(brush_layer_img_.img_.get(), *p_region);
+        Image dst_sub(&curr_layer->img_, *p_region);
 
         texbuf_dst.init();
         texbuf_dst.allocate(size_b, flag, SizedInternalFormat::RGBA8);
+
+        texbuf_src.init();
+        texbuf_src.allocate(size_b, flag, SizedInternalFormat::RGBA8);
+
+        Col_RGBA* ptr_src = (Col_RGBA*)texbuf_src.buffer_->map(Access::READ_WRITE);
         Col_RGBA* ptr_dst = (Col_RGBA*)texbuf_dst.buffer_->map(Access::READ_WRITE);
-        memcpy(ptr_dst, curr_layer->img_.pixels_, size_b);
+
+        Col_RGBA* ptr_src_img_ = src_sub.pixels_;
+        memcpy(ptr_src, ptr_src_img_, size_b);
+        Col_RGBA* ptr_dst_img_ = dst_sub.pixels_;
+        memcpy(ptr_dst, ptr_dst_img_, size_b);
+
+        texbuf_src.buffer_->unmap();
         texbuf_dst.buffer_->unmap();
         
         texbuf_src.bind_image(0, Access::READ_WRITE, ImageUnitFormat::RGBA8UI);
@@ -96,11 +112,21 @@ void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
         glDispatchCompute(width * height / 16, 1, 1);
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-        ptr_dst = (Col_RGBA*)texbuf_dst.buffer_->map(Access::READ_WRITE);
-        memcpy(curr_layer->img_.pixels_, ptr_dst, size_b);
+        // @ApplyResult:
+        Col_RGBA* result = (Col_RGBA*)texbuf_dst.buffer_->map(Access::READ_WRITE);
+        memcpy(dst_sub.pixels_, result, size_b);
+        curr_layer->img_.set_subimage(&dst_sub, p_region->position);
         texbuf_dst.buffer_->unmap();
-        // clear brush image
-        memset(layer_img_.img_->pixels_, 0x00, size_b);
+
+        // clear brush layer
+        uint32_t layer_w = brush_layer_img_.img_->info_.width;
+        uint32_t layer_h = brush_layer_img_.img_->info_.height;
+        uint32_t layer_s = layer_w * layer_h * sizeof(Col_RGBA);
+        memset(brush_layer_img_.img_->pixels_, 0x00, layer_s);
+        brush_layer_img_.mark_dirt(Dove::IRect2D{0, 0, layer_w, layer_h});
+        app_->curr_scene_->merge_region(*p_region);
+
+        painting_region_ = {0};
         // done
     }
 }
@@ -139,17 +165,18 @@ void Brush::on_pointer(Input::PointerInfo _info, int _x, int _y) {
         // - current scene layer
         // - brush layer, in an older way -- splitted tex and img
         // - brush layer, in an new way -- LayerImage
+        const Image* tgt_img = brush_layer_img_.img_.get();
+        Dove::IRect2D step_region = draw_circle((int)cs_pos.x + half_width, -(int)cs_pos.y + half_height, brush_size, tgt_img);
+        painting_region_ = Dove::merge_rect(painting_region_, step_region);
 
-        // const Image* tgt_img = &app_->curr_scene_->get_curr_layer()->img_;
-        // const Image* tgt_img = &image_;
-        const Image* tgt_img = layer_img_.img_.get();// it's working!! nice
-        draw_circle((int)cs_pos.x + half_width, -(int)cs_pos.y + half_height, brush_size, tgt_img);
+        brush_layer_img_.mark_dirt(step_region);
+        app_->curr_scene_->merge_region(step_region);
     }
 }
 
-void Brush::draw_circle(int _x, int _y, int _r, const Image* _target_img) {
+Dove::IRect2D Brush::draw_circle(int _x, int _y, int _r, const Image* _target_img) {
     if (_x < -_r || _x > _target_img->info_.width + _r || _y < -_r || _y > _target_img->info_.height + _r )
-        return;
+        return Dove::IRect2D{0};
 
     // a function changing the vec2 position into an index
     auto px = [=](int _x, int _y){
@@ -188,11 +215,7 @@ void Brush::draw_circle(int _x, int _y, int _r, const Image* _target_img) {
     region.width  = glm::min(_x + _r, scn->info_.width) - region.posx;
     region.height = glm::min(_y + _r, scn->info_.height) - region.posy;
 
-    // scn->merge_region(region);
-    scn->merge_region(region);
-
-    // @LayerImageInte:
-    layer_img_.mark_dirt(region);
+    return region;
 }
 
 void Brush::resize_layer_img() {

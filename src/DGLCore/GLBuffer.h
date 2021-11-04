@@ -59,5 +59,6 @@ private:
     BufType type_;
     BufFlag flag_; 
     bool    mapping_;
+    bool    allocated_;
 };
 }

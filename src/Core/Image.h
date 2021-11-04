@@ -13,6 +13,11 @@ public:
     Image(const Image* _src, Dove::IRect2D _region);
     ~Image();
 
+private:
+    // @temp: we will be able to use these functions later
+    Image(const Image&) = delete;
+    Image& operator=(const Image&) = delete;
+
 public:
     void recreate(unsigned int _width, unsigned int _height, Col_RGBA _base_color = Col_RGBA{0x00, 0x00, 0x00, 0x00});
     void set_subimage(const Image* _img, Dove::IVector2D _pos);

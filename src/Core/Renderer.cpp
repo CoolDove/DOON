@@ -66,38 +66,35 @@ void Renderer::render() {
     glm::mat4 view = Space::mat_world_camera(&app_->curr_scene_->camera_);
     glm::mat4 proj = Space::mat_camproj(&app_->curr_scene_->camera_, wnd_width, wnd_height);
 
-    {// draw base
+    {// @DrawBase:
         program_base_.bind();
-
         float cam_size = (10.0f - cam->size_)/10.0f;
         int cell_scale = (int)((cam_size * cam_size * cam_size) * 30 + 1);
-
         program_base_.uniform_mat("_view", 4, &view[0][0]);
         program_base_.uniform_mat("_proj", 4, &proj[0][0]);
         program_base_.uniform_f("_size", (float)img->info_.width, (float)img->info_.height);
         program_base_.uniform_i("_scale", cell_scale);
-
         batch_.draw_batch();
     }
-    /********draw canvas for every canvas********/
-    program_canvas_.bind();
-    program_canvas_.uniform_mat("_view", 4, &view[0][0]);
-    program_canvas_.uniform_mat("_proj", 4, &proj[0][0]);
 
-    auto ite = scn->layers_.begin();
-    for (auto ite = scn->layers_.begin(); ite != scn->layers_.end(); ite++) {
-        ite->get()->tex_.bind(0);
-        program_canvas_.uniform_i("_tex", 0);
-        batch_.draw_batch();
+    {// @DrawLayers:
+        program_canvas_.bind();
+        program_canvas_.uniform_mat("_view", 4, &view[0][0]);
+        program_canvas_.uniform_mat("_proj", 4, &proj[0][0]);
 
-        if (ite->get() == scn->get_curr_layer() && dynamic_cast<Tool::Brush*>(app_->curr_tool_)) {
-            // render the brush layer after current layer renderred
-            dynamic_cast<Tool::Brush*>(app_->curr_tool_)->layer_img_.tex_->bind(0);
+        auto ite = scn->layers_.begin();
+        for (auto ite = scn->layers_.begin(); ite != scn->layers_.end(); ite++) {
+            ite->get()->tex_.bind(0);
             program_canvas_.uniform_i("_tex", 0);
             batch_.draw_batch();
+
+            if (ite->get() == scn->get_curr_layer() && dynamic_cast<Tool::Brush*>(app_->curr_tool_)) {
+                dynamic_cast<Tool::Brush*>(app_->curr_tool_)->brush_layer_img_.tex_->bind(0);
+                program_canvas_.uniform_i("_tex", 0);
+                batch_.draw_batch();
+            }
         }
     }
-    /********draw canvas for every canvas********/
 }
 
 void Renderer::init_opengl() {
