@@ -133,6 +133,15 @@ inline IAABBox2D merge_aabb(IAABBox2D _a, IAABBox2D _b) {
 
 inline IRect2D merge_rect(IRect2D _a, IRect2D _b) {
 // NOTE: may be some problems here
+    if (_a.width == 0 || _a.height == 0) {
+        if (_b.width == 0 || _b.height == 0) {
+            return {0};
+        } else {
+            return _b;
+        }
+    } else if (_b.width == 0 || _b.height == 0) {
+        return _a;
+    }
     IAABBox2D boxa = rect_to_aabb(_a);
     IAABBox2D boxb = rect_to_aabb(_b);
     return aabb_to_rect(merge_aabb(boxa, boxb));
