@@ -41,8 +41,8 @@ void Buffer::bind(BufType _target) {
 }
 
 void* Buffer::map(Access _access) {
-    assert(id_ && "the buffer has not been initialized");
-    assert(!mapping_ && "the buffer is under mapping");
+    assert(id_ && "the buffer has not been initialized, you cannot map it again");
+    assert(!mapping_ && "the buffer is under mapping, you cannot map it again");
     assert(allocated_ && "please allocate the buffer before mapping");
     if (_access == Access::READ_ONLY)
         assert((uint32_t)(flag_&BufFlag::MAP_READ_BIT)&&"the buffer doesn't have MAP_READ_BIT on");

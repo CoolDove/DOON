@@ -1,6 +1,7 @@
 ﻿#include "Brush.h"
 #include "Base/General.h"
 #include "Core/Color.h"
+#include "Core/Compositor.h"
 #include "Core/Scene.h"
 #include "DGLCore/GLEnums.h"
 #include "DoveLog.hpp"
@@ -26,18 +27,13 @@ Brush::Brush(Application* _app)
 {
     DLOG_TRACE("brush constructed");
 
-    using namespace DGL;
-    try {
-        Shader comp;
-        comp.init(ShaderType::COMPUTE_SHADER);
-
-        // TODO: correct the blend function
-        comp.load("./res/shaders/brush-composite.comp");
-
-        comp_shader_.link(1, &comp);
-    } catch (const EXCEPTION::SHADER_COMPILING_FAILED& exp) {
-        DLOG_ERROR("%s", exp.msg.c_str());
-    }
+    // using namespace DGL;
+    // try {
+        // Shader comp;
+        // comp.init(ShaderType::COMPUTE_SHADER);
+    // } catch (const EXCEPTION::SHADER_COMPILING_FAILED& exp) {
+        // DLOG_ERROR("%s", exp.msg.c_str());
+    // }
 }
 
 Brush::~Brush() {
@@ -72,9 +68,6 @@ void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
         DLOG_TRACE("brush up");
 
         using namespace DGL;
-        GLTextureBuffer texbuf_src;
-        GLTextureBuffer texbuf_dst;
-
         // @Composition: composite the whole image for now
         Layer* curr_layer = app_->curr_scene_->get_curr_layer();
         Dove::IRect2D* p_region = &painting_region_;
@@ -83,42 +76,16 @@ void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
         int size_b = width * height * sizeof(Col_RGBA); // region byte size 
         BufFlag flag = BufFlag::DYNAMIC_STORAGE_BIT | BufFlag::MAP_READ_BIT | BufFlag::MAP_WRITE_BIT;
 
-        // NOTE: subimage that stores the data to be composed
         Image src_sub(brush_layer_img_.img_.get(), *p_region);
         Image dst_sub(&curr_layer->img_, *p_region);
 
-        texbuf_dst.init();
-        texbuf_dst.allocate(size_b, flag, SizedInternalFormat::RGBA8);
-
-        texbuf_src.init();
-        texbuf_src.allocate(size_b, flag, SizedInternalFormat::RGBA8);
-
-        Col_RGBA* ptr_src = (Col_RGBA*)texbuf_src.buffer_->map(Access::READ_WRITE);
-        Col_RGBA* ptr_dst = (Col_RGBA*)texbuf_dst.buffer_->map(Access::READ_WRITE);
-
-        Col_RGBA* ptr_src_img_ = src_sub.pixels_;
-        memcpy(ptr_src, ptr_src_img_, size_b);
-        Col_RGBA* ptr_dst_img_ = dst_sub.pixels_;
-        memcpy(ptr_dst, ptr_dst_img_, size_b);
-
-        texbuf_src.buffer_->unmap();
-        texbuf_dst.buffer_->unmap();
+        uint32_t result_id = app_->compositor_->compose("common", src_sub.pixels_, dst_sub.pixels_, size_b);
+        app_->compositor_->get_result(result_id, dst_sub.pixels_, size_b);
         
-        texbuf_src.bind_image(0, Access::READ_WRITE, ImageUnitFormat::RGBA8UI);
-        texbuf_dst.bind_image(1, Access::READ_WRITE, ImageUnitFormat::RGBA8UI);
-
-        comp_shader_.bind();
-        glDispatchCompute(width * height / 16, 1, 1);
-        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-        // @ApplyResult:
-        Col_RGBA* result = (Col_RGBA*)texbuf_dst.buffer_->map(Access::READ_WRITE);
-        memcpy(dst_sub.pixels_, result, size_b);
         curr_layer->img_.set_subimage(&dst_sub, p_region->position);
-        texbuf_dst.buffer_->unmap();
-
 
         // TODO: record brush command into commands history
+        // ...
         // ...
         
         // @Clear:
@@ -129,6 +96,7 @@ void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
         uint32_t layer_s = layer_w * layer_h * sizeof(Col_RGBA);
         memset(brush_layer_img_.img_->pixels_, 0x00, layer_s);
         brush_layer_img_.mark_dirt(*p_region);
+
         // mark the scene layer img to be dirty, let it recompose all the needed layers
         app_->curr_scene_->merge_region(*p_region);
 

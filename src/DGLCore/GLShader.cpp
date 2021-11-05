@@ -7,6 +7,8 @@
 static char* read_file(const char* _path, int* _size = nullptr) {
     std::ifstream file(_path);
 
+    bool good = file.good();
+
     if (!file.good())
         throw DGL::EXCEPTION::FILE_NOT_EXIST(_path);
     

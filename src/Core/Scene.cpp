@@ -48,7 +48,7 @@ Scene::Scene(unsigned int _width, unsigned int _height, Col_RGBA _col)
     computer.init(DGL::ShaderType::COMPUTE_SHADER);
 
     try {
-        computer.load("./res/shaders/brush-composite.comp");
+        computer.load("./res/shaders/blend_common.comp");
     } catch (const DGL::EXCEPTION::SHADER_COMPILING_FAILED& err) {
         DLOG_ERROR("shader err: %s", err.msg.c_str());
         assert(1 && "failed to compile compute shader");
