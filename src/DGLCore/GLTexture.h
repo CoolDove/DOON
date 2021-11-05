@@ -92,6 +92,10 @@ class GLTexture {
 public:
     GLTexture();
     ~GLTexture();
+
+    GLTexture(const GLTexture&) = delete;
+    GLTexture* operator=(const GLTexture&) = delete;
+    
     void init();
     void release();
 
