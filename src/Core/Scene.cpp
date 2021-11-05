@@ -71,7 +71,7 @@ void Scene::on_update() {
     // so we cannot use REGION_UPLOAD, fix this later
     using namespace DGL;
 
-    #ifdef REGION_UPLOAD
+    // #ifdef REGION_UPLOAD
     if (region_.width != 0 && region_.height != 0) {
         GLTexture2D* tex = &curr_layer_ite_->get()->tex_;
         Image*       img = &curr_layer_ite_->get()->img_;
@@ -84,14 +84,14 @@ void Scene::on_update() {
 
         clear_region();
     }
-    #else
-    GLTexture2D* tex = &curr_layer_ite_->get()->tex_;
-    Image*       img = &curr_layer_ite_->get()->img_;
-    tex->upload(0, 0, 0, info_.width, info_.height,
-                PixFormat::RGBA, PixType::UNSIGNED_BYTE,
-                img->pixels_);
-
-    #endif
+    // #else
+    // GLTexture2D* tex = &curr_layer_ite_->get()->tex_;
+    // Image*       img = &curr_layer_ite_->get()->img_;
+    // tex->upload(0, 0, 0, info_.width, info_.height,
+                // PixFormat::RGBA, PixType::UNSIGNED_BYTE,
+                // img->pixels_);
+// 
+    // #endif
 }
 
 void Scene::add_layer(Col_RGBA _col) {
