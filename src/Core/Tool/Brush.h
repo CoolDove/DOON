@@ -30,23 +30,16 @@ public:
 
     virtual void on_update();
 public:
-    void resize_layer_img();
-
-public:
     // @BrushInfo:
     int        size_max_;
     float      size_min_scale_;
     Col_RGBA   col_;
-
-public:
-    LayerImage    brush_layer_img_;
+    // NOTE: this region is used to bake brush layer into current layer, should be clear after pen released
     Dove::IRect2D painting_region_;
 private:
     Dove::IRect2D draw_circle(int _x, int _y, int _r, const Image* _target_img);
 
     Application* app_;
     bool         holding_;
-
-    Program      comp_shader_; //TODO: move this to somewhere else, maybe a Compositor class
 };
 }

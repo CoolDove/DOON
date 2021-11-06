@@ -50,7 +50,7 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     // scenes_["void1"] = make_unique<Scene>(2048, 2048, Col_RGBA{0x00, 0x00, 0x00, 0x00});
 
     if (scenes_.size() == 0) {
-        scenes_["void"] = make_unique<Scene>(512, 512, Col_RGBA{0x00, 0x00, 0x00, 0x00});
+        scenes_["void"] = make_unique<Scene>(2048, 2048, Col_RGBA{0x00, 0x00, 0x00, 0x00});
     }
     
     curr_scene_ = scenes_.begin()->second.get();
@@ -70,15 +70,6 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     action_list_ = std::make_unique<ActionList>();
 
     action_list_->invoke({Dove::KeyCode::A, Dove::ModKey::None});
-
-    // GLTexture2D tex;
-    // tex.init();
-    // int width  = curr_scene_->info_.width;
-    // int height = curr_scene_->info_.height;
-    // @temp:
-    // Image img(width, height, Col_RGBA{ 0x00, 0x00, 0x00, 0x00 });
-    // tex.allocate(1, SizedInternalFormat::RGBA8, width, height);
-    // tex.upload(0, 0, 0, width, height, PixFormat::RGBA, PixType::UNSIGNED_BYTE, img.pixels_);
 }
 
 Application::~Application() {
@@ -233,7 +224,7 @@ void Application::init_dlog() {
     DLOG_INIT;
 }
 
-// region: INIT
+// @region: INIT
 void Application::init_window(HINSTANCE _instance, HINSTANCE _prev_instance, char* _cmd_line, int _show_code) {
     WNDCLASS wnd_class = {};
     wnd_class.style = CS_HREDRAW | CS_VREDRAW;

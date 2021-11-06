@@ -3,6 +3,7 @@
 #include "Core/Color.h"
 #include "assert.h"
 #include "Windows.h"
+#include <string.h>
 
 Image::Image()
 :   inited_(false),
@@ -136,6 +137,23 @@ void Image::set_subimage(const Image *_img, Dove::IVector2D _pos) {
         memcpy(ptr_dst, ptr_src, region_src.width * sizeof(Col_RGBA));
         ptr_src += _img->info_.width;
         ptr_dst += info_.width;
+    }
+}
+void Image::clear() {
+    memset(pixels_, 0x00, info_.width * info_.height);
+}
+
+void Image::clear(Dove::IRect2D _region) {
+    if (_region.posx < 0) _region.posx = 0;
+    if (_region.posy < 0) _region.posy = 0;
+    if (_region.posx >= info_.width || _region.posy >= 0) return;
+    if (_region.width > info_.width - _region.posx) _region.width = info_.width - _region.posx;
+    if (_region.height > info_.height - _region.posy) _region.height = info_.height - _region.posy;
+
+    Col_RGBA* ptr = pixels_ + _region.posy * info_.width + _region.posx;
+    for (int i = _region.posy; i < _region.posy + _region.height; i++) {
+        memset(ptr, 0x00, _region.width * sizeof(Col_RGBA));
+        ptr += info_.width;
     }
 }
 

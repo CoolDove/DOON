@@ -1,25 +1,46 @@
 ﻿#include "Layer.h"
 #include "Base/General.h"
 #include "Core/Color.h"
+#include "DGLCore/GLBuffer.h"
+#include "DGLCore/GLEnums.h"
 #include "DGLCore/GLTexture.h"
+#include <stdint.h>
+#include <string.h>
 
-Layer::Layer(unsigned int _width, unsigned int _height, std::string _name, Col_RGBA _col) 
-:   img_(_width, _height, _col)
+Layer::Layer(unsigned int _width, unsigned int _height, std::string _name, Col_RGBA _col)
+:   img_(_width, _height, _col),
+    dirt_region_{0}
 {
     info_.name       = _name;
     info_.blend_mode = BlendMode::NORMAL;
 
-    tex_.init();
-    tex_.allocate(1, DGL::SizedInternalFormat::RGBA8, _width, _height);
-    tex_.upload(0, 0, 0, _width, _height, DGL::PixFormat::RGBA, DGL::PixType::UNSIGNED_BYTE, img_.pixels_);
-    tex_.param_mag_filter(DGL::TexFilter::NEAREST);
-    tex_.param_min_filter(DGL::TexFilter::NEAREST);
-    tex_.param_wrap_r(DGL::TexWrap::CLAMP_TO_EDGE);
-    tex_.param_wrap_s(DGL::TexWrap::CLAMP_TO_EDGE);
+    using namespace DGL;
+    texbuf_.init();
+    texbuf_.allocate(_width * _height * sizeof(Col_RGBA),
+                     BufFlag::MAP_READ_BIT | BufFlag::MAP_WRITE_BIT | BufFlag::DYNAMIC_STORAGE_BIT,
+                     SizedInternalFormat::RGBA8);
+
+    mark_dirt({0, 0, _width, _height});
 }
 
 Layer::~Layer() {
 
+}
+
+void Layer::mark_dirt(Dove::IRect2D _region) {
+    dirt_region_ = Dove::merge_rect(_region, dirt_region_);
+}
+
+void Layer::update_texbuf(bool _whole) {
+    using namespace DGL;
+    if (_whole) {
+        Col_RGBA* ptr = (Col_RGBA*)texbuf_.buffer_->map(DGL::Access::READ_WRITE);
+        memcpy(ptr, img_.pixels_, img_.get_size_b());
+        texbuf_.buffer_->unmap();
+    } else {
+        // TODO: finish this
+        // ...
+    }
 }
 
 LayerImage::LayerImage(int _width, int _height, Col_RGBA _col, bool _attach)

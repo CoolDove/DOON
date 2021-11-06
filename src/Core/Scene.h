@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "DGLCore/GLTexture.h"
 #include <DGLCore/DGLCore.h>
 #include <Core/Image.h>
 #include <Core/Layer.h>
@@ -39,7 +40,7 @@ public:
     bool next_layer();
     bool previous_layer();
 
-    void merge_region(Dove::IRect2D _region);
+    void mark_region(Dove::IRect2D _region);
     void clear_region();
 
     Layer*        get_curr_layer() { return curr_layer_ite_->get(); };
@@ -51,13 +52,10 @@ public:
 
     LayerList   layers_;
 
-    GLTexture2D brush_tex_;
-    Image       brush_img_;
-
-    Image       result_img_;
-    GLTexture2D result_tex_;
-
-    Program     compose_shader_;
+    DGL::GLTextureBuffer result_buffer_;
+    DGL::GLTextureBuffer brush_buffer_;
+    LayerImage           result_;
+    Image                brush_img_;
 
     struct {
         int width;

@@ -3,6 +3,7 @@
 #include "DGLCore/GLEnums.h"
 #include "DGLCore/GLProgram.h"
 #include "DGLCore/GLShader.h"
+#include "DGLCore/GLTexture.h"
 #include "DoveLog.hpp"
 #include <DGLCore/GLDebugger.h>
 #include <stdint.h>
@@ -38,6 +39,18 @@ Compositor::~Compositor() {
 
 void Compositor::load_shaders() {
   
+}
+
+void Compositor::compose(const std::string& _composition_func,
+                         DGL::GLTextureBuffer* _src, DGL::GLTextureBuffer* _dst,
+                         uint32_t _size_b, bool _sync)
+{
+    using namespace DGL;
+    comp_shaders_[_composition_func].bind();
+    _src->bind_image(0, Access::READ_WRITE, ImageUnitFormat::RGBA8UI);
+    _dst->bind_image(1, Access::READ_WRITE, ImageUnitFormat::RGBA8UI);
+    glDispatchCompute((_size_b / sizeof(Col_RGBA)) / GROUP_SIZE_X, 1, 1);
+    if (_sync) glsync();
 }
 
 uint32_t Compositor::compose(const std::string &_composition_func,

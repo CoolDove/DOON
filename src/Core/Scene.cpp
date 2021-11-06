@@ -1,9 +1,16 @@
 ﻿#include "Scene.h"
 #include "Base/General.h"
+#include "Core/Application.h"
+#include "Core/Color.h"
+#include "Core/Compositor.h"
+#include "Core/Image.h"
+#include "DGLCore/GLEnums.h"
 #include "stb_image/stb_image.h"
 #include <Core/Sampler.h>
 #include <DoveLog.hpp>
 #include <DGLCore/GLDebugger.h>
+#include <atomic>
+#include <cstring>
 #include <stdint.h>
 
 // Scene::Scene(const char* _image_path)
@@ -19,8 +26,8 @@
 
 Scene::Scene(unsigned int _width, unsigned int _height, Col_RGBA _col)
 :   image_(_width, _height, _col),
+    result_(_width, _height, _col, true),
     brush_img_(_width, _height, _col),
-    result_img_(_width, _height, _col),
     region_{0}
 {
     camera_.position_.x = 0.0f;
@@ -34,64 +41,58 @@ Scene::Scene(unsigned int _width, unsigned int _height, Col_RGBA _col)
                    BufFlag::MAP_READ_BIT|
                    BufFlag::MAP_WRITE_BIT;
 
-
     add_layer(_col);
-
-    // TODO: compose all the layers into result tex
-    // @doing: initialize the result tex
-    result_tex_.init();
-    result_tex_.allocate(1, SizedInternalFormat::RGBA8, _width, _height);
-    result_tex_.upload(0, 0, 0, _width, _height, PixFormat::RGBA, PixType::UNSIGNED_BYTE, result_img_.pixels_);
-
-    // @sec: load compose shader(program)
-    DGL::Shader computer;
-    computer.init(DGL::ShaderType::COMPUTE_SHADER);
-
-    try {
-        computer.load("./res/shaders/blend_common.comp");
-    } catch (const DGL::EXCEPTION::SHADER_COMPILING_FAILED& err) {
-        DLOG_ERROR("shader err: %s", err.msg.c_str());
-        assert(1 && "failed to compile compute shader");
-    }
-    compose_shader_.init();
-    compose_shader_.link(1, &computer);
 
     Dove::IRect2D region;
     region.posx = region.posy = 0;
     region.width = (uint32_t)info_.width;
     region.height = (uint32_t)info_.height;
+
+    result_buffer_.init();
+    result_buffer_.allocate(_width * _height * sizeof(Col_RGBA), flag, SizedInternalFormat::RGBA8UI);
+    brush_buffer_.init();
+    brush_buffer_.allocate(_width * _height * sizeof(Col_RGBA), flag, SizedInternalFormat::RGBA8UI);
     
-    merge_region(region);
+    mark_region(region);
 }
 
+// TODO: optimization here, use down cache
 void Scene::on_update() {
-    // #define REGION_UPLOAD
-    // FIXME:
-    // because the brush doesnt correctly setup the updated region after brush released for now.
-    // so we cannot use REGION_UPLOAD, fix this later
     using namespace DGL;
-
-    // #ifdef REGION_UPLOAD
     if (region_.width != 0 && region_.height != 0) {
-        GLTexture2D* tex = &curr_layer_ite_->get()->tex_;
-        Image*       img = &curr_layer_ite_->get()->img_;
+        // NOTE: recompose every pixel for every layer, it's horribly slow, but just temp solution for testing
+        // @doing: 
+        Compositor* compositor = Application::instance_->compositor_.get();
+        uint32_t region_size_b = region_.width * region_.height * sizeof(Col_RGBA);
+        uint32_t img_size_b    = info_.width * info_.height * sizeof(Col_RGBA);
 
-        for (int i = region_.posy; i < region_.posy + region_.height; i++) {
-            tex->upload(0, region_.posx, i, region_.width, 1,
-                        PixFormat::RGBA, PixType::UNSIGNED_BYTE,
-                        img->pixels_ + i * info_.width + region_.posx);
+        // update brush buffer, upload the brush_img_ data to brush_buffer_
+        Col_RGBA* brush_buffer_ptr = (Col_RGBA*)brush_buffer_.buffer_->map(Access::READ_WRITE);
+        memcpy(brush_buffer_ptr, brush_img_.pixels_, img_size_b);
+        brush_buffer_.buffer_->unmap();
+
+        // clear result buffer to start composition
+        Col_RGBA* ptr = (Col_RGBA*)result_buffer_.buffer_->map(Access::READ_WRITE);
+        memset(ptr, 0x00, img_size_b);
+        result_buffer_.buffer_->unmap();
+        
+        for (auto ite = layers_.begin(); ite != layers_.end(); ite++) {
+            compositor->compose("common", &ite->get()->texbuf_, &result_buffer_, img_size_b);
+            // @ComposeBrushLayerIn:
+
+            if (ite == curr_layer_ite_) {
+                compositor->compose("common", &brush_buffer_, &result_buffer_, img_size_b);
+            }
         }
+
+        // we have compose all the layers into result_buffer_, pick it out
+        ptr = (Col_RGBA*)result_buffer_.buffer_->map(Access::READ_WRITE);
+        memcpy(result_.img_->pixels_, ptr, img_size_b);
+        result_buffer_.buffer_->unmap();
+        result_.update_tex(true);
 
         clear_region();
     }
-    // #else
-    // GLTexture2D* tex = &curr_layer_ite_->get()->tex_;
-    // Image*       img = &curr_layer_ite_->get()->img_;
-    // tex->upload(0, 0, 0, info_.width, info_.height,
-                // PixFormat::RGBA, PixType::UNSIGNED_BYTE,
-                // img->pixels_);
-// 
-    // #endif
 }
 
 void Scene::add_layer(Col_RGBA _col) {
@@ -143,7 +144,7 @@ bool Scene::previous_layer() {
     return false;
 }
 
-void Scene::merge_region(Dove::IRect2D _region) {
+void Scene::mark_region(Dove::IRect2D _region) {
     region_ = Dove::merge_rect(_region, region_);
 }
 

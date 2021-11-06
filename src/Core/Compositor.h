@@ -40,6 +40,10 @@ public:
     void load_shaders();
 
     // NOTE: this function returns an id, after glsync(), you can use that id to get the result
+    void compose(const std::string& _composition_func,
+                 DGL::GLTextureBuffer* _src, DGL::GLTextureBuffer* _dst,
+                 uint32_t _size_b, bool _sync = true);
+
     uint32_t compose(const std::string& _composition_func,
                      Col_RGBA* _src, Col_RGBA* _dst,
                      uint32_t _size_b, bool _sync = true);

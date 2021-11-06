@@ -22,18 +22,9 @@ Brush::Brush(Application* _app)
     col_{0xff,0xff,0xff,0xff},
     size_min_scale_(0.01f),
     painting_region_{0},
-    size_max_(20),
-    brush_layer_img_(_app->curr_scene_->info_.width, _app->curr_scene_->info_.height, Col_RGBA{0x00, 0x00, 0x00, 0x00}, true)
+    size_max_(20)
 {
     DLOG_TRACE("brush constructed");
-
-    // using namespace DGL;
-    // try {
-        // Shader comp;
-        // comp.init(ShaderType::COMPUTE_SHADER);
-    // } catch (const EXCEPTION::SHADER_COMPILING_FAILED& exp) {
-        // DLOG_ERROR("%s", exp.msg.c_str());
-    // }
 }
 
 Brush::~Brush() {
@@ -50,7 +41,7 @@ void Brush::on_deactivate() {
 }
 
 void Brush::on_update() {
-    brush_layer_img_.update_tex(false);
+
 }
 
 void Brush::on_pointer_down(Input::PointerInfo _info, int _x, int _y) {
@@ -69,6 +60,7 @@ void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
 
         using namespace DGL;
         // @Composition: composite the whole image for now
+        Image* brush_img = &app_->curr_scene_->brush_img_;
         Layer* curr_layer = app_->curr_scene_->get_curr_layer();
         Dove::IRect2D* p_region = &painting_region_;
         int width  = p_region->width;
@@ -76,30 +68,28 @@ void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
         int size_b = width * height * sizeof(Col_RGBA); // region byte size 
         BufFlag flag = BufFlag::DYNAMIC_STORAGE_BIT | BufFlag::MAP_READ_BIT | BufFlag::MAP_WRITE_BIT;
 
-        Image src_sub(brush_layer_img_.img_.get(), *p_region);
+        Image src_sub(brush_img, *p_region);
         Image dst_sub(&curr_layer->img_, *p_region);
 
         uint32_t result_id = app_->compositor_->compose("common", src_sub.pixels_, dst_sub.pixels_, size_b);
         app_->compositor_->get_result(result_id, dst_sub.pixels_, size_b);
         
+        // set current layer image
         curr_layer->img_.set_subimage(&dst_sub, p_region->position);
+        curr_layer->mark_dirt(*p_region);
+        curr_layer->update_texbuf(true);
 
         // TODO: record brush command into commands history
         // ...
         // ...
         
         // @Clear:
-        // clear brush layer, then mark the whole brush layer image as dirty,
-        // so that next rendering it will be blank
-        uint32_t layer_w = brush_layer_img_.img_->info_.width;
-        uint32_t layer_h = brush_layer_img_.img_->info_.height;
+        uint32_t layer_w = brush_img->info_.width;
+        uint32_t layer_h = brush_img->info_.height;
         uint32_t layer_s = layer_w * layer_h * sizeof(Col_RGBA);
-        memset(brush_layer_img_.img_->pixels_, 0x00, layer_s);
-        brush_layer_img_.mark_dirt(*p_region);
-
+        memset(brush_img->pixels_, 0x00, layer_s);
         // mark the scene layer img to be dirty, let it recompose all the needed layers
-        app_->curr_scene_->merge_region(*p_region);
-
+        app_->curr_scene_->mark_region(*p_region);
         // clear painting_region
         painting_region_ = {0};
         // done
@@ -137,13 +127,13 @@ void Brush::on_pointer(Input::PointerInfo _info, int _x, int _y) {
         int size_min = (int)(size_min_scale_ * size_max_);
         unsigned int brush_size = (unsigned int)((pressure / 1024.0f) * (size_max_ - (size_min)) + size_min);
 
-        const Image* tgt_img = brush_layer_img_.img_.get();
-        Dove::IRect2D step_region = draw_circle((int)cs_pos.x + half_width, -(int)cs_pos.y + half_height, brush_size, tgt_img);
+        const Image* tgt_img = &app_->curr_scene_->brush_img_;
+        // draw dot on the brush img
+        Dove::IRect2D dot_region =
+            draw_circle((int)cs_pos.x + half_width, -(int)cs_pos.y + half_height, brush_size, tgt_img);
 
-        painting_region_ = Dove::merge_rect(painting_region_, step_region);
-        brush_layer_img_.mark_dirt(step_region);
-
-        app_->curr_scene_->merge_region(step_region);
+        painting_region_ = Dove::merge_rect(painting_region_, dot_region);
+        app_->curr_scene_->mark_region(dot_region);
     }
 }
 
@@ -190,18 +180,4 @@ Dove::IRect2D Brush::draw_circle(int _x, int _y, int _r, const Image* _target_im
 
     return region;
 }
-
-void Brush::resize_layer_img() {
-    // if (app_->curr_scene_) {
-        // Scene* scn = app_->curr_scene_;
-        // int width  = scn->info_.width;
-        // int height = scn->info_.height;
-// 
-        // image_.recreate(width, height, Col_RGBA{0x00, 0x00, 0x00, 0x00});
-// 
-        // tex_.allocate(1, DGL::SizedInternalFormat::RGBA8, width, height);
-        // tex_.upload(0, 0, 0, width, height, PixFormat::RGBA, PixType::UNSIGNED_BYTE, image_.pixels_);
-    // }
-}
-
 }

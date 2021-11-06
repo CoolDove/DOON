@@ -5,6 +5,6 @@ namespace DGL
 {
 Camera::Camera()
 :	position_(0, 0),
-	size_(1.0f)
+	size_(0.6f)
 {}
 }

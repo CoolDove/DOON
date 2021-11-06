@@ -17,6 +17,8 @@ private:
 public:
     LayerImage(int _width, int _height, Col_RGBA _col, bool _attach);
     ~LayerImage();
+    LayerImage(const LayerImage&) = delete;
+    LayerImage operator=(const LayerImage&) = delete;
 
     ImagePtr img_;
     Tex2DPtr tex_;
@@ -38,14 +40,18 @@ class Layer {
 public:
     Layer(unsigned int _width, unsigned int _height, std::string _name, Col_RGBA _col);
     ~Layer();
+
+    void update_texbuf(bool _whole);
+    void mark_dirt(Dove::IRect2D _region);
+    void clear_dirt();
 public:
     struct {
         std::string name;
         BlendMode   blend_mode;
     } info_;
 
-    // TODO: replace this with layer image
     Image img_;
-    DGL::GLTexture2D tex_;
+    DGL::GLTextureBuffer texbuf_;
+    Dove::IRect2D        dirt_region_;
 };
 

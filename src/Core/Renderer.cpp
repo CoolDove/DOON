@@ -78,22 +78,14 @@ void Renderer::render() {
     }
 
     {// @DrawLayers:
+        // now, we only need to draw the result image
         program_canvas_.bind();
         program_canvas_.uniform_mat("_view", 4, &view[0][0]);
         program_canvas_.uniform_mat("_proj", 4, &proj[0][0]);
 
-        auto ite = scn->layers_.begin();
-        for (auto ite = scn->layers_.begin(); ite != scn->layers_.end(); ite++) {
-            ite->get()->tex_.bind(0);
-            program_canvas_.uniform_i("_tex", 0);
-            batch_.draw_batch();
-
-            if (ite->get() == scn->get_curr_layer() && dynamic_cast<Tool::Brush*>(app_->curr_tool_)) {
-                dynamic_cast<Tool::Brush*>(app_->curr_tool_)->brush_layer_img_.tex_->bind(0);
-                program_canvas_.uniform_i("_tex", 0);
-                batch_.draw_batch();
-            }
-        }
+        program_canvas_.uniform_i("_tex", 0);
+        app_->curr_scene_->result_.tex_->bind(0);
+        batch_.draw_batch();
     }
 }
 

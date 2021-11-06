@@ -21,6 +21,9 @@ private:
 public:
     void recreate(unsigned int _width, unsigned int _height, Col_RGBA _base_color = Col_RGBA{0x00, 0x00, 0x00, 0x00});
     void set_subimage(const Image* _img, Dove::IVector2D _pos);
+    void clear();
+    void clear(Dove::IRect2D _region);
+    uint32_t get_size_b() const { return info_.width * info_.height * sizeof(Col_RGBA); }
 
     // TODO: change pixels type to Col_RGBA*
     Col_RGBA* pixels_;
