@@ -41,8 +41,6 @@ void Brush::on_deactivate() {
 }
 
 void Brush::on_update() {
-    
-
 }
 
 void Brush::on_pointer_down(Input::PointerInfo _info, int _x, int _y) {

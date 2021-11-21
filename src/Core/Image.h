@@ -25,7 +25,6 @@ public:
     void clear(Dove::IRect2D _region);
     uint32_t get_size_b() const { return info_.width * info_.height * sizeof(Col_RGBA); }
 
-    // TODO: change pixels type to Col_RGBA*
     Col_RGBA* pixels_;
     struct Info {
         int width;

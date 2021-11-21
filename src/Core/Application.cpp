@@ -43,16 +43,16 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
 
     inited_ = true;
 
+    // repair multiple scenes
     long clock = std::clock();
     // scenes_["anji"]  = make_unique<Scene>("./res/textures/anji.png");
-    // scenes_["alp"]   = make_unique<Scene>("./res/textures/alp.png");
+    scenes_["alp"]   = make_unique<Scene>("./res/textures/alp.png");
     // scenes_["test"]  = make_unique<Scene>("./res/textures/test.png");
-    // scenes_["void1"] = make_unique<Scene>(2048, 2048, Col_RGBA{0x00, 0x00, 0x00, 0x00});
+    scenes_["void1"] = make_unique<Scene>(2048, 2048, Col_RGBA{0x00, 0x00, 0x00, 0x00});
+    scenes_["void2"] = make_unique<Scene>(2048, 1024, Col_RGBA{0x00, 0x00, 0x00, 0x00});
 
     if (scenes_.size() == 0) {
-        // scenes_["void"] = make_unique<Scene>(2100, 2970, Col_RGBA{0x00, 0x00, 0x00, 0x00});
         scenes_["void"] = make_unique<Scene>(1024, 1024, Col_RGBA{0x00, 0x00, 0x00, 0x00});
-        // scenes_["void"] = make_unique<Scene>(2970, 2100, Col_RGBA{0x00, 0x33, 0x00, 0x11});
     }
     
     curr_scene_ = scenes_.begin()->second.get();
@@ -112,7 +112,7 @@ void Application::render_ui() {
     {
         if (ImGui::Begin("panel")) {
             if (ImGui::CollapsingHeader("cam")) {
-                float cam_region = 0.5f * glm::max(curr_scene_->image_.info_.width, curr_scene_->image_.info_.height);
+                float cam_region = 0.5f * glm::max(curr_scene_->info_.width, curr_scene_->info_.height);
                 ImGui::DragFloat2("cam_pos", (float*)&cam->position_, 1.0f, -cam_region, cam_region);
                 ImGui::DragFloat("cam_size", &cam->size_, 0.1f, 0.1f, 10.0f);
             }

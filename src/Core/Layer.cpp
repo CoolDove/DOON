@@ -39,20 +39,11 @@ void Layer::update_tex(bool _whole) {
                     PixFormat::RGBA, PixType::UNSIGNED_BYTE,
                     img_.pixels_);
     } else {
-        // TODO: parically updating
+        // TODO: **region updating**
     }
-    
-    // if (_whole) {
-        // Col_RGBA* ptr = (Col_RGBA*)texbuf_.buffer_->map(DGL::Access::READ_WRITE);
-        // memcpy(ptr, img_.pixels_, img_.get_size_b());
-        // texbuf_.buffer_->unmap();
-    // } else {
-        // // TODO: finish this
-        // // ...
-    // }
 }
-// ---------------------Layer Image------------------------- //
 
+// ---------------------Layer Image------------------------- //
 LayerImage::LayerImage(int _width, int _height, Col_RGBA _col, bool _attach)
 :   gl_attached_(false)
 {

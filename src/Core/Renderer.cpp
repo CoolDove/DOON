@@ -40,7 +40,7 @@ void Renderer::init() {
 }
 
 void Renderer::recreate_canvas_batch() {
-    if (app_->curr_scene_ && app_->curr_scene_->image_.pixels_) {
+    if (app_->curr_scene_) {
         int width  = app_->curr_scene_->info_.width;
         int height = app_->curr_scene_->info_.height;
 
@@ -56,7 +56,6 @@ void Renderer::render() {
     glClear(GL_COLOR_BUFFER_BIT);
 
     Scene* scn = app_->curr_scene_;
-    Image* img = &app_->curr_scene_->image_;
     Dove::IRect2D updated_region = scn->get_region();
 
     glEnable(GL_BLEND);
@@ -76,7 +75,7 @@ void Renderer::render() {
         int cell_scale = (int)((cam_size * cam_size * cam_size) * 30 + 1);
         program_base_.uniform_mat("_view", 4, &view[0][0]);
         program_base_.uniform_mat("_proj", 4, &proj[0][0]);
-        program_base_.uniform_f("_size", (float)img->info_.width, (float)img->info_.height);
+        program_base_.uniform_f("_size", (float)scn->info_.width, (float)scn->info_.height);
         program_base_.uniform_i("_scale", cell_scale);
         batch_.draw_batch();
     }

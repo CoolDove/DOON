@@ -17,7 +17,6 @@ using namespace DGL;
 
 class Scene {
 public:
-    // TODO: recover this function to enable creating scenes from a existing picture file
     Scene(const char* _image_path);
     Scene(uint32_t _width, uint32_t _height, Col_RGBA _col);
     ~Scene();
@@ -26,7 +25,6 @@ public:
     void on_update();
 
     void add_layer(Col_RGBA _col, const std::string& _name);
-    // void add_layer(Col_RGBA _col, const std::string& _name, int _layer_position_or_something);
     void add_layer(Col_RGBA _col);
     void change_layer(const std::string& _name);
     void change_layer(Layer* _layer);

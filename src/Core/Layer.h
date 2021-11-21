@@ -50,11 +50,8 @@ public:
         BlendMode   blend_mode;
     } info_;
 
-    // this stores the pixels in the layer,
-    // TODO: but we still need a texture for rendering
     Image img_;
     DGL::GLTexture2D    tex_;
-    DGL::GLTextureBuffer texbuf_;
+    // DGL::GLTextureBuffer texbuf_;
     Dove::IRect2D        dirt_region_;
 };
-
