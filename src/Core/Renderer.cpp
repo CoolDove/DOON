@@ -92,7 +92,7 @@ void Renderer::render() {
             batch_.draw_batch();
             if (ite->get() == scn->get_curr_layer()) {
                 program_canvas_.uniform_i("_tex", 0);
-                scn->brush_tex_.bind(0);
+                scn->brush_layer_->tex_->bind(0);
 
                 batch_.draw_batch();
             }

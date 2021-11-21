@@ -13,8 +13,6 @@
 #include <cstring>
 #include <stdint.h>
 
-// TODO: change texture filering mode after initializing, for layer textures and the brush texture.
-
 Scene::Scene(const char* _image_path)
 :   region_{0}
 {
@@ -32,21 +30,14 @@ Scene::Scene(const char* _image_path)
     memcpy(get_curr_layer()->img_->pixels_, img.pixels_, img.get_size_b());
     get_curr_layer()->update_tex(true);
     
-    brush_img_ = std::make_unique<Image>(
-        info_.width, info_.height, Col_RGBA{0x00, 0x00, 0x00, 0x00});
 
     Dove::IRect2D region;
     region.posx = region.posy = 0;
     region.width = (uint32_t)info_.width;
     region.height = (uint32_t)info_.height;
 
-    brush_tex_.init();
-    brush_tex_.param_mag_filter(TexFilter::NEAREST);
-    brush_tex_.param_min_filter(TexFilter::NEAREST);
-    brush_tex_.param_wrap_r(TexWrap::CLAMP_TO_EDGE);
-    brush_tex_.param_wrap_s(TexWrap::CLAMP_TO_EDGE);
-
-    brush_tex_.allocate(1, SizedInternalFormat::RGBA8, info_.width, info_.height);
+    brush_layer_ = std::make_unique<Layer>(
+        info_.width, info_.height, "BrushLayer", Col_RGBA{0x00, 0x00, 0x00, 0x00});
 
     mark_region(region);
 }
@@ -61,8 +52,8 @@ Scene::Scene(unsigned int _width, unsigned int _height, Col_RGBA _col)
     info_.width  = _width;
     info_.height = _height;
 
-    brush_img_ = std::make_unique<Image>(
-        info_.width, info_.height, Col_RGBA{0x00, 0x00, 0x00, 0x00});
+    brush_layer_ = std::make_unique<Layer>(
+        _width, _height, "BrushLayer", Col_RGBA{0x00, 0x00, 0x00, 0x00});
 
     BufFlag flag = BufFlag::DYNAMIC_STORAGE_BIT|
                    BufFlag::MAP_READ_BIT|
@@ -76,22 +67,16 @@ Scene::Scene(unsigned int _width, unsigned int _height, Col_RGBA _col)
     region.width = (uint32_t)info_.width;
     region.height = (uint32_t)info_.height;
 
-    brush_tex_.init();
-    brush_tex_.allocate(1, SizedInternalFormat::RGBA8, _width, _height);
-    
     mark_region(region);
 }
 
 
 void Scene::on_update() {
     using namespace DGL;
-    // update brush layer
-    // TODO: region uploading here
-    // NOTE: maybe i should have partially updating in texture class.
-    brush_tex_.upload(0, 0, 0,
-                      info_.width, info_.height,
-                      PixFormat::RGBA, PixType::UNSIGNED_BYTE,
-                      brush_img_->pixels_);
+    for (auto ite = layers_.begin(); ite != layers_.end(); ite++) {
+        ite->get()->update_tex(false);
+    }
+    brush_layer_->update_tex(false);
 }
 
 void Scene::add_layer(Col_RGBA _col) {

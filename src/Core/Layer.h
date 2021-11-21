@@ -44,7 +44,7 @@ public:
     Layer(unsigned int _width, unsigned int _height, std::string _name, Col_RGBA _col);
     ~Layer();
 
-    void update_tex(bool _whole);
+    void update_tex(bool _whole = false);
     void mark_dirt(Dove::IRect2D _region);
     void clear_dirt();
 public:

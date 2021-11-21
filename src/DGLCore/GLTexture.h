@@ -140,7 +140,8 @@ public:
     GLTexture2D();
 
     void allocate(uint32_t _levels, SizedInternalFormat _format, int _width, int _height);
-    // TODO: upload region
+    // TODO: upload region in texture class
+    // void upload_region(uint32_t _level, Dove::IRect2D _region, Dove::IVector2D _src_info, ...);
     void upload(uint32_t _level, int _offset_x, int _offset_y,
                 int _width, int _height, PixFormat _format, PixType _type, void* _data);
     void bind(uint32_t _unit);

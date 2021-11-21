@@ -36,6 +36,9 @@ Layer::~Layer() {
 void Layer::mark_dirt(Dove::IRect2D _region) {
     dirt_region_ = Dove::merge_rect(_region, dirt_region_);
 }
+void Layer::clear_dirt() {
+    dirt_region_ = {0};
+}
 
 void Layer::update_tex(bool _whole) {
     using namespace DGL;
@@ -44,8 +47,15 @@ void Layer::update_tex(bool _whole) {
                     PixFormat::RGBA, PixType::UNSIGNED_BYTE,
                     img_->pixels_);
     } else {
-        // TODO: **region updating**
+        if (dirt_region_.width == 0 || dirt_region_.height == 0) return;
+        for (uint32_t y = dirt_region_.posy; y <= dirt_region_.posy + dirt_region_.height; y++) {
+            tex_->upload(0, dirt_region_.posx, y, dirt_region_.width, 1,
+                        PixFormat::RGBA, PixType::UNSIGNED_BYTE,
+                        img_->pixels_ + y * img_->info_.width + dirt_region_.posx);
+        }
     }
+
+    clear_dirt();
 }
 
 // ---------------------Layer Image------------------------- //
