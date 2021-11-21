@@ -15,10 +15,11 @@ Layer::Layer(unsigned int _width, unsigned int _height, std::string _name, Col_R
     info_.blend_mode = BlendMode::NORMAL;
 
     using namespace DGL;
-    texbuf_.init();
-    texbuf_.allocate(_width * _height * sizeof(Col_RGBA),
-                     BufFlag::MAP_READ_BIT | BufFlag::MAP_WRITE_BIT | BufFlag::DYNAMIC_STORAGE_BIT,
-                     SizedInternalFormat::RGBA8);
+    tex_.init();
+    tex_.allocate(1, SizedInternalFormat::RGBA8, _width, _height);
+    tex_.upload(0, 0, 0, _width, _height,
+                PixFormat::RGBA, PixType::UNSIGNED_BYTE,
+                img_.pixels_);
 
     mark_dirt({0, 0, _width, _height});
 }
@@ -31,17 +32,26 @@ void Layer::mark_dirt(Dove::IRect2D _region) {
     dirt_region_ = Dove::merge_rect(_region, dirt_region_);
 }
 
-void Layer::update_texbuf(bool _whole) {
+void Layer::update_tex(bool _whole) {
     using namespace DGL;
     if (_whole) {
-        Col_RGBA* ptr = (Col_RGBA*)texbuf_.buffer_->map(DGL::Access::READ_WRITE);
-        memcpy(ptr, img_.pixels_, img_.get_size_b());
-        texbuf_.buffer_->unmap();
+        tex_.upload(0, 0, 0, img_.info_.width, img_.info_.height,
+                    PixFormat::RGBA, PixType::UNSIGNED_BYTE,
+                    img_.pixels_);
     } else {
-        // TODO: finish this
-        // ...
+        // TODO: parically updating
     }
+    
+    // if (_whole) {
+        // Col_RGBA* ptr = (Col_RGBA*)texbuf_.buffer_->map(DGL::Access::READ_WRITE);
+        // memcpy(ptr, img_.pixels_, img_.get_size_b());
+        // texbuf_.buffer_->unmap();
+    // } else {
+        // // TODO: finish this
+        // // ...
+    // }
 }
+// ---------------------Layer Image------------------------- //
 
 LayerImage::LayerImage(int _width, int _height, Col_RGBA _col, bool _attach)
 :   gl_attached_(false)

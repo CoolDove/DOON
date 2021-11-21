@@ -41,6 +41,7 @@ void Brush::on_deactivate() {
 }
 
 void Brush::on_update() {
+    
 
 }
 
@@ -60,7 +61,7 @@ void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
 
         using namespace DGL;
         // @Composition: composite the whole image for now
-        Image* brush_img = &app_->curr_scene_->brush_img_;
+        Image* brush_img = app_->curr_scene_->brush_img_.get();
         Layer* curr_layer = app_->curr_scene_->get_curr_layer();
         Dove::IRect2D* p_region = &painting_region_;
         int width  = p_region->width;
@@ -77,7 +78,7 @@ void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
         // set current layer image
         curr_layer->img_.set_subimage(&dst_sub, p_region->position);
         curr_layer->mark_dirt(*p_region);
-        curr_layer->update_texbuf(true);
+        curr_layer->update_tex(true);
 
         // TODO: record brush command into commands history
         // ...
@@ -108,7 +109,6 @@ void Brush::on_pointer(Input::PointerInfo _info, int _x, int _y) {
         int wnd_height = app_->window_info_.height;
 
         DGL::Camera* cam = &app_->curr_scene_->camera_;
-        Image* img = &app_->curr_scene_->image_;
 
         glm::mat4 matrix = Space::mat_ndc_world(cam, wnd_width, wnd_height);
         glm::vec4 ws_pos = glm::vec4(_x, _y, 1, 1);
@@ -121,13 +121,18 @@ void Brush::on_pointer(Input::PointerInfo _info, int _x, int _y) {
 
         glm::vec4 cs_pos = matrix * ws_pos;
 
-        int half_width  = (int)(0.5f * img->info_.width);
-        int half_height = (int)(0.5f * img->info_.height);
+        int half_width  = (int)(0.5f * app_->curr_scene_->info_.width);
+        int half_height = (int)(0.5f * app_->curr_scene_->info_.height);
 
         int size_min = (int)(size_min_scale_ * size_max_);
         unsigned int brush_size = (unsigned int)((pressure / 1024.0f) * (size_max_ - (size_min)) + size_min);
 
-        const Image* tgt_img = &app_->curr_scene_->brush_img_;
+        const Image* tgt_img = app_->curr_scene_->brush_img_.get();
+
+        DLOG_TRACE("mouse point: %d %d, paint point: %d %d",
+                   (int)ws_pos.x, (int)ws_pos.y,
+                   (int)cs_pos.x + half_width, -(int)cs_pos.y + half_height);
+
         // draw dot on the brush img
         Dove::IRect2D dot_region =
             draw_circle((int)cs_pos.x + half_width, -(int)cs_pos.y + half_height, brush_size, tgt_img);

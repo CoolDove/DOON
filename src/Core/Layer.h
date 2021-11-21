@@ -41,7 +41,7 @@ public:
     Layer(unsigned int _width, unsigned int _height, std::string _name, Col_RGBA _col);
     ~Layer();
 
-    void update_texbuf(bool _whole);
+    void update_tex(bool _whole);
     void mark_dirt(Dove::IRect2D _region);
     void clear_dirt();
 public:
@@ -50,7 +50,10 @@ public:
         BlendMode   blend_mode;
     } info_;
 
+    // this stores the pixels in the layer,
+    // TODO: but we still need a texture for rendering
     Image img_;
+    DGL::GLTexture2D    tex_;
     DGL::GLTextureBuffer texbuf_;
     Dove::IRect2D        dirt_region_;
 };

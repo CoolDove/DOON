@@ -10,14 +10,6 @@
 #include <list>
 #include <memory>
 
-// struct RectInt {
-    // // posx and posy is the left-up point
-    // int posx;
-    // int posy;
-    // int width;
-    // int height;
-// };
-
 using LayerList = std::list<std::unique_ptr<Layer>>;
 using LayerIte = std::list<std::unique_ptr<Layer>>::iterator;
 
@@ -25,7 +17,8 @@ using namespace DGL;
 
 class Scene {
 public:
-    // Scene(const char* _image_path);
+    // TODO: recover this function to enable creating scenes from a existing picture file
+    Scene(const char* _image_path);
     Scene(uint32_t _width, uint32_t _height, Col_RGBA _col);
     ~Scene();
 
@@ -47,15 +40,11 @@ public:
     Dove::IRect2D get_region() const { return region_; };
 public:
     Camera      camera_;
-    // NOTE: maybe this is not necessary anymore
-    Image       image_;
 
     LayerList   layers_;
 
-    DGL::GLTextureBuffer result_buffer_;
-    DGL::GLTextureBuffer brush_buffer_;
-    LayerImage           result_;
-    Image                brush_img_;
+    DGL::GLTexture2D       brush_tex_;
+    std::unique_ptr<Image> brush_img_;
 
     struct {
         int width;
@@ -63,6 +52,6 @@ public:
     } info_;
 
 private:
-    Dove::IRect2D region_;// updated region
+    Dove::IRect2D region_; // updated region
     LayerIte      curr_layer_ite_;
 };

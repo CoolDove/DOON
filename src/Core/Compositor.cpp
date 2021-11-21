@@ -6,6 +6,7 @@
 #include "DGLCore/GLTexture.h"
 #include "DoveLog.hpp"
 #include <DGLCore/GLDebugger.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -28,6 +29,7 @@ void ComposeBuffer::realloc(uint32_t _size_b) {
 }
 
 ComposeBuffer::~ComposeBuffer() {
+    
 }
 
 Compositor::Compositor() {
@@ -38,7 +40,6 @@ Compositor::~Compositor() {
 }
 
 void Compositor::load_shaders() {
-  
 }
 
 void Compositor::compose(const std::string& _composition_func,
@@ -155,9 +156,9 @@ ComposeBuffer* Compositor::get_buffer(uint32_t _size_b, bool _occupy) {
           } else {
             // FIXME:
             // do nothing so that the function returns nullptr
-            // maybe someday we could wait for glsync here and call get_buffe() recursively again.
+            // maybe someday we could wait for glsync here and
+            // call get_buffe() recursively again.
             // but that is dangerous
-            // @temp:
             assert(0 && " there is no more buffer to be used ");
           }
         } else {

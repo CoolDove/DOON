@@ -24,9 +24,13 @@ void Renderer::init() {
     std::string msg_canvas_vert;
     std::string msg_canvas_frag;
 
-    Shader canvas_vert("./res/shaders/canvas.vert", ShaderType::VERTEX_SHADER, &msg_canvas_vert);
-    Shader canvas_frag("./res/shaders/canvas.frag", ShaderType::FRAGMENT_SHADER, &msg_canvas_frag);
-    program_canvas_.link(2, &canvas_vert, &canvas_frag);
+    try {
+        Shader canvas_vert("./res/shaders/canvas.vert", ShaderType::VERTEX_SHADER, &msg_canvas_vert);
+        Shader canvas_frag("./res/shaders/canvas.frag", ShaderType::FRAGMENT_SHADER, &msg_canvas_frag);
+        program_canvas_.link(2, &canvas_vert, &canvas_frag);
+    } catch (const DGL::EXCEPTION::SHADER_COMPILING_FAILED& err) {
+        DLOG_ERROR("shader error: %s", err.msg.c_str());
+    }
 
     Shader base_vert("./res/shaders/base.vert", ShaderType::VERTEX_SHADER);
     Shader base_frag("./res/shaders/base.frag", ShaderType::FRAGMENT_SHADER);
@@ -78,14 +82,22 @@ void Renderer::render() {
     }
 
     {// @DrawLayers:
-        // now, we only need to draw the result image
-        program_canvas_.bind();
-        program_canvas_.uniform_mat("_view", 4, &view[0][0]);
-        program_canvas_.uniform_mat("_proj", 4, &proj[0][0]);
+        for (auto ite = scn->layers_.begin(); ite != scn->layers_.end(); ite++) {
+            program_canvas_.bind();
+            program_canvas_.uniform_mat("_view", 4, &view[0][0]);
+            program_canvas_.uniform_mat("_proj", 4, &proj[0][0]);
 
-        program_canvas_.uniform_i("_tex", 0);
-        app_->curr_scene_->result_.tex_->bind(0);
-        batch_.draw_batch();
+            program_canvas_.uniform_i("_tex", 0);
+            ite->get()->tex_.bind(0);
+
+            batch_.draw_batch();
+            if (ite->get() == scn->get_curr_layer()) {
+                program_canvas_.uniform_i("_tex", 0);
+                scn->brush_tex_.bind(0);
+
+                batch_.draw_batch();
+            }
+        }
     }
 }
 

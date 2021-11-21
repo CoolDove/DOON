@@ -50,7 +50,9 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     // scenes_["void1"] = make_unique<Scene>(2048, 2048, Col_RGBA{0x00, 0x00, 0x00, 0x00});
 
     if (scenes_.size() == 0) {
-        scenes_["void"] = make_unique<Scene>(2048, 2048, Col_RGBA{0x00, 0x00, 0x00, 0x00});
+        // scenes_["void"] = make_unique<Scene>(2100, 2970, Col_RGBA{0x00, 0x00, 0x00, 0x00});
+        scenes_["void"] = make_unique<Scene>(1024, 1024, Col_RGBA{0x00, 0x00, 0x00, 0x00});
+        // scenes_["void"] = make_unique<Scene>(2970, 2100, Col_RGBA{0x00, 0x33, 0x00, 0x11});
     }
     
     curr_scene_ = scenes_.begin()->second.get();
@@ -131,6 +133,9 @@ void Application::render_ui() {
             }
 
             if (ImGui::CollapsingHeader("scene")) {
+                if (ImGui::Button("add layer")) {
+                    curr_scene_->add_layer(Col_RGBA{0x00, 0x00, 0x00, 0x00});
+                }
                 ImGui::BeginGroup();
                 for (auto ite = curr_scene_->layers_.rbegin(); ite != curr_scene_->layers_.rend(); ite++)
                 {
@@ -143,10 +148,6 @@ void Application::render_ui() {
                     }
                 }
                 ImGui::EndGroup();
-
-                if (ImGui::Button("add layer")) {
-                    curr_scene_->add_layer(Col_RGBA{0x00, 0x00, 0x00, 0x00});
-                }
             }
             ImGui::End();
         }
@@ -180,9 +181,6 @@ void Application::render_ui() {
         ImGui::LabelText("canvas size",  "-%d * %d-", curr_scene_->info_.width, curr_scene_->info_.height);
         ImGui::EndGroup();
 
-        // ********** action list ************
-        ImGui::BeginGroup();
-
         auto* calls = &action_list_->call_pages_["def"];
         auto* actions = &action_list_->action_pages_["def"];
 
@@ -193,8 +191,6 @@ void Application::render_ui() {
                 ImGui::LabelText(action_ite->first.c_str(), action_name.c_str());
             }
         }
-
-        ImGui::EndGroup();
 
         ImGui::End();
     }
@@ -220,6 +216,8 @@ void Application::init_dlog() {
         OutputDebugString(_msg.to_string(Dove::DMSG_FLAG_SIMPLE | Dove::DMSG_FLAG_FILE | Dove::DMSG_FLAG_LINE).c_str());
         OutputDebugString("\n");
     };
+
+    DLOG_TRACE("dlog inited");
 
     DLOG_INIT;
 }
@@ -257,12 +255,11 @@ void Application::init_window(HINSTANCE _instance, HINSTANCE _prev_instance, cha
 }
 
 void Application::init_imgui() {
-    /*──────────────────────────────────────────────────────────────────────────────┐
-    │ ImGui_ImplWin32_EnableDpiAwareness();                                         │
-    │ i dont know why this function is called in the imgui example,                 │
-    │ but for my situation,                                                         │
-    │ calling this causes an offset of my mouse position depends on the window size │
-    └──────────────────────────────────────────────────────────────────────────────*/
+    // @why:
+    // ImGui_ImplWin32_EnableDpiAwareness();                                        
+    // i dont know why this function is called in the imgui example,                
+    // but for my situation,                                                        
+    // calling this causes an offset of my mouse position depends on the window size
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
 

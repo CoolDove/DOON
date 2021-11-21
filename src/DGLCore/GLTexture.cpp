@@ -28,9 +28,7 @@ void GLTexture::release() {
     inited_ = false;
 }
 
-/*──────────┐
-│ texture2D │
-└──────────*/
+// -----------texture2D
 GLTexture2D::GLTexture2D()
 :   GLTexture()
 {
@@ -65,9 +63,8 @@ void GLTexture2D::bind_image(uint32_t _unit, uint32_t _level, bool _layered, int
 }
 
 
-/*───────────────┐
-│ texture buffer │
-└───────────────*/
+
+// -----------texture buffer
 GLTextureBuffer::GLTextureBuffer()
 :   GLTexture(),
     attached_(false)

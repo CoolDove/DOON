@@ -5,6 +5,8 @@
 
 #ifdef DEBUG
 
+// NOTE: do i really need exceptions?
+
 inline void APIENTRY 
 gl_debug_proc(GLenum source, 
               GLenum type, 
@@ -14,7 +16,7 @@ gl_debug_proc(GLenum source,
               const char *message, 
               const void *userParam)
 {
-    if(id == 131169 || id == 131185 || id == 131218 || id == 131204) return; // for what
+    if(id == 131169 || id == 131185 || id == 131218 || id == 131204) return; // for what?
 
     std::string log = "";
     switch (source)
@@ -72,9 +74,7 @@ inline void gl_debug_init() {
 }
 #endif
 
-/*──────────┐
-│ EXCEPTION │
-└──────────*/
+// EXCEPTION
 namespace DGL::EXCEPTION
 {
 
