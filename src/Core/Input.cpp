@@ -15,7 +15,6 @@ InputContext input_context = {0};
 // TODO: mouse scroll to zoom the camera, middle drag to move the camera
 // TODO: alt-mouse_right drag to adjust the brush size
         // currently, ctrl scroll to adjust the brush size
-//xTODO: input to action
 // TODO: load key-action map from the config file
 
 // check if mouse is in region for tools

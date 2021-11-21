@@ -37,6 +37,9 @@ private:
 };
 
 class Layer {
+private:
+    using ImagePtr = std::unique_ptr<Image>;
+    using Tex2DPtr = std::unique_ptr<DGL::GLTexture2D>;
 public:
     Layer(unsigned int _width, unsigned int _height, std::string _name, Col_RGBA _col);
     ~Layer();
@@ -50,8 +53,7 @@ public:
         BlendMode   blend_mode;
     } info_;
 
-    Image img_;
-    DGL::GLTexture2D    tex_;
-    // DGL::GLTextureBuffer texbuf_;
-    Dove::IRect2D        dirt_region_;
+    ImagePtr img_;
+    Tex2DPtr tex_;
+    Dove::IRect2D dirt_region_;
 };

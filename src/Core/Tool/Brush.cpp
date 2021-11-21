@@ -68,13 +68,13 @@ void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
         BufFlag flag = BufFlag::DYNAMIC_STORAGE_BIT | BufFlag::MAP_READ_BIT | BufFlag::MAP_WRITE_BIT;
 
         Image src_sub(brush_img, *p_region);
-        Image dst_sub(&curr_layer->img_, *p_region);
+        Image dst_sub(&(*curr_layer->img_), *p_region);
 
         uint32_t result_id = app_->compositor_->compose("common", src_sub.pixels_, dst_sub.pixels_, size_b);
         app_->compositor_->get_result(result_id, dst_sub.pixels_, size_b);
         
         // set current layer image
-        curr_layer->img_.set_subimage(&dst_sub, p_region->position);
+        curr_layer->img_->set_subimage(&dst_sub, p_region->position);
         curr_layer->mark_dirt(*p_region);
         curr_layer->update_tex(true);
 

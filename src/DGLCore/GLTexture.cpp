@@ -62,8 +62,6 @@ void GLTexture2D::bind_image(uint32_t _unit, uint32_t _level, bool _layered, int
     glBindImageTexture(_unit, id_, _level, _layered, _layer, (GLenum)_acc, (GLenum)_format);
 }
 
-
-
 // -----------texture buffer
 GLTextureBuffer::GLTextureBuffer()
 :   GLTexture(),
@@ -77,6 +75,12 @@ void GLTextureBuffer::init() {
     glCreateTextures((GLenum)type_, 1, &id_);
 
     if (!id_) throw DGL::EXCEPTION::CREATION_FAILED();
+
+    // param_mag_filter(TexFilter::NEAREST);
+    // param_min_filter(TexFilter::NEAREST);
+    // param_wrap_r(TexWrap::CLAMP_TO_EDGE);
+    // param_wrap_s(TexWrap::CLAMP_TO_EDGE);
+
     inited_ = true;
 }
 

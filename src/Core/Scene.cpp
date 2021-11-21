@@ -13,6 +13,8 @@
 #include <cstring>
 #include <stdint.h>
 
+// TODO: change texture filering mode after initializing, for layer textures and the brush texture.
+
 Scene::Scene(const char* _image_path)
 :   region_{0}
 {
@@ -27,7 +29,7 @@ Scene::Scene(const char* _image_path)
     
     // you must set info_ before adding layers
     add_layer(Col_RGBA{0x00, 0x00, 0x00, 0x00}, _image_path);// current layer has been setted
-    memcpy(get_curr_layer()->img_.pixels_, img.pixels_, img.get_size_b());
+    memcpy(get_curr_layer()->img_->pixels_, img.pixels_, img.get_size_b());
     get_curr_layer()->update_tex(true);
     
     brush_img_ = std::make_unique<Image>(
@@ -39,6 +41,11 @@ Scene::Scene(const char* _image_path)
     region.height = (uint32_t)info_.height;
 
     brush_tex_.init();
+    brush_tex_.param_mag_filter(TexFilter::NEAREST);
+    brush_tex_.param_min_filter(TexFilter::NEAREST);
+    brush_tex_.param_wrap_r(TexWrap::CLAMP_TO_EDGE);
+    brush_tex_.param_wrap_s(TexWrap::CLAMP_TO_EDGE);
+
     brush_tex_.allocate(1, SizedInternalFormat::RGBA8, info_.width, info_.height);
 
     mark_region(region);

@@ -87,7 +87,7 @@ void Renderer::render() {
             program_canvas_.uniform_mat("_proj", 4, &proj[0][0]);
 
             program_canvas_.uniform_i("_tex", 0);
-            ite->get()->tex_.bind(0);
+            ite->get()->tex_->bind(0);
 
             batch_.draw_batch();
             if (ite->get() == scn->get_curr_layer()) {

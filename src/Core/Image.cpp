@@ -84,7 +84,6 @@ void Image::recreate(unsigned int _width, unsigned int _height, Col_RGBA _base_c
     inited_ = true;
 }
 
-// FIXME: stupid error!!!
 void Image::set_subimage(const Image *_img, Dove::IVector2D _pos) {
     Dove::IRect2D region_src; // for _img
     Dove::IRect2D region_dst; // for this
@@ -128,8 +127,6 @@ void Image::set_subimage(const Image *_img, Dove::IVector2D _pos) {
         region_dst.height = region_src.height;
     }
 
-    // @set:
-    // Col_RGBA* ptr_src = _img->pixels_ + region_src.posy * _img->info_.width + region_src.posx;
     Col_RGBA* ptr_src = _img->pixels_ + region_src.posy * _img->info_.width + region_src.posx;
     Col_RGBA* ptr_dst = pixels_ + region_dst.posy * info_.width + region_dst.posx;
 

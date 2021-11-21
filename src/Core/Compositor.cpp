@@ -61,6 +61,7 @@ uint32_t Compositor::compose(const std::string &_composition_func,
     using namespace DGL;
     ComposeBuffer* src_buffer = get_buffer(_size_b);
     ComposeBuffer* dst_buffer = get_buffer(_size_b);
+    // FIXME: sometimes this assertion occurs for unknown reseaon
     assert(src_buffer && dst_buffer);// they shouldnt be nullptr for now
     src_buffer->occupying_ = true;
     dst_buffer->occupying_ = true;
