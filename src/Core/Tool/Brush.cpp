@@ -60,6 +60,7 @@ void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
         DLOG_TRACE("brush up");
 
         // @Composition: composite the whole image for now
+        Layer* brush_layer = app_->curr_scene_->brush_layer_.get();
         Image* brush_img = app_->curr_scene_->brush_layer_->img_.get();
         Layer* curr_layer = app_->curr_scene_->get_curr_layer();
         IRect2D* p_region = &painting_region_;
@@ -77,7 +78,6 @@ void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
         // set current layer image
         curr_layer->img_->set_subimage(&dst_sub, p_region->position);
         curr_layer->mark_dirt(*p_region);
-        // curr_layer->update_tex(false);
 
         // TODO: record brush command into commands history
         // ...
@@ -87,7 +87,9 @@ void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
         uint32_t layer_w = brush_img->info_.width;
         uint32_t layer_h = brush_img->info_.height;
         uint32_t layer_s = layer_w * layer_h * sizeof(Col_RGBA);
+        // clear brush img
         memset(brush_img->pixels_, 0x00, layer_s);
+        brush_layer->mark_dirt_whole();
         
         curr_layer->mark_dirt(*p_region);
         painting_region_ = {0};

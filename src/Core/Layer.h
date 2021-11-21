@@ -46,6 +46,7 @@ public:
 
     void update_tex(bool _whole = false);
     void mark_dirt(Dove::IRect2D _region);
+    void mark_dirt_whole();
     void clear_dirt();
 public:
     struct {

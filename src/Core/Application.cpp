@@ -22,6 +22,7 @@ using wglCreateContextAttribsARB_t = HGLRC (WINAPI *) (HDC hDC, HGLRC hshareCont
 
 Application* Application::instance_ = nullptr;
 
+// TODO: try to process input message in another thread, to get preciser mouse motion trace
 Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _cmd_line, int _show_code) 
 :   window_info_{0, 0},
     inited_(false)
@@ -49,7 +50,6 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     scenes_["alp"]   = make_unique<Scene>("./res/textures/alp.png");
     // scenes_["test"]  = make_unique<Scene>("./res/textures/test.png");
     scenes_["void1"] = make_unique<Scene>(2048, 2048, Col_RGBA{0x00, 0x00, 0x00, 0x00});
-    scenes_["void2"] = make_unique<Scene>(2048, 1024, Col_RGBA{0x00, 0x00, 0x00, 0x00});
 
     if (scenes_.size() == 0) {
         scenes_["void"] = make_unique<Scene>(1024, 1024, Col_RGBA{0x00, 0x00, 0x00, 0x00});

@@ -36,6 +36,9 @@ Layer::~Layer() {
 void Layer::mark_dirt(Dove::IRect2D _region) {
     dirt_region_ = Dove::merge_rect(_region, dirt_region_);
 }
+void Layer::mark_dirt_whole() {
+    dirt_region_ = Dove::IRect2D{0, 0, (uint32_t)img_->info_.width, (uint32_t)img_->info_.height};
+}
 void Layer::clear_dirt() {
     dirt_region_ = {0};
 }
@@ -47,11 +50,21 @@ void Layer::update_tex(bool _whole) {
                     PixFormat::RGBA, PixType::UNSIGNED_BYTE,
                     img_->pixels_);
     } else {
+        // region is 0
         if (dirt_region_.width == 0 || dirt_region_.height == 0) return;
-        for (uint32_t y = dirt_region_.posy; y <= dirt_region_.posy + dirt_region_.height; y++) {
-            tex_->upload(0, dirt_region_.posx, y, dirt_region_.width, 1,
+        // region is the whole
+        if (dirt_region_.posx == 0 && dirt_region_.posy == 0 &&
+            dirt_region_.width == img_->info_.width && dirt_region_.height == img_->info_.height)
+        {
+            tex_->upload(0, 0, 0, img_->info_.width, img_->info_.height,
                         PixFormat::RGBA, PixType::UNSIGNED_BYTE,
-                        img_->pixels_ + y * img_->info_.width + dirt_region_.posx);
+                        img_->pixels_);
+        } else {
+            for (uint32_t y = dirt_region_.posy; y <= dirt_region_.posy + dirt_region_.height; y++) {
+                tex_->upload(0, dirt_region_.posx, y, dirt_region_.width, 1,
+                            PixFormat::RGBA, PixType::UNSIGNED_BYTE,
+                            img_->pixels_ + y * img_->info_.width + dirt_region_.posx);
+            }
         }
     }
 

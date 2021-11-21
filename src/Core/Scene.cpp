@@ -26,10 +26,9 @@ Scene::Scene(const char* _image_path)
     info_.height = img.info_.height;
     
     // you must set info_ before adding layers
-    add_layer(Col_RGBA{0x00, 0x00, 0x00, 0x00}, _image_path);// current layer has been setted
+    add_layer(Col_RGBA{0x00, 0x00, 0x00, 0x00}, _image_path);
     memcpy(get_curr_layer()->img_->pixels_, img.pixels_, img.get_size_b());
     get_curr_layer()->update_tex(true);
-    
 
     Dove::IRect2D region;
     region.posx = region.posy = 0;
