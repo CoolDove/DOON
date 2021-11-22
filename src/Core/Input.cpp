@@ -4,6 +4,7 @@
 #include <DoveLog.hpp>
 #include <imgui/imgui.h>
 #include <Core/Action.h>
+#include <Core/Renderer.h>
 
 #define IMGUI_MONOPOLY_INPUT 0x0010
 namespace Input {
@@ -16,6 +17,7 @@ InputContext input_context = {0};
 // TODO: alt-mouse_right drag to adjust the brush size
         // currently, ctrl scroll to adjust the brush size
 // TODO: load key-action map from the config file
+
 
 // check if mouse is in region for tools
 bool is_mouse_position_valid(Application* _app, int _x, int _y) {
@@ -141,8 +143,11 @@ LRESULT CALLBACK wnd_proc(HWND _window, UINT _message, WPARAM _wparam, LPARAM _l
             int width  = app->window_info_.width;
             int height = app->window_info_.height;
 
-            if (app->inited_) 
+            // TODO: move to somewhere else
+            if (app->inited_) {
                 glViewport(0, 0, width, height);
+                app->renderer_->resize_framebuffer({width, height});
+            }
 
         } break;
         case WM_MOVE:

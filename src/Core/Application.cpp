@@ -72,6 +72,14 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     action_list_ = std::make_unique<ActionList>();
 
     action_list_->invoke({Dove::KeyCode::A, Dove::ModKey::None});
+
+//  @temporary: check the version
+    GLint major;
+    GLint minor;
+    glGetIntegerv(GL_MAJOR_VERSION, &major);
+    glGetIntegerv(GL_MINOR_VERSION, &minor);
+
+    DLOG_TRACE("GL version: %d.%d\n", major, minor);
 }
 
 Application::~Application() {

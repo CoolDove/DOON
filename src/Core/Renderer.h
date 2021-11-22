@@ -1,6 +1,8 @@
 ﻿#pragma once
 
+#include "Base/General.h"
 #include "Core/Application.h"
+#include "DGLCore/GLTexture.h"
 #include <DGLCore/DGLCore.h>
 #include <Windows.h>
 
@@ -11,6 +13,8 @@ public:
     void render();
     void on_ui();
     void recreate_canvas_batch();
+
+    void resize_framebuffer(Dove::IVector2D _size);
 public:
     struct OpenGLInfo {
         string version;
@@ -31,6 +35,10 @@ private:
 
     Program program_canvas_;
     Program program_base_;
+
+    // TODO: GLFrameBuffer class
+    GLuint framebuf_;
+    DGL::GLTexture2D framebuf_tex_;
 
     GeoBatch batch_;
 

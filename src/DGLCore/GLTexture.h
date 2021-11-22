@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <memory>
 
+// TODO: immutable textures and mutable textures
 namespace DGL
 {
 enum class TexType : uint32_t {
@@ -96,13 +97,15 @@ public:
     GLTexture(const GLTexture&) = delete;
     GLTexture* operator=(const GLTexture&) = delete;
     
-    void init();
+    void init(bool _immutable = true);
     void release();
 
 public:
     TexType  get_type() const { return type_; }
     uint32_t get_glid() const { return id_; }
     bool     get_inited() const { return inited_; }
+    bool     get_immutable() const { return immutable_; }
+    bool     get_allocated() const { return allocated_; }
 
 public:
     void param_min_filter(TexFilter _filter) {
@@ -129,17 +132,29 @@ public:
         glTextureParameteri(id_, (GLenum)TexParam::TEXTURE_WRAP_T, (GLenum)_wrap);
     }
 
+public:
+    struct {
+        uint32_t width;
+        uint32_t height;
+        uint32_t levels;
+        SizedInternalFormat format;
+    } info_;
+
 protected:
     GLuint  id_;
     bool    inited_;
+    bool    immutable_;
+    bool    allocated_;
     TexType type_;
 };
 
-class GLTexture2D : public GLTexture{
+class GLTexture2D : public GLTexture {
 public:
     GLTexture2D();
 
-    void allocate(uint32_t _levels, SizedInternalFormat _format, int _width, int _height);
+    // params in the second line are used only when this is a mutable texture
+    void allocate(uint32_t _levels, SizedInternalFormat _format, int _width, int _height,
+                  PixFormat _pix_format = PixFormat::BGRA, PixType _pix_type = PixType::UNSIGNED_BYTE, void* _data = nullptr);
     // TODO: upload region in texture class
     // void upload_region(uint32_t _level, Dove::IRect2D _region, Dove::IVector2D _src_info, ...);
     void upload(uint32_t _level, int _offset_x, int _offset_y,
@@ -153,7 +168,7 @@ private:
     uint32_t levels_count_;
 };
 
-class GLTextureBuffer : public GLTexture{
+class GLTextureBuffer : public GLTexture {
 public:
     GLTextureBuffer();
 
@@ -165,5 +180,4 @@ public:
 private:
     bool attached_;
 };
-
 }

@@ -4,7 +4,6 @@
 
 // TODO: give up actions with args
 // TODO: rebuild action system
-// @Test:
 ActionList::ActionList()
 :   curr_page_("def")
 {

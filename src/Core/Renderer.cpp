@@ -13,7 +13,9 @@
 #include "Color.h"
 
 using namespace DGL;
-Renderer::Renderer(Application* _app) {
+Renderer::Renderer(Application *_app)
+:   framebuf_(0)
+{
     app_ = _app;
     init_opengl();
 }
@@ -21,20 +23,33 @@ Renderer::Renderer(Application* _app) {
 void Renderer::init() {
     batch_.init({{DGL::Attribute::POSITION, 3}, { DGL::Attribute::UV, 2 }});
 
-    std::string msg_canvas_vert;
-    std::string msg_canvas_frag;
-
     try {
-        Shader canvas_vert("./res/shaders/canvas.vert", ShaderType::VERTEX_SHADER, &msg_canvas_vert);
-        Shader canvas_frag("./res/shaders/canvas.frag", ShaderType::FRAGMENT_SHADER, &msg_canvas_frag);
+        Shader canvas_vert("./res/shaders/canvas.vert", ShaderType::VERTEX_SHADER);
+        Shader canvas_frag("./res/shaders/canvas.frag", ShaderType::FRAGMENT_SHADER);
         program_canvas_.link(2, &canvas_vert, &canvas_frag);
     } catch (const DGL::EXCEPTION::SHADER_COMPILING_FAILED& err) {
         DLOG_ERROR("shader error: %s", err.msg.c_str());
     }
 
-    Shader base_vert("./res/shaders/base.vert", ShaderType::VERTEX_SHADER);
-    Shader base_frag("./res/shaders/base.frag", ShaderType::FRAGMENT_SHADER);
-    program_base_.link(2, &base_vert, &base_frag);
+    try {
+        Shader base_vert("./res/shaders/base.vert", ShaderType::VERTEX_SHADER);
+        Shader base_frag("./res/shaders/base.frag", ShaderType::FRAGMENT_SHADER);
+        program_base_.link(2, &base_vert, &base_frag);
+    } catch (const DGL::EXCEPTION::SHADER_COMPILING_FAILED& err) {
+        DLOG_ERROR("shader error: %s", err.msg.c_str());
+    }
+
+    // @Temporary: research on framebuffer
+    int wnd_width = app_->window_info_.width;
+    int wnd_height = app_->window_info_.height;
+
+    framebuf_tex_.init();
+    framebuf_tex_.allocate(1, SizedInternalFormat::RGBA8,
+                           wnd_width, wnd_height,
+                           PixFormat::RGBA, PixType::UNSIGNED_BYTE);
+
+    glCreateFramebuffers(1, &framebuf_);
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuf_);
 
     recreate_canvas_batch();
 }
@@ -50,6 +65,7 @@ void Renderer::recreate_canvas_batch() {
     }
 }
 
+// TODO: programmable blending
 void Renderer::render() {
     program_canvas_.bind();
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
@@ -58,6 +74,7 @@ void Renderer::render() {
     Scene* scn = app_->curr_scene_;
     Dove::IRect2D updated_region = scn->get_region();
 
+    // set the blending function
     glEnable(GL_BLEND);
     glBlendEquation(GL_FUNC_ADD);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -69,6 +86,18 @@ void Renderer::render() {
     glm::mat4 view = Space::mat_world_camera(&app_->curr_scene_->camera_);
     glm::mat4 proj = Space::mat_camproj(&app_->curr_scene_->camera_, wnd_width, wnd_height);
 
+
+    // bind framebuffer attach
+    glNamedFramebufferTexture(framebuf_, GL_COLOR_ATTACHMENT0,
+                              framebuf_tex_.get_glid(), 0);
+    GLenum framebuf_status = glCheckNamedFramebufferStatus(framebuf_, GL_FRAMEBUFFER);
+    if (framebuf_status != GL_FRAMEBUFFER_COMPLETE) {
+        DLOG_ERROR("framebuffer is not complete!");
+        assert(false);
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuf_);
+    glClear(GL_COLOR_BUFFER_BIT);
     {// @DrawBase:
         program_base_.bind();
         float cam_size = (10.0f - cam->size_)/10.0f;
@@ -80,6 +109,7 @@ void Renderer::render() {
         batch_.draw_batch();
     }
 
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
     {// @DrawLayers:
         for (auto ite = scn->layers_.begin(); ite != scn->layers_.end(); ite++) {
             program_canvas_.bind();
@@ -90,6 +120,7 @@ void Renderer::render() {
             ite->get()->tex_->bind(0);
 
             batch_.draw_batch();
+
             if (ite->get() == scn->get_curr_layer()) {
                 program_canvas_.uniform_i("_tex", 0);
                 scn->brush_layer_->tex_->bind(0);
@@ -98,6 +129,16 @@ void Renderer::render() {
             }
         }
     }
+
+    // detach the framebuffer texture
+    glNamedFramebufferTexture(framebuf_, GL_COLOR_ATTACHMENT0,
+                              0, 0);
+}
+
+void Renderer::resize_framebuffer(Dove::IVector2D _size) {
+    framebuf_tex_.release();
+    framebuf_tex_.init();
+    framebuf_tex_.allocate(1, SizedInternalFormat::RGBA8, _size.x, _size.y);
 }
 
 void Renderer::init_opengl() {
@@ -127,7 +168,6 @@ void Renderer::init_opengl() {
 
     gladLoadGL();
 
-    glEnable(GL_BLEND);
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
     SwapBuffers(device_context_);
@@ -163,7 +203,6 @@ void Renderer::init_opengl() {
         gl_debug_init();
 #endif
     }
-
 }
 
 void Renderer::on_ui() {

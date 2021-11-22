@@ -45,7 +45,7 @@ void Brush::on_update() {
 
 void Brush::on_pointer_down(Input::PointerInfo _info, int _x, int _y) {
     if (!holding_) {
-        DLOG_TRACE("brush down");
+        // DLOG_TRACE("brush down");
         holding_ = true;
     }
 }
@@ -57,7 +57,7 @@ void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
 
     if (holding_) {
         holding_ = false;
-        DLOG_TRACE("brush up");
+        // DLOG_TRACE("brush up");
 
         // @Composition: composite the whole image for now
         Layer* brush_layer = app_->curr_scene_->brush_layer_.get();

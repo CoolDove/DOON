@@ -185,10 +185,10 @@ void Compositor::add_compshader(std::string _name, std::string _load_path) {
 
     // try {
         // shader.load(_load_path);
-    // } catch (const EXCEPTION::SHADER_COMPILING_FAILED& exp) {
-        // DLOG_ERROR("ShaderError: %s", exp.msg.c_str());
+    // } catch (const exception::shader_compiling_failed& exp) {
+        // dlog_error("shadererror: %s", exp.msg.c_str());
         // assert(0&& " failed to compile compute shader ");
-    // } catch (const EXCEPTION::FILE_NOT_EXIST& exp) {
+    // } catch (const exception::file_not_exist& exp) {
         // assert(0&& " file not exist ");
     // }
 
