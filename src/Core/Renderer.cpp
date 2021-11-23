@@ -105,17 +105,16 @@ void Renderer::render() {
         program_base_.uniform_f("_size", (float)scn->info_.width, (float)scn->info_.height);
         program_base_.uniform_i("_scale", cell_scale);
         // @test:
-        // batch_.draw_batch();
+        batch_.draw_batch();
     }
     bool using_frametex_a = false;
 
     {// DrawLayers:
         for (auto ite = scn->layers_.begin(); ite != scn->layers_.end(); ite++) {
-            if (ite == --scn->layers_.end()) {
+            if (ite == --scn->layers_.end() && ite->get() != scn->get_curr_layer()) {
                 // this is the last layer
                 glBindFramebuffer(GL_FRAMEBUFFER, 0);
                 glClear(GL_COLOR_BUFFER_BIT);
-
             } else {
                 if (using_frametex_a)
                     glNamedFramebufferTexture(framebuf_, GL_COLOR_ATTACHMENT0, framebuf_tex_a_.get_glid(), 0);
@@ -129,8 +128,7 @@ void Renderer::render() {
             program_canvas_.uniform_mat("_proj", 4, &proj[0][0]);
 
             program_canvas_.uniform_i("_tex", 0);
-            ite->get()->tex_->bind(0); // layer texture
-
+            ite->get()->tex_->bind(0);
             program_canvas_.uniform_i("_framebuffer", 1);
             if (using_frametex_a)
                 framebuf_tex_b_.bind(1);
@@ -138,15 +136,32 @@ void Renderer::render() {
                 framebuf_tex_a_.bind(1);
 
             batch_.draw_batch();
-
-            // TODO: recover brush layer rendering later
-            // if (ite->get() == scn->get_curr_layer()) {
-                // program_canvas_.uniform_i("_tex", 0);
-                // scn->brush_layer_->tex_->bind(0);
-                // batch_.draw_batch();
-            // }
-            // switch the using framebuffer texture
             using_frametex_a = !using_frametex_a;
+
+            if (ite->get() == scn->get_curr_layer()) {
+                if (ite == --scn->layers_.end()) {
+                    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+                    glClear(GL_COLOR_BUFFER_BIT);
+                }
+
+                if (using_frametex_a)
+                    glNamedFramebufferTexture(framebuf_, GL_COLOR_ATTACHMENT0, framebuf_tex_a_.get_glid(), 0);
+                else
+                    glNamedFramebufferTexture(framebuf_, GL_COLOR_ATTACHMENT0, framebuf_tex_b_.get_glid(), 0);
+                glClear(GL_COLOR_BUFFER_BIT); 
+
+                program_canvas_.uniform_i("_tex", 0);
+                scn->brush_layer_->tex_->bind(0);
+                program_canvas_.uniform_i("_framebuffer", 1);
+
+                if (using_frametex_a)
+                    framebuf_tex_b_.bind(1);
+                else
+                    framebuf_tex_a_.bind(1);
+
+                batch_.draw_batch();
+                using_frametex_a = !using_frametex_a;
+            }
         }
     }
 
