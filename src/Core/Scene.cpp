@@ -18,7 +18,7 @@ Scene::Scene(const char* _image_path)
 {
     camera_.position_.x = 0.0f;
     camera_.position_.y = 0.0f;
-    camera_.size_       = 5.0f;
+    camera_.size_       = 0.1f;
 
     Image img(_image_path, 0);
 

@@ -38,7 +38,8 @@ private:
 
     // TODO: GLFrameBuffer class
     GLuint framebuf_;
-    DGL::GLTexture2D framebuf_tex_;
+    DGL::GLTexture2D framebuf_tex_a_;
+    DGL::GLTexture2D framebuf_tex_b_;
 
     GeoBatch batch_;
 

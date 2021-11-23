@@ -43,8 +43,12 @@ void Renderer::init() {
     int wnd_width = app_->window_info_.width;
     int wnd_height = app_->window_info_.height;
 
-    framebuf_tex_.init();
-    framebuf_tex_.allocate(1, SizedInternalFormat::RGBA8,
+    framebuf_tex_a_.init();
+    framebuf_tex_a_.allocate(1, SizedInternalFormat::RGBA8,
+                           wnd_width, wnd_height,
+                           PixFormat::RGBA, PixType::UNSIGNED_BYTE);
+    framebuf_tex_b_.init();
+    framebuf_tex_b_.allocate(1, SizedInternalFormat::RGBA8,
                            wnd_width, wnd_height,
                            PixFormat::RGBA, PixType::UNSIGNED_BYTE);
 
@@ -67,9 +71,8 @@ void Renderer::recreate_canvas_batch() {
 
 // TODO: programmable blending
 void Renderer::render() {
-    program_canvas_.bind();
+
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
 
     Scene* scn = app_->curr_scene_;
     Dove::IRect2D updated_region = scn->get_region();
@@ -86,19 +89,14 @@ void Renderer::render() {
     glm::mat4 view = Space::mat_world_camera(&app_->curr_scene_->camera_);
     glm::mat4 proj = Space::mat_camproj(&app_->curr_scene_->camera_, wnd_width, wnd_height);
 
-
-    // bind framebuffer attach
-    glNamedFramebufferTexture(framebuf_, GL_COLOR_ATTACHMENT0,
-                              framebuf_tex_.get_glid(), 0);
-    GLenum framebuf_status = glCheckNamedFramebufferStatus(framebuf_, GL_FRAMEBUFFER);
-    if (framebuf_status != GL_FRAMEBUFFER_COMPLETE) {
-        DLOG_ERROR("framebuffer is not complete!");
-        assert(false);
-    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glClear(GL_COLOR_BUFFER_BIT);// clear default framebuffer
 
     glBindFramebuffer(GL_FRAMEBUFFER, framebuf_);
+    glNamedFramebufferTexture(framebuf_, GL_COLOR_ATTACHMENT0,
+                              framebuf_tex_a_.get_glid(), 0);
     glClear(GL_COLOR_BUFFER_BIT);
-    {// @DrawBase:
+    {// DrawBase:
         program_base_.bind();
         float cam_size = (10.0f - cam->size_)/10.0f;
         int cell_scale = (int)((cam_size * cam_size * cam_size) * 30 + 1);
@@ -106,39 +104,65 @@ void Renderer::render() {
         program_base_.uniform_mat("_proj", 4, &proj[0][0]);
         program_base_.uniform_f("_size", (float)scn->info_.width, (float)scn->info_.height);
         program_base_.uniform_i("_scale", cell_scale);
-        batch_.draw_batch();
+        // @test:
+        // batch_.draw_batch();
     }
+    bool using_frametex_a = false;
 
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    {// @DrawLayers:
+    {// DrawLayers:
         for (auto ite = scn->layers_.begin(); ite != scn->layers_.end(); ite++) {
+            if (ite == --scn->layers_.end()) {
+                // this is the last layer
+                glBindFramebuffer(GL_FRAMEBUFFER, 0);
+                glClear(GL_COLOR_BUFFER_BIT);
+
+            } else {
+                if (using_frametex_a)
+                    glNamedFramebufferTexture(framebuf_, GL_COLOR_ATTACHMENT0, framebuf_tex_a_.get_glid(), 0);
+                else
+                    glNamedFramebufferTexture(framebuf_, GL_COLOR_ATTACHMENT0, framebuf_tex_b_.get_glid(), 0);
+                glClear(GL_COLOR_BUFFER_BIT); 
+            }
+
             program_canvas_.bind();
             program_canvas_.uniform_mat("_view", 4, &view[0][0]);
             program_canvas_.uniform_mat("_proj", 4, &proj[0][0]);
 
             program_canvas_.uniform_i("_tex", 0);
-            ite->get()->tex_->bind(0);
+            ite->get()->tex_->bind(0); // layer texture
+
+            program_canvas_.uniform_i("_framebuffer", 1);
+            if (using_frametex_a)
+                framebuf_tex_b_.bind(1);
+            else
+                framebuf_tex_a_.bind(1);
 
             batch_.draw_batch();
 
-            if (ite->get() == scn->get_curr_layer()) {
-                program_canvas_.uniform_i("_tex", 0);
-                scn->brush_layer_->tex_->bind(0);
-
-                batch_.draw_batch();
-            }
+            // TODO: recover brush layer rendering later
+            // if (ite->get() == scn->get_curr_layer()) {
+                // program_canvas_.uniform_i("_tex", 0);
+                // scn->brush_layer_->tex_->bind(0);
+                // batch_.draw_batch();
+            // }
+            // switch the using framebuffer texture
+            using_frametex_a = !using_frametex_a;
         }
     }
 
     // detach the framebuffer texture
-    glNamedFramebufferTexture(framebuf_, GL_COLOR_ATTACHMENT0,
-                              0, 0);
+    glNamedFramebufferTexture(framebuf_, GL_COLOR_ATTACHMENT0, 0, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void Renderer::resize_framebuffer(Dove::IVector2D _size) {
-    framebuf_tex_.release();
-    framebuf_tex_.init();
-    framebuf_tex_.allocate(1, SizedInternalFormat::RGBA8, _size.x, _size.y);
+    framebuf_tex_a_.release();
+    framebuf_tex_a_.init();
+    framebuf_tex_a_.allocate(1, SizedInternalFormat::RGBA8, _size.x, _size.y);
+
+    framebuf_tex_b_.release();
+    framebuf_tex_b_.init();
+    framebuf_tex_b_.allocate(1, SizedInternalFormat::RGBA8, _size.x, _size.y);
 }
 
 void Renderer::init_opengl() {

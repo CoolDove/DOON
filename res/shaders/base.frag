@@ -29,8 +29,6 @@ void main() {
 
     vec4 col_a = vec4(0.7f, 0.7f, 0.7f, 1.0f);
     vec4 col_b = vec4(0.8f, 0.8f, 0.8f, 1.0f);
-    // vec4 col_a = vec4(0.1f, 0.8f, 0.6f, 1.0f);
-    // vec4 col_b = vec4(0.7f, 0.8f, 0.2f, 1.0f);
 
     FragColor = mix(col_a, col_b, mix_);
 
