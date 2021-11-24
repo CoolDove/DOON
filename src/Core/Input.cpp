@@ -137,6 +137,7 @@ LRESULT CALLBACK wnd_proc(HWND _window, UINT _message, WPARAM _wparam, LPARAM _l
     {
         case WM_SIZE:
         {
+            // FIXME: don't recreate texture while minimize the window
             app->window_info_.width = LOWORD(_lparam);
             app->window_info_.height = HIWORD(_lparam);
 
@@ -146,7 +147,9 @@ LRESULT CALLBACK wnd_proc(HWND _window, UINT _message, WPARAM _wparam, LPARAM _l
             // TODO: move to somewhere else
             if (app->inited_) {
                 glViewport(0, 0, width, height);
-                app->renderer_->resize_framebuffer({width, height});
+                if (width != 0 && height != 0) {
+                    app->renderer_->resize_framebuffer({width, height});
+                }
             }
 
         } break;

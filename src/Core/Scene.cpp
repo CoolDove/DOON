@@ -18,7 +18,7 @@ Scene::Scene(const char* _image_path)
 {
     camera_.position_.x = 0.0f;
     camera_.position_.y = 0.0f;
-    camera_.size_       = 0.1f;
+    camera_.size_       = 0.9f;
 
     Image img(_image_path, 0);
 
@@ -46,7 +46,7 @@ Scene::Scene(unsigned int _width, unsigned int _height, Col_RGBA _col)
 {
     camera_.position_.x = 0.0f;
     camera_.position_.y = 0.0f;
-    camera_.size_       = 5.0f;
+    camera_.size_       = 0.9f;
 
     info_.width  = _width;
     info_.height = _height;

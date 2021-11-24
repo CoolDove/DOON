@@ -39,7 +39,7 @@ void Renderer::init() {
         DLOG_ERROR("shader error: %s", err.msg.c_str());
     }
 
-    // @Temporary: research on framebuffer
+    // create framebuffer and framebuffer textures
     int wnd_width = app_->window_info_.width;
     int wnd_height = app_->window_info_.height;
 
@@ -69,7 +69,7 @@ void Renderer::recreate_canvas_batch() {
     }
 }
 
-// TODO: programmable blending
+// FIXME: **blending error
 void Renderer::render() {
 
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);

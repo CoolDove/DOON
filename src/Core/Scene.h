@@ -12,12 +12,11 @@
 
 using LayerList = std::list<std::unique_ptr<Layer>>;
 using LayerIte = std::list<std::unique_ptr<Layer>>::iterator;
+using LayerPtr = std::unique_ptr<Layer>;
 
 using namespace DGL;
 
 class Scene {
-private:
-    using LayerPtr = std::unique_ptr<Layer>;
 public:
     Scene(const char* _image_path);
     Scene(uint32_t _width, uint32_t _height, Col_RGBA _col);
@@ -43,9 +42,6 @@ public:
 
     LayerList   layers_;
     LayerPtr    brush_layer_;
-
-    // DGL::GLTexture2D       brush_tex_;
-    // std::unique_ptr<Image> brush_img_;
 
     struct {
         int width;
