@@ -36,8 +36,14 @@ private:
     Program program_canvas_;
     Program program_base_;
 
+    Program program_paint_;
+    DGL::GLTexture2D paint_tex_;
+
     // TODO: GLFrameBuffer class
     GLuint framebuf_;
+    GLuint fbuf_output_;
+    GLuint fbuf_layers_; // compose layers to this
+
     DGL::GLTexture2D framebuf_tex_a_;
     DGL::GLTexture2D framebuf_tex_b_;
 

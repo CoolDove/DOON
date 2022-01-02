@@ -82,7 +82,11 @@ GLint Program::locate_uniform(const std::string& _name) {
         // we didnt find the location in the cache
         GLuint loc = glGetUniformLocation(id_, _name.c_str());
 
-        if (loc == -1) throw DGL::EXCEPTION::NO_UNIFORM_LOCATION_FOUND(_name);
+        // if (loc == -1) throw DGL::EXCEPTION::NO_UNIFORM_LOCATION_FOUND(_name);
+        if (loc == -1) {
+            DLOG_ERROR("uniform name %s not found", _name.c_str());
+            return -1;
+        }
 
         uniform_location_cache_[_name] = loc;
         return loc;

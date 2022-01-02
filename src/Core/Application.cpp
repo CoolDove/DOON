@@ -46,7 +46,7 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
 
     // repair multiple scenes
     long clock = std::clock();
-    scenes_["anji"]  = make_unique<Scene>("./res/textures/anji.png");
+    // scenes_["anji"]  = make_unique<Scene>("./res/textures/anji.png");
     scenes_["alp"]   = make_unique<Scene>("./res/textures/alp.png");
     // scenes_["test"]  = make_unique<Scene>("./res/textures/test.png");
     // scenes_["p1"] = make_unique<Scene>("./res/p1.png");

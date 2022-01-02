@@ -25,7 +25,7 @@ public:
     void bind();
 
 public:
-    // you have to manually bind this programe before setting uniforms
+    // you have to manually bind this program before setting uniforms
     void uniform_i(const std::string& _name, int32_t _v0);
     void uniform_i(const std::string& _name, int32_t _v0, int32_t _v1);
     void uniform_i(const std::string& _name, int32_t _v0, int32_t _v1, int32_t _v2);
