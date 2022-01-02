@@ -31,4 +31,8 @@ launch.json
 /.cache/
 build.bat
 update.bat
-.rgignore
+
+# emacs ignore
+
+.[#]*
+[#]*[#]
