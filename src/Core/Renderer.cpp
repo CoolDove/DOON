@@ -102,9 +102,11 @@ void Renderer::render() {
     {// compose layers to paint_tex_
         glDisable(GL_BLEND);
         glBindFramebuffer(GL_FRAMEBUFFER, fbuf_layers_);
-        // glNamedFramebufferTexture(fbuf_layers_, GL_COLOR_ATTACHMENT0, current_paint_tex_->get_glid(), 0);
-        // glNamedFramebufferTexture(fbuf_layers_, GL_COLOR_ATTACHMENT0, paint_tex_b_.get_glid(), 0);
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        glNamedFramebufferTexture(fbuf_layers_, GL_COLOR_ATTACHMENT0, paint_tex_b_.get_glid(), 0);
+        glClear(GL_COLOR_BUFFER_BIT);
+        glNamedFramebufferTexture(fbuf_layers_, GL_COLOR_ATTACHMENT0, paint_tex_a_.get_glid(), 0);
+        glClear(GL_COLOR_BUFFER_BIT);
 
         program_paint_.bind();
         glViewport(0, 0, scn->info_.width, scn->info_.height);
@@ -113,13 +115,13 @@ void Renderer::render() {
             glNamedFramebufferTexture(fbuf_layers_, GL_COLOR_ATTACHMENT0, current_paint_tex_->get_glid(), 0);
             glClear(GL_COLOR_BUFFER_BIT);
 
-            program_paint_.uniform_f("_size", scn->info_.width, scn->info_.height);
+            program_paint_.uniform_f("_size", (float)scn->info_.width, (float)scn->info_.height);
 
             layer->tex_->bind(0);
             program_paint_.uniform_i("_tex", 0);
 
             other_paint_tex_->bind(1);
-            program_paint_.uniform_i("_framebuffer", 1);
+            program_paint_.uniform_i("_paintbuffer", 1);
 
             batch_.draw_batch();
         }

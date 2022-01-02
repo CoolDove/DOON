@@ -113,6 +113,11 @@ void GLTextureBuffer::init() {
 
     if (!id_) throw DGL::EXCEPTION::CREATION_FAILED();
     inited_ = true;
+
+    param_mag_filter(TexFilter::NEAREST);
+    param_min_filter(TexFilter::NEAREST);
+    param_wrap_r(TexWrap::CLAMP_TO_EDGE);
+    param_wrap_s(TexWrap::CLAMP_TO_EDGE);
 }
 
 void GLTextureBuffer::allocate(size_t _size_b, BufFlag _flag, SizedInternalFormat _format) {
