@@ -14,7 +14,9 @@
 
 using namespace DGL;
 Renderer::Renderer(Application *_app)
-:   framebuf_(0)
+:   framebuf_(0),
+    current_paint_tex_(nullptr),
+    other_paint_tex_(nullptr)
 {
     app_ = _app;
     init_opengl();
@@ -60,16 +62,20 @@ void Renderer::init() {
                            wnd_width, wnd_height,
                            PixFormat::RGBA, PixType::UNSIGNED_BYTE);
 
-    paint_tex_.init();
-    paint_tex_.allocate(1, SizedInternalFormat::RGBA8,
+    paint_tex_a_.init();
+    paint_tex_a_.allocate(1, SizedInternalFormat::RGBA8,
+                             app_->curr_scene_->info_.width, app_->curr_scene_->info_.height,
+                             PixFormat::RGBA, PixType::UNSIGNED_BYTE);
+    paint_tex_b_.init();
+    paint_tex_b_.allocate(1, SizedInternalFormat::RGBA8,
                              app_->curr_scene_->info_.width, app_->curr_scene_->info_.height,
                              PixFormat::RGBA, PixType::UNSIGNED_BYTE);
 
     glCreateFramebuffers(1, &framebuf_);
     glBindFramebuffer(GL_FRAMEBUFFER, framebuf_);
 
-    glCreateFramebuffers(1, &fbuf_layers_);
-    glBindFramebuffer(GL_FRAMEBUFFER, fbuf_layers_);
+    glCreateFramebuffers(2, &fbuf_layers_);
+    // glBindFramebuffer(GL_FRAMEBUFFER, fbuf_layers_);
 
     recreate_canvas_batch();
 }
@@ -87,30 +93,41 @@ void Renderer::recreate_canvas_batch() {
 
 // FIXME: **blending error
 void Renderer::render() {
-    glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
 
     Scene* scn = app_->curr_scene_;
     Dove::IRect2D updated_region = scn->get_region();
 
     // set the blending function
-    glEnable(GL_BLEND);
-    glBlendEquation(GL_FUNC_ADD);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
 
     {// compose layers to paint_tex_
+        glDisable(GL_BLEND);
         glBindFramebuffer(GL_FRAMEBUFFER, fbuf_layers_);
-        glNamedFramebufferTexture(fbuf_layers_, GL_COLOR_ATTACHMENT0, paint_tex_.get_glid(), 0);
-        // compose layers, draw to fbuf_layers_
+        // glNamedFramebufferTexture(fbuf_layers_, GL_COLOR_ATTACHMENT0, current_paint_tex_->get_glid(), 0);
+        // glNamedFramebufferTexture(fbuf_layers_, GL_COLOR_ATTACHMENT0, paint_tex_b_.get_glid(), 0);
+        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+
         program_paint_.bind();
         glViewport(0, 0, scn->info_.width, scn->info_.height);
         for (auto const& layer : scn->layers_) {
+            swap_paint_tex();
+            glNamedFramebufferTexture(fbuf_layers_, GL_COLOR_ATTACHMENT0, current_paint_tex_->get_glid(), 0);
+            glClear(GL_COLOR_BUFFER_BIT);
+
             program_paint_.uniform_f("_size", scn->info_.width, scn->info_.height);
+
             layer->tex_->bind(0);
             program_paint_.uniform_i("_tex", 0);
+
+            other_paint_tex_->bind(1);
+            program_paint_.uniform_i("_framebuffer", 1);
+
             batch_.draw_batch();
         }
     }
+
+    glEnable(GL_BLEND);
+    glBlendEquation(GL_FUNC_ADD);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     int wnd_width  = app_->window_info_.width;
     int wnd_height = app_->window_info_.height;
@@ -134,11 +151,11 @@ void Renderer::render() {
         batch_.draw_batch();
     }
 
-    {// draw canvas
+    if (current_paint_tex_ != nullptr) {// draw canvas
         program_canvas_.bind();
         program_canvas_.uniform_mat("_view", 4, &view[0][0]);
         program_canvas_.uniform_mat("_proj", 4, &proj[0][0]);
-        paint_tex_.bind(0);
+        current_paint_tex_->bind(0);
         program_canvas_.uniform_i("_tex", 0);
         batch_.draw_batch();
     }

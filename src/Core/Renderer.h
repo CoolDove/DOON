@@ -37,7 +37,25 @@ private:
     Program program_base_;
 
     Program program_paint_;
-    DGL::GLTexture2D paint_tex_;
+    DGL::GLTexture2D paint_tex_a_;
+    DGL::GLTexture2D paint_tex_b_;
+    DGL::GLTexture2D* current_paint_tex_;
+    DGL::GLTexture2D* other_paint_tex_;
+
+    void swap_paint_tex() {
+        if (current_paint_tex_ == nullptr) {
+            current_paint_tex_ = &paint_tex_a_;
+            other_paint_tex_ = &paint_tex_b_;
+        }
+        else if (current_paint_tex_ == &paint_tex_a_) {
+            current_paint_tex_ = &paint_tex_b_;
+            other_paint_tex_ = &paint_tex_a_;
+        } 
+        else if (current_paint_tex_ == &paint_tex_b_) {
+            current_paint_tex_ = &paint_tex_a_;
+            other_paint_tex_ = &paint_tex_b_;
+        }
+    }
 
     // TODO: GLFrameBuffer class
     GLuint framebuf_;
