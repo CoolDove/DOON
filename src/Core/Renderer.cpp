@@ -97,8 +97,6 @@ void Renderer::render() {
     Scene* scn = app_->curr_scene_;
     Dove::IRect2D updated_region = scn->get_region();
 
-    // set the blending function
-
     {// compose layers to paint_tex_
         glDisable(GL_BLEND);
         glBindFramebuffer(GL_FRAMEBUFFER, fbuf_layers_);
@@ -110,6 +108,7 @@ void Renderer::render() {
 
         program_paint_.bind();
         glViewport(0, 0, scn->info_.width, scn->info_.height);
+
         for (auto const& layer : scn->layers_) {
             swap_paint_tex();
             glNamedFramebufferTexture(fbuf_layers_, GL_COLOR_ATTACHMENT0, current_paint_tex_->get_glid(), 0);
@@ -117,13 +116,22 @@ void Renderer::render() {
 
             program_paint_.uniform_f("_size", (float)scn->info_.width, (float)scn->info_.height);
 
-            layer->tex_->bind(0);
+            (*layer).tex_->bind(0);
             program_paint_.uniform_i("_tex", 0);
-
             other_paint_tex_->bind(1);
             program_paint_.uniform_i("_paintbuffer", 1);
-
             batch_.draw_batch();
+
+            // render brush layer
+            if (&(*layer) == scn->get_curr_layer()) {
+                swap_paint_tex();
+                glNamedFramebufferTexture(fbuf_layers_, GL_COLOR_ATTACHMENT0, current_paint_tex_->get_glid(), 0);
+                glClear(GL_COLOR_BUFFER_BIT);
+
+                scn->brush_layer_->tex_->bind(0);
+                other_paint_tex_->bind(1);
+                batch_.draw_batch();
+            }
         }
     }
 
@@ -161,65 +169,6 @@ void Renderer::render() {
         program_canvas_.uniform_i("_tex", 0);
         batch_.draw_batch();
     }
-
-    // bool using_frametex_a = false;
-    // {// DrawLayers:
-        // for (auto ite = scn->layers_.begin(); ite != scn->layers_.end(); ite++) {
-            // if (ite == --scn->layers_.end() && ite->get() != scn->get_curr_layer()) {
-                // // this is the last layer
-                // glBindFramebuffer(GL_FRAMEBUFFER, 0);
-                // glClear(GL_COLOR_BUFFER_BIT);
-            // } else {
-                // if (using_frametex_a)
-                    // glNamedFramebufferTexture(framebuf_, GL_COLOR_ATTACHMENT0, framebuf_tex_a_.get_glid(), 0);
-                // else
-                    // glNamedFramebufferTexture(framebuf_, GL_COLOR_ATTACHMENT0, framebuf_tex_b_.get_glid(), 0);
-                // glClear(GL_COLOR_BUFFER_BIT); 
-            // }
-// 
-            // program_canvas_.bind();
-            // program_canvas_.uniform_mat("_view", 4, &view[0][0]);
-            // program_canvas_.uniform_mat("_proj", 4, &proj[0][0]);
-// 
-            // program_canvas_.uniform_i("_tex", 0);
-            // ite->get()->tex_->bind(0);
-            // program_canvas_.uniform_i("_framebuffer", 1);
-            // if (using_frametex_a)
-                // framebuf_tex_b_.bind(1);
-            // else
-                // framebuf_tex_a_.bind(1);
-// 
-            // batch_.draw_batch();
-            // using_frametex_a = !using_frametex_a;
-// 
-            // if (ite->get() == scn->get_curr_layer()) {
-                // if (ite == --scn->layers_.end()) {
-                    // glBindFramebuffer(GL_FRAMEBUFFER, 0);
-                    // glClear(GL_COLOR_BUFFER_BIT);
-                // }
-// 
-                // if (using_frametex_a)
-                    // glNamedFramebufferTexture(framebuf_, GL_COLOR_ATTACHMENT0, framebuf_tex_a_.get_glid(), 0);
-                // else
-                    // glNamedFramebufferTexture(framebuf_, GL_COLOR_ATTACHMENT0, framebuf_tex_b_.get_glid(), 0);
-                // glClear(GL_COLOR_BUFFER_BIT); 
-// 
-                // program_canvas_.uniform_i("_tex", 0);
-                // scn->brush_layer_->tex_->bind(0);
-                // program_canvas_.uniform_i("_framebuffer", 1);
-// 
-                // if (using_frametex_a)
-                    // framebuf_tex_b_.bind(1);
-                // else
-                    // framebuf_tex_a_.bind(1);
-// 
-                // batch_.draw_batch();
-                // using_frametex_a = !using_frametex_a;
-            // }
-        // }
-    // }
-
-
     
     // detach the framebuffer texture
     glNamedFramebufferTexture(framebuf_, GL_COLOR_ATTACHMENT0, 0, 0);
