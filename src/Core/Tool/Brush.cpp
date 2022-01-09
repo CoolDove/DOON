@@ -131,9 +131,18 @@ void Brush::on_pointer(Input::PointerInfo _info, int _x, int _y) {
         // draw dot on the brush img
         Dove::IRect2D dot_region =
             draw_circle((int)cs_pos.x + half_width, -(int)cs_pos.y + half_height, brush_size, tgt_img);
-
         painting_region_ = Dove::merge_rect(painting_region_, dot_region);
         app_->curr_scene_->brush_layer_->mark_dirt(dot_region);
+
+        // New Pen System
+
+        // @StepZ: collect sample points
+
+        // @StepA: collect dap data into a vector;
+        std::vector<Vec2> daps;
+
+        // @StepB: render daps using Opengl Blending...
+        
     }
 }
 
