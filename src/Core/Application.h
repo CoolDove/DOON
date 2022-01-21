@@ -10,6 +10,7 @@
 #include "Tool/Tools.h"
 
 #include <Core/Action.h>
+#include <Core/DOONRes.h>
 
 #define WGL_CONTEXT_MAJOR_VERSION_ARB           	0x2091
 #define WGL_CONTEXT_MINOR_VERSION_ARB           	0x2092
@@ -51,6 +52,7 @@ public:
 
     unique_ptr<Renderer>    renderer_;
     unique_ptr<Compositor>  compositor_;
+    unique_ptr<DOONRes>     RES;
 
 public:// window
     bool    inited_;

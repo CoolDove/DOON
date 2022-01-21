@@ -91,7 +91,6 @@ void Renderer::recreate_canvas_batch() {
     }
 }
 
-// FIXME: **blending error
 void Renderer::render() {
 
     Scene* scn = app_->curr_scene_;
@@ -99,6 +98,7 @@ void Renderer::render() {
 
     {// compose layers to paint_tex_
         glDisable(GL_BLEND);
+
         glBindFramebuffer(GL_FRAMEBUFFER, fbuf_layers_);
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glNamedFramebufferTexture(fbuf_layers_, GL_COLOR_ATTACHMENT0, paint_tex_b_.get_glid(), 0);

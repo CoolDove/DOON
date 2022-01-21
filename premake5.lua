@@ -23,6 +23,11 @@ project "DOON"
 	}
 
 	files {
+		"src/*.h", 
+		"src/*/*.h", 
+		"src/*/*/*.h", 
+		"vendor/stb_image/*.h",
+
 		"src/*.cpp", 
 		"src/*/*.cpp", 
 		"src/*/*/*.cpp", 

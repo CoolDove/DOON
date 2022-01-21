@@ -32,9 +32,12 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
 
     // NOTE:
     // initialization order:
-    // dlog >> window >> render(>>opengl) >> imgui >> tablet >> scene >> tools
+    // dlog >> doonres >> window >> render(>>opengl) >> imgui >> tablet >> scene >> tools
 
     init_dlog();
+
+    RES = std::make_unique<DOONRes>();
+    
     init_window(_instance, _prev_instance, _cmd_line, _show_code);
     renderer_ = make_unique<Renderer>(this);
     init_imgui();

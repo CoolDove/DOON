@@ -12,6 +12,7 @@
 #include <cstring>
 #include <stdint.h>
 #include <string.h>
+#include <Core/DOONRes.h>
 
 // @doing: remove old img and tex pair
 namespace Tool
@@ -31,6 +32,13 @@ Brush::~Brush() {
 }
 
 void Brush::on_init() {
+    app_->RES->LoadGLTexture2D("./res/textures/jko.png", "jko");
+    DLOG_DEBUG("we have loaded texture: jko");
+
+    app_->RES->ReleaseGLTexture2D("jko");
+
+    DLOG_DEBUG("we have relesed texture: jko");
+    
 }
 
 void Brush::on_activate() {
@@ -139,7 +147,6 @@ void Brush::on_pointer(Input::PointerInfo _info, int _x, int _y) {
         // @StepZ: collect sample points
 
         // @StepA: collect dap data into a vector;
-        std::vector<Vec2> daps;
 
         // @StepB: render daps using Opengl Blending...
         
