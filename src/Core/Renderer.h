@@ -2,6 +2,7 @@
 
 #include "Base/General.h"
 #include "Core/Application.h"
+#include "DGLCore/GLGeoBatch.h"
 #include "DGLCore/GLProgram.h"
 #include "DGLCore/GLTexture.h"
 #include <DGLCore/DGLCore.h>
@@ -18,6 +19,9 @@ public:
     void recreate_canvas_batch();
 
     void resize_framebuffer(Dove::IVector2D _size);
+
+    GeoBatch* get_canvas_quad() { return &batch_; };
+
 public:
     struct OpenGLInfo {
         string version;

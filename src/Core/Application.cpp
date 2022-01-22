@@ -47,6 +47,8 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
 
     inited_ = true;
 
+    RES->LoadShader("./res/shaders/paint.vert", "./res/shaders/paint.frag", "paint");
+
     // repair multiple scenes
     long clock = std::clock();
     // scenes_["anji"]  = make_unique<Scene>("./res/textures/anji.png");

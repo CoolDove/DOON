@@ -133,7 +133,8 @@ void Renderer::render() {
         glClear(GL_COLOR_BUFFER_BIT);
         glDepthFunc(GL_ALWAYS);
 
-        program_paint_.bind();
+        auto paint_shader = app_->RES->GetShader("paint");
+        paint_shader->bind();
         glViewport(0, 0, scn->info_.width, scn->info_.height);
 
         for (auto const& layer : scn->layers_) {
@@ -141,12 +142,12 @@ void Renderer::render() {
             glNamedFramebufferTexture(fbuf_layers_, GL_COLOR_ATTACHMENT0, current_paint_tex_->get_glid(), 0);
             glClear(GL_COLOR_BUFFER_BIT);
 
-            program_paint_.uniform_f("_size", (float)scn->info_.width, (float)scn->info_.height);
+            paint_shader->uniform_f("_size", (float)scn->info_.width, (float)scn->info_.height);
 
             (*layer).tex_->bind(0);
-            program_paint_.uniform_i("_tex", 0);
+            paint_shader->uniform_i("_tex", 0);
             other_paint_tex_->bind(1);
-            program_paint_.uniform_i("_paintbuffer", 1);
+            paint_shader->uniform_i("_paintbuffer", 1);
             batch_.draw_batch();
 
             // render brush layer

@@ -18,14 +18,13 @@ public:
     ~Program();
 
     void init();
-    // void link(std::vector<const Shader*> _shaders);
 
     /// fill in shader pointers
     void link(int _count, ... );
     void bind();
 
 public:
-    // you have to manually bind this program before setting uniforms
+    // NOTE: you have to manually bind this program before setting uniforms !!!!!!
     void uniform_i(const std::string& _name, int32_t _v0);
     void uniform_i(const std::string& _name, int32_t _v0, int32_t _v1);
     void uniform_i(const std::string& _name, int32_t _v0, int32_t _v1, int32_t _v2);

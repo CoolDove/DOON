@@ -42,12 +42,14 @@ public:
     DGL::GeoBatch quad_;
 
 private:
-    GLuint fbuf_brush_;
     Dove::IRect2D draw_circle(int _x, int _y, int _r, const Image* _target_img);
-
     Dove::IRect2D draw_dap(int _x, int _y, int _size, float _radians);
 
+    void clear_brush_tex(Col_RGBA color = {0x00, 0x00, 0x00, 0x00});
+
+    GLuint fbuf_brush_;
     Application* app_;
     bool         holding_;
+    DGL::Program* shader_;
 };
 }

@@ -72,10 +72,12 @@ Scene::Scene(unsigned int _width, unsigned int _height, Col_RGBA _col)
 
 void Scene::on_update() {
     using namespace DGL;
-    for (auto ite = layers_.begin(); ite != layers_.end(); ite++) {
-        ite->get()->update_tex(false);
-    }
-    brush_layer_->update_tex(false);
+    // for (auto ite = layers_.begin(); ite != layers_.end(); ite++) {
+        // ite->get()->update_tex(false);
+    // }
+
+    // @Temporary: do not update brush tex for now
+    // brush_layer_->update_tex(false);
 }
 
 void Scene::add_layer(Col_RGBA _col) {
