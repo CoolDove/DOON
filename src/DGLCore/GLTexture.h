@@ -122,29 +122,11 @@ private:
     uint32_t levels_count_;
 
 public:
-    void param_min_filter(TexFilter _filter) {
-        assert(inited_);
-        glTextureParameteri(id_, (GLenum)TexParam::TEXTURE_MIN_FILTER, (GLenum)_filter);
-    }
-
-    void param_mag_filter(TexFilter _filter) {
-        assert(inited_);
-        glTextureParameteri(id_, (GLenum)TexParam::TEXTURE_MAG_FILTER, (GLenum)_filter);
-    }
-
-    void param_wrap_r(TexWrap _wrap) {
-        assert(inited_);
-        glTextureParameteri(id_, (GLenum)TexParam::TEXTURE_WRAP_R, (GLenum)_wrap);
-    }
-    void param_wrap_s(TexWrap _wrap) {
-        assert(inited_);
-        glTextureParameteri(id_, (GLenum)TexParam::TEXTURE_WRAP_S, (GLenum)_wrap);
-    }
-
-    void param_wrap_t(TexWrap _wrap) {
-        assert(inited_);
-        glTextureParameteri(id_, (GLenum)TexParam::TEXTURE_WRAP_T, (GLenum)_wrap);
-    }
+    void param_min_filter(TexFilter _filter) {glTextureParameteri(id_, (GLenum)TexParam::TEXTURE_MIN_FILTER, (GLenum)_filter);}
+    void param_mag_filter(TexFilter _filter) {glTextureParameteri(id_, (GLenum)TexParam::TEXTURE_MAG_FILTER, (GLenum)_filter);}
+    void param_wrap_r(TexWrap _wrap) {glTextureParameteri(id_, (GLenum)TexParam::TEXTURE_WRAP_R, (GLenum)_wrap);}
+    void param_wrap_s(TexWrap _wrap) {glTextureParameteri(id_, (GLenum)TexParam::TEXTURE_WRAP_S, (GLenum)_wrap);}
+    void param_wrap_t(TexWrap _wrap) {glTextureParameteri(id_, (GLenum)TexParam::TEXTURE_WRAP_T, (GLenum)_wrap);}
 
 public:
     struct {

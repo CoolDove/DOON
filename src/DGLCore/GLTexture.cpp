@@ -23,6 +23,12 @@ void GLTexture2D::init() {
     assert(!inited_);
     glCreateTextures((GLenum)type_, 1, &id_);
     if (!id_) throw DGL::EXCEPTION::CREATION_FAILED();
+
+    param_mag_filter(TexFilter::NEAREST);
+    param_min_filter(TexFilter::NEAREST);
+    param_wrap_r(TexWrap::CLAMP_TO_EDGE);
+    param_wrap_s(TexWrap::CLAMP_TO_EDGE);
+    
     inited_ = true;
 }
 
@@ -52,12 +58,12 @@ void GLTexture2D::allocate(uint32_t _levels, SizedInternalFormat _format,
                      data);
     }
 
+    allocated_ = true;
+
     info_.width = _width;
     info_.height = _height;
     info_.levels = _levels;
     info_.format = _format;
-
-    allocated_ = true;
 }
 
 void GLTexture2D::upload(uint32_t _level, int _offset_x, int _offset_y,

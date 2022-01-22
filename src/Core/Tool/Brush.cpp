@@ -93,7 +93,6 @@ void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
 
         auto paint_shader = app_->RES->GetShader("paint");
 
-        // TODO: robust
         paint_shader->bind();
         paint_shader->uniform_f("_size", (float)src->info_.width, (float)src->info_.height);
         src->bind(0);
@@ -103,7 +102,6 @@ void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
 
         app_->renderer_->get_canvas_quad()->draw_batch();
 
-        // glNamedFramebufferTexture(fbuf, GL_COLOR_ATTACHMENT0, 0, 0);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         IRect2D rect;
