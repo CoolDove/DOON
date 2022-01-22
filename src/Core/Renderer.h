@@ -41,11 +41,6 @@ private:
     HDC   device_context_;
     HGLRC gl_context_;
 
-    Program program_canvas_;
-    Program program_base_;
-
-    Program program_paint_;
-
     GLFramebuffer fbuf_paint_;
     DGL::GLTexture2D paint_tex_a_;
     DGL::GLTexture2D paint_tex_b_;

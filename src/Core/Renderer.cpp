@@ -57,33 +57,10 @@ Renderer::Renderer(Application *_app)
 void Renderer::init() {
     batch_.init({{DGL::Attribute::POSITION, 3}, { DGL::Attribute::UV, 2 }});
 
-    try {
-        Shader canvas_vert("./res/shaders/canvas.vert", ShaderType::VERTEX_SHADER);
-        Shader canvas_frag("./res/shaders/canvas.frag", ShaderType::FRAGMENT_SHADER);
-        program_canvas_.link(2, &canvas_vert, &canvas_frag);
-    } catch (const DGL::EXCEPTION::SHADER_COMPILING_FAILED& err) {
-        DLOG_ERROR("shader error: %s", err.msg.c_str());
-    }
-
-    try {
-        Shader base_vert("./res/shaders/base.vert", ShaderType::VERTEX_SHADER);
-        Shader base_frag("./res/shaders/base.frag", ShaderType::FRAGMENT_SHADER);
-        program_base_.link(2, &base_vert, &base_frag);
-    } catch (const DGL::EXCEPTION::SHADER_COMPILING_FAILED& err) {
-        DLOG_ERROR("shader error: %s", err.msg.c_str());
-    }
-
-    try {
-        Shader paint_vert("./res/shaders/paint.vert", ShaderType::VERTEX_SHADER);
-        Shader paint_frag("./res/shaders/paint.frag", ShaderType::FRAGMENT_SHADER);
-        program_paint_.link(2, &paint_vert, &paint_frag);
-    } catch (const DGL::EXCEPTION::SHADER_COMPILING_FAILED& err) {
-        DLOG_ERROR("shader error: %s", err.msg.c_str());
-    }
-
-    // create framebuffer and framebuffer textures
     int wnd_width = app_->window_info_.width;
     int wnd_height = app_->window_info_.height;
+
+    fbuf_paint_.init();
 
     paint_tex_a_.init();
     paint_tex_a_.allocate(1, SizedInternalFormat::RGBA8,
@@ -93,8 +70,6 @@ void Renderer::init() {
     paint_tex_b_.allocate(1, SizedInternalFormat::RGBA8,
                              app_->curr_scene_->info_.width, app_->curr_scene_->info_.height,
                              PixFormat::RGBA, PixType::UNSIGNED_BYTE);
-
-    fbuf_paint_.init();
 
     recreate_canvas_batch();
 }
@@ -172,22 +147,24 @@ void Renderer::render() {
     glm::mat4 proj = Space::mat_camproj(&app_->curr_scene_->camera_, wnd_width, wnd_height);
 
     {// draw base
-        program_base_.bind();
+        auto shader_base = app_->RES->GetShader("base");
+        shader_base->bind();
         float cam_size = (10.0f - cam->size_)/10.0f;
         int cell_scale = (int)((cam_size * cam_size * cam_size) * 30 + 1);
-        program_base_.uniform_mat("_view", 4, &view[0][0]);
-        program_base_.uniform_mat("_proj", 4, &proj[0][0]);
-        program_base_.uniform_f("_size", (float)scn->info_.width, (float)scn->info_.height);
-        program_base_.uniform_i("_scale", cell_scale);
+        shader_base->uniform_mat("_view", 4, &view[0][0]);
+        shader_base->uniform_mat("_proj", 4, &proj[0][0]);
+        shader_base->uniform_f("_size", (float)scn->info_.width, (float)scn->info_.height);
+        shader_base->uniform_i("_scale", cell_scale);
         batch_.draw_batch();
     }
-
+    
+    auto shader_canvas = app_->RES->GetShader("canvas");
+    shader_canvas->bind();
+    shader_canvas->uniform_mat("_view", 4, &view[0][0]);
+    shader_canvas->uniform_mat("_proj", 4, &proj[0][0]);
     if (current_paint_tex_ != nullptr) {// draw canvas
-        program_canvas_.bind();
-        program_canvas_.uniform_mat("_view", 4, &view[0][0]);
-        program_canvas_.uniform_mat("_proj", 4, &proj[0][0]);
         current_paint_tex_->bind(0);
-        program_canvas_.uniform_i("_tex", 0);
+        shader_canvas->uniform_i("_tex", 0);
         batch_.draw_batch();
     }
 

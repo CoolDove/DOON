@@ -45,6 +45,8 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     inited_ = true;
 
     RES->LoadShader("./res/shaders/paint.vert", "./res/shaders/paint.frag", "paint");
+    RES->LoadShader("./res/shaders/canvas.vert", "./res/shaders/canvas.frag", "canvas");
+    RES->LoadShader("./res/shaders/base.vert", "./res/shaders/base.frag", "base");
 
     // repair multiple scenes
     long clock = std::clock();

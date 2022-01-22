@@ -8,5 +8,5 @@ uniform sampler2D _brushtex;
 
 void main() {
     vec4 col = texture(_brushtex, v_uv);
-    FragColor = vec4(0.0, 0.0, 0.0, col.a * 0.4);
+    FragColor = vec4(1.0, 1.0, 1.0, col.a);
 }
