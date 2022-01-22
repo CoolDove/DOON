@@ -1,16 +1,19 @@
 ﻿#include "GLShader.h"
 #include <fstream>
+#include <ios>
 #include <stdlib.h>
 #include <assert.h>
 #include "GLDebugger.h"
 
 static char* read_file(const char* _path, int* _size = nullptr) {
-    std::ifstream file(_path);
+    std::ifstream file(_path, std::ios_base::in);
 
     bool good = file.good();
 
-    if (!file.good())
-        throw DGL::EXCEPTION::FILE_NOT_EXIST(_path);
+    if (!file.good()) {
+        // throw DGL::EXCEPTION::FILE_NOT_EXIST(_path);
+        return nullptr;
+    }
     
     file.seekg(0, std::ios::end);
     size_t size = file.tellg();
@@ -28,12 +31,14 @@ static char* read_file(const char* _path, int* _size = nullptr) {
 namespace DGL {
 Shader::Shader() 
 :   id_(0),
-    inited_(false)
+    inited_(false),
+    good_(false)
 {}
 
 Shader::Shader(const std::string& _path, ShaderType _type, std::string* _msg) 
 :   id_(0),
-    inited_(false)
+    inited_(false),
+    good_(false)
 {
     init(_type);
     load(_path, _msg);
@@ -57,9 +62,13 @@ bool Shader::load(const std::string& _path, std::string* _compile_msg) {
     assert(inited_&&"shader has to be initialized before being loaded");
 
     char* src = read_file(_path.c_str());
+    if (src == nullptr) return false;
+
     glShaderSource(id_, 1, &src, 0);
 
-    bool result = compile(src, _compile_msg);
+    bool result = compile(src, _compile_msg);// true means good
+
+    if (result) good_ = true;
 
     delete [] src;
     return result;
@@ -82,9 +91,10 @@ bool Shader::compile(const std::string& _src, std::string* _compile_msg) {
         }
         std::string log = infoLog;
         glDeleteShader(id_);
-        free(infoLog);
+        DLOG_ERROR("%s", infoLog);
 
-        throw DGL::EXCEPTION::SHADER_COMPILING_FAILED(log);
+        free(infoLog);
+        // throw DGL::EXCEPTION::SHADER_COMPILING_FAILED(log);
     }
 
     return compile_tag;

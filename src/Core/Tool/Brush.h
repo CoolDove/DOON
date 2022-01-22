@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "DGLCore/GLGeoBatch.h"
 #include "Tool.h"
 #include <Core/Color.h>
 #include <DGLCore/GLProgram.h>
@@ -36,7 +37,12 @@ public:
     Col_RGBA   col_;
     // NOTE: this region is used to bake brush layer into current layer, should be clear after pen released
     Dove::IRect2D painting_region_;
+    DGL::GLTexture2D* brush_tex_;
+
+    DGL::GeoBatch quad_;
+
 private:
+    GLuint fbuf_brush_;
     Dove::IRect2D draw_circle(int _x, int _y, int _r, const Image* _target_img);
 
     Dove::IRect2D draw_dap(int _x, int _y, int _size, float _radians);

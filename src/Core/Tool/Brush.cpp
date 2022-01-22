@@ -4,6 +4,7 @@
 #include "Core/Compositor.h"
 #include "Core/Scene.h"
 #include "DGLCore/GLEnums.h"
+#include "DGLCore/GLGeoBatch.h"
 #include "DoveLog.hpp"
 #include <Core/Application.h>
 #include <Core/Space.h>
@@ -15,6 +16,7 @@
 #include <Core/DOONRes.h>
 
 // @doing: remove old img and tex pair
+using namespace DGL;
 namespace Tool
 {
 Brush::Brush(Application* _app) 
@@ -30,15 +32,23 @@ Brush::Brush(Application* _app)
 
 Brush::~Brush() {
 }
-
 void Brush::on_init() {
     app_->RES->LoadGLTexture2D("./res/textures/jko.png", "jko");
-    DLOG_DEBUG("we have loaded texture: jko");
+    brush_tex_ = app_->RES->LoadGLTexture2D("./res/brushes/ugly.png", "brush_ugly");
+    DLOG_DEBUG("brush texture loaded: ugly");
 
-    app_->RES->ReleaseGLTexture2D("jko");
+    if (app_->RES->LoadShader("./res/shaders/brush.vert", "./res/shaders/brush.frag", "brush")) {
+        DLOG_DEBUG("brush shader loaded");
+    } else {
+        DLOG_ERROR("failed to load brush shader");
+    }
 
-    DLOG_DEBUG("we have relesed texture: jko");
-    
+
+    quad_.init({{ Attribute::POSITION, 3 }, { Attribute::UV, 2 }});
+    quad_.add_quad(1, 1, "brush");
+    quad_.upload();
+
+    glCreateFramebuffers(1, &fbuf_brush_);
 }
 
 void Brush::on_activate() {
@@ -53,7 +63,6 @@ void Brush::on_update() {
 
 void Brush::on_pointer_down(Input::PointerInfo _info, int _x, int _y) {
     if (!holding_) {
-        // DLOG_TRACE("brush down");
         holding_ = true;
     }
 }
@@ -158,37 +167,52 @@ Dove::IRect2D Brush::draw_circle(int _x, int _y, int _r, const Image* _target_im
         return Dove::IRect2D{0};
 
     // a function changing the vec2 position into an index
-    auto px = [=](int _x, int _y){
-        return _y * _target_img->info_.width + _x;
-    };
+    // auto px = [=](int _x, int _y){
+        // return _y * _target_img->info_.width + _x;
+    // };
 
-    int start_y = _y - _r;
-
-    for (int i = 0; i < glm::min(2 * _r, _target_img->info_.height - start_y); i++)
+    Scene* scn = app_->curr_scene_;
     {
-        int line_y = start_y + i;
-        if (line_y < 0) continue;
+        glEnable(GL_BLEND);
+        glBlendEquation(GL_FUNC_ADD);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glBindFramebuffer(GL_FRAMEBUFFER, fbuf_brush_);
 
-        int scan_length = (int)(2 * glm::sqrt(_r * _r - (_r - i) * (_r - i)));
-        int start_x = (int)(_x - scan_length * 0.5f);
-        if (start_x < 0) {
-            scan_length += start_x;
-            start_x = 0;
-        }
+        // find brush layer texture
+        // glNamedFramebufferTexture(fbuf_brush_, GL_COLOR_ATTACHMENT0, , 0);
+        // @Continue: do not clear, bind the brush layer texture as frame targert color attachment
 
-        scan_length = glm::min(scan_length, _target_img->info_.width - start_x);
-        int start = px(start_x, line_y);
 
-        for (int j = 0; j < scan_length; j++)
-        {
-            unsigned int* pix = (unsigned int*)_target_img->pixels_ + start + j;
-            *pix = col_.cluster;
-        }
+
+
     }
+
+    // int start_y = _y - _r;
+
+    // for (int i = 0; i < glm::min(2 * _r, _target_img->info_.height - start_y); i++)
+    // {
+        // int line_y = start_y + i;
+        // if (line_y < 0) continue;
+// 
+        // int scan_length = (int)(2 * glm::sqrt(_r * _r - (_r - i) * (_r - i)));
+        // int start_x = (int)(_x - scan_length * 0.5f);
+        // if (start_x < 0) {
+            // scan_length += start_x;
+            // start_x = 0;
+        // }
+// 
+        // scan_length = glm::min(scan_length, _target_img->info_.width - start_x);
+        // int start = px(start_x, line_y);
+// 
+        // for (int j = 0; j < scan_length; j++)
+        // {
+            // unsigned int* pix = (unsigned int*)_target_img->pixels_ + start + j;
+            // *pix = col_.cluster;
+        // }
+    // }
 
     // mark the updated region of current scene
     Dove::IRect2D region;
-    Scene* scn = app_->curr_scene_;
     region.posx   = glm::max(_x - _r, 0);
     region.posy   = glm::max(_y - _r, 0);
     region.width  = glm::min(_x + _r, scn->info_.width) - region.posx;

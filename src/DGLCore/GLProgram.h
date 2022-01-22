@@ -48,10 +48,12 @@ private:
 public:
     uint32_t get_glid()   const { return id_; };
     bool     get_inited() const { return inited_; };
+    bool     good() const { return good_; };
     
 private:
     GLuint id_;
     bool   inited_;
+    bool   good_;
 
     std::unordered_map<std::string, GLuint> uniform_location_cache_;
 };
