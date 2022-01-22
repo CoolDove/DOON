@@ -2,11 +2,14 @@
 
 #include "Base/General.h"
 #include "Core/Application.h"
+#include "DGLCore/GLProgram.h"
 #include "DGLCore/GLTexture.h"
 #include <DGLCore/DGLCore.h>
 #include <Windows.h>
 
 class Renderer {
+public:
+    static void blit(DGL::GLTexture2D* src, DGL::GLTexture2D* dst, Dove::IRect2D rect_src, Dove::IRect2D rect_dst);
 public:
     Renderer(Application* _app);
     void init();
@@ -61,6 +64,8 @@ private:
     GLuint framebuf_;
     GLuint fbuf_output_;
     GLuint fbuf_layers_; // compose layers to this
+
+    static GLuint tempframebuffer_;// for static blit
 
     DGL::GLTexture2D framebuf_tex_a_;
     DGL::GLTexture2D framebuf_tex_b_;

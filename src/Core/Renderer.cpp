@@ -13,6 +13,32 @@
 #include "Color.h"
 
 using namespace DGL;
+
+GLuint Renderer::tempframebuffer_ = 0;
+void Renderer::blit(DGL::GLTexture2D* src, DGL::GLTexture2D* dst, Dove::IRect2D rect_src, Dove::IRect2D rect_dst) {
+    if (!src || !dst) return;
+
+    GLuint* fbuf = (GLuint*)malloc(2 * sizeof(GLuint));
+    glCreateFramebuffers(2, fbuf);
+    glNamedFramebufferTexture(fbuf[0], GL_COLOR_ATTACHMENT0, src->get_glid(), 0);
+    glNamedFramebufferTexture(fbuf[1], GL_COLOR_ATTACHMENT0, dst->get_glid(), 0);
+
+    GLint srcx0 = rect_src.posx;
+    GLint srcy0 = rect_src.posy;
+    GLint srcx1 = rect_src.posx + rect_src.width;
+    GLint srcy1 = rect_src.posy + rect_src.height;
+    
+    GLint dstx0 = rect_dst.posx;
+    GLint dsty0 = rect_dst.posy;
+    GLint dstx1 = rect_dst.posx + rect_dst.width;
+    GLint dsty1 = rect_dst.posy + rect_dst.height;
+
+    glBlitNamedFramebuffer(fbuf[0], fbuf[1], srcx0, srcy0, srcx1, srcy1, dstx0, dsty0, dstx1, dsty1, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+    glDeleteFramebuffers(2, fbuf);
+    free(fbuf);
+}
+
 Renderer::Renderer(Application *_app)
 :   framebuf_(0),
     current_paint_tex_(nullptr),
@@ -105,6 +131,7 @@ void Renderer::render() {
         glClear(GL_COLOR_BUFFER_BIT);
         glNamedFramebufferTexture(fbuf_layers_, GL_COLOR_ATTACHMENT0, paint_tex_a_.get_glid(), 0);
         glClear(GL_COLOR_BUFFER_BIT);
+        glDepthFunc(GL_ALWAYS);
 
         program_paint_.bind();
         glViewport(0, 0, scn->info_.width, scn->info_.height);
