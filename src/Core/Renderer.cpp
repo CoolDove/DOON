@@ -17,6 +17,8 @@ using namespace DGL;
 GLuint Renderer::tempframebuffer_ = 0;
 void Renderer::blit(DGL::GLTexture2D* src, DGL::GLTexture2D* dst, Dove::IRect2D rect_src, Dove::IRect2D rect_dst) {
     if (!src || !dst) return;
+    
+    // TODO: stash and recover framebuffer
 
     GLuint* fbuf = (GLuint*)malloc(2 * sizeof(GLuint));
     glCreateFramebuffers(2, fbuf);
@@ -156,7 +158,7 @@ void Renderer::render() {
                 glNamedFramebufferTexture(fbuf_layers_, GL_COLOR_ATTACHMENT0, current_paint_tex_->get_glid(), 0);
                 glClear(GL_COLOR_BUFFER_BIT);
 
-                scn->brush_layer_->tex_->bind(0);
+                scn->brush_layer_.bind(0);
                 other_paint_tex_->bind(1);
                 batch_.draw_batch();
             }

@@ -89,13 +89,13 @@ enum class TexWrap : uint32_t {
     MIRROR_CLAMP_TO_EDGE = 0x8743,
 };
 
-class GLTexture {
+class GLTexture2D {
 public:
-    GLTexture();
-    ~GLTexture();
+    GLTexture2D();
+    ~GLTexture2D();
 
-    GLTexture(const GLTexture&) = delete;
-    GLTexture* operator=(const GLTexture&) = delete;
+    GLTexture2D(const GLTexture2D&) = delete;
+    GLTexture2D* operator=(const GLTexture2D&) = delete;
     
     void init(bool _immutable = true);
     void release();
@@ -104,8 +104,22 @@ public:
     TexType  get_type() const { return type_; }
     uint32_t get_glid() const { return id_; }
     bool     get_inited() const { return inited_; }
-    bool     get_immutable() const { return immutable_; }
     bool     get_allocated() const { return allocated_; }
+
+    // params in the second line are used only when this is a mutable texture
+    void allocate(uint32_t _levels, SizedInternalFormat _format, int _width, int _height,
+                  PixFormat _pix_format = PixFormat::BGRA, PixType _pix_type = PixType::UNSIGNED_BYTE, void* _data = nullptr);
+    // TODO: upload region in texture class
+    // void upload_region(uint32_t _level, Dove::IRect2D _region, Dove::IVector2D _src_info, ...);
+    void upload(uint32_t _level, int _offset_x, int _offset_y,
+                int _width, int _height, PixFormat _format, PixType _type, void* _data);
+    void bind(uint32_t _unit);
+    void bind_image(uint32_t _unit, uint32_t _level, bool _layered, int _layer,
+                    Access _acc, ImageUnitFormat _format);
+
+    uint32_t get_levels_count() const { return levels_count_; }
+private:
+    uint32_t levels_count_;
 
 public:
     void param_min_filter(TexFilter _filter) {
@@ -140,7 +154,7 @@ public:
         SizedInternalFormat format;
     } info_;
 
-protected:
+private:
     GLuint  id_;
     bool    inited_;
     bool    immutable_;
@@ -148,36 +162,4 @@ protected:
     TexType type_;
 };
 
-class GLTexture2D : public GLTexture {
-public:
-    GLTexture2D();
-
-    // params in the second line are used only when this is a mutable texture
-    void allocate(uint32_t _levels, SizedInternalFormat _format, int _width, int _height,
-                  PixFormat _pix_format = PixFormat::BGRA, PixType _pix_type = PixType::UNSIGNED_BYTE, void* _data = nullptr);
-    // TODO: upload region in texture class
-    // void upload_region(uint32_t _level, Dove::IRect2D _region, Dove::IVector2D _src_info, ...);
-    void upload(uint32_t _level, int _offset_x, int _offset_y,
-                int _width, int _height, PixFormat _format, PixType _type, void* _data);
-    void bind(uint32_t _unit);
-    void bind_image(uint32_t _unit, uint32_t _level, bool _layered, int _layer,
-                    Access _acc, ImageUnitFormat _format);
-
-    uint32_t get_levels_count() const { return levels_count_; }
-private:
-    uint32_t levels_count_;
-};
-
-class GLTextureBuffer : public GLTexture {
-public:
-    GLTextureBuffer();
-
-    void init();
-    void allocate(size_t _size_b, BufFlag _flag, SizedInternalFormat _format);
-    void bind_image(uint32_t _unit, Access _acc, ImageUnitFormat _format);
-public:
-    std::unique_ptr<Buffer> buffer_;
-private:
-    bool attached_;
-};
 }

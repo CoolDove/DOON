@@ -1,5 +1,4 @@
 ﻿#include "Application.h"
-#include "Core/Compositor.h"
 #include "DoveLog.hpp"
 #include "Renderer.h"
 #include <DGLCore/DGLCore.h>
@@ -42,8 +41,6 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     renderer_ = make_unique<Renderer>(this);
     init_imgui();
     init_tablet();
-
-    compositor_ = make_unique<Compositor>();
 
     inited_ = true;
 

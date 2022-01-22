@@ -41,7 +41,8 @@ public:
     Camera      camera_;
 
     LayerList   layers_;
-    LayerPtr    brush_layer_;
+    // LayerPtr    brush_layer_;
+    DGL::GLTexture2D brush_layer_;
 
     struct {
         int width;

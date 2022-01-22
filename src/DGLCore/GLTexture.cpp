@@ -3,42 +3,33 @@
 
 namespace DGL
 {
-GLTexture::GLTexture()
+GLTexture2D::GLTexture2D()
 :   id_(0),
     inited_(false),
     type_(TexType::UNKNOWN),
     info_({0}),
-    immutable_(false),
     allocated_(false)
 {
+    type_ = TexType::TEXTURE_2D;
+
 }
 
-GLTexture::~GLTexture() {
+GLTexture2D::~GLTexture2D() {
     if (inited_) 
         glDeleteTextures(1, &id_);
 }
 
-void GLTexture::init(bool _immutable) {
+void GLTexture2D::init(bool _immutable) {
     assert(!inited_);
     glCreateTextures((GLenum)type_, 1, &id_);
-
     if (!id_) throw DGL::EXCEPTION::CREATION_FAILED();
     inited_ = true;
-    immutable_ = _immutable;
 }
 
-void GLTexture::release() {
+void GLTexture2D::release() {
     if (inited_) glDeleteTextures(1, &id_);
     inited_ = false;
     allocated_ = false;
-    immutable_ = false;
-}
-
-// -----------texture2D
-GLTexture2D::GLTexture2D()
-:   GLTexture()
-{
-    type_ = TexType::TEXTURE_2D;
 }
 
 void GLTexture2D::allocate(uint32_t _levels, SizedInternalFormat _format,
@@ -69,7 +60,6 @@ void GLTexture2D::allocate(uint32_t _levels, SizedInternalFormat _format,
     allocated_ = true;
 }
 
-// _level, _offset_x, _offset_y, are only used by immutable textures
 void GLTexture2D::upload(uint32_t _level, int _offset_x, int _offset_y,
                          int _width, int _height, PixFormat _format, PixType _type, void* _data)
 {
@@ -91,52 +81,11 @@ void GLTexture2D::bind(uint32_t _unit) {
     glBindTextureUnit(_unit, id_);
 }
 
-void GLTexture2D::bind_image(uint32_t _unit, uint32_t _level, bool _layered, int _layer,
-                             Access _acc, ImageUnitFormat _format)
+void GLTexture2D::bind_image(
+    uint32_t _unit, uint32_t _level, bool _layered, int _layer, Access _acc, ImageUnitFormat _format)
 {
     assert(inited_);
     glBindImageTexture(_unit, id_, _level, _layered, _layer, (GLenum)_acc, (GLenum)_format);
-}
-
-// TODO: immutable and mutable GLTextureBuffer
-// -----------texture buffer
-GLTextureBuffer::GLTextureBuffer()
-:   GLTexture(),
-    attached_(false)
-{
-    type_ = TexType::TEXTURE_BUFFER;
-}
-
-void GLTextureBuffer::init() {
-    assert(!inited_);
-    glCreateTextures((GLenum)type_, 1, &id_);
-
-    if (!id_) throw DGL::EXCEPTION::CREATION_FAILED();
-    inited_ = true;
-
-    param_mag_filter(TexFilter::NEAREST);
-    param_min_filter(TexFilter::NEAREST);
-    param_wrap_r(TexWrap::CLAMP_TO_EDGE);
-    param_wrap_s(TexWrap::CLAMP_TO_EDGE);
-}
-
-void GLTextureBuffer::allocate(size_t _size_b, BufFlag _flag, SizedInternalFormat _format) {
-    assert(inited_);
-
-    if (!attached_) {
-        buffer_ = std::make_unique<Buffer>();
-        buffer_->init();
-        buffer_->allocate(_size_b, _flag);
-        glTextureBuffer(id_, (GLenum)_format, buffer_->get_id());
-        attached_ = true;
-    } else {
-        buffer_->allocate(_size_b, _flag);
-    }
-}
-
-void GLTextureBuffer::bind_image(uint32_t _unit, Access _acc, ImageUnitFormat _format) {
-    assert(inited_&&attached_);
-    glBindImageTexture(_unit, id_, 0, false, 0, (GLenum)_acc, (GLenum)_format);
 }
 
 }

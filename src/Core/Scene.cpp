@@ -2,7 +2,6 @@
 #include "Base/General.h"
 #include "Core/Application.h"
 #include "Core/Color.h"
-#include "Core/Compositor.h"
 #include "Core/Image.h"
 #include "DGLCore/GLEnums.h"
 #include "stb_image/stb_image.h"
@@ -35,8 +34,8 @@ Scene::Scene(const char* _image_path)
     region.width = (uint32_t)info_.width;
     region.height = (uint32_t)info_.height;
 
-    brush_layer_ = std::make_unique<Layer>(
-        info_.width, info_.height, "BrushLayer", Col_RGBA{0x00, 0x00, 0x00, 0x00});
+    brush_layer_.init();
+    brush_layer_.allocate(1, SizedInternalFormat::RGBA8, info_.width, info_.height, PixFormat::RGBA, PixType::UNSIGNED_BYTE);
 
     mark_region(region);
 }
@@ -51,8 +50,8 @@ Scene::Scene(unsigned int _width, unsigned int _height, Col_RGBA _col)
     info_.width  = _width;
     info_.height = _height;
 
-    brush_layer_ = std::make_unique<Layer>(
-        _width, _height, "BrushLayer", Col_RGBA{0x00, 0x00, 0x00, 0x00});
+    brush_layer_.init();
+    brush_layer_.allocate(1, SizedInternalFormat::RGBA8, _width, _height, PixFormat::RGBA, PixType::UNSIGNED_BYTE);
 
     BufFlag flag = BufFlag::DYNAMIC_STORAGE_BIT|
                    BufFlag::MAP_READ_BIT|
@@ -71,13 +70,7 @@ Scene::Scene(unsigned int _width, unsigned int _height, Col_RGBA _col)
 
 
 void Scene::on_update() {
-    using namespace DGL;
-    // for (auto ite = layers_.begin(); ite != layers_.end(); ite++) {
-        // ite->get()->update_tex(false);
-    // }
 
-    // @Temporary: do not update brush tex for now
-    // brush_layer_->update_tex(false);
 }
 
 void Scene::add_layer(Col_RGBA _col) {

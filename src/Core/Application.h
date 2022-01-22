@@ -5,7 +5,6 @@
 #include <thread>
 #include <Windows.h>
 
-#include <Core/Compositor.h>
 #include "Scene.h"
 #include "Tool/Tools.h"
 
@@ -51,7 +50,6 @@ public:
     } tools_;
 
     unique_ptr<Renderer>    renderer_;
-    unique_ptr<Compositor>  compositor_;
     unique_ptr<DOONRes>     RES;
 
 public:// window
