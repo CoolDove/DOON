@@ -6,6 +6,7 @@
 #include "DGLCore/GLProgram.h"
 #include "DGLCore/GLTexture.h"
 #include <DGLCore/DGLCore.h>
+#include <DGLCore/GLFramebuffer.h>
 #include <Windows.h>
 
 class Renderer {
@@ -44,6 +45,8 @@ private:
     Program program_base_;
 
     Program program_paint_;
+
+    GLFramebuffer fbuf_paint_;
     DGL::GLTexture2D paint_tex_a_;
     DGL::GLTexture2D paint_tex_b_;
     DGL::GLTexture2D* current_paint_tex_;
@@ -63,16 +66,6 @@ private:
             other_paint_tex_ = &paint_tex_b_;
         }
     }
-
-    // TODO: GLFrameBuffer class
-    GLuint framebuf_;
-    GLuint fbuf_output_;
-    GLuint fbuf_layers_; // compose layers to this
-
-    static GLuint tempframebuffer_;// for static blit
-
-    DGL::GLTexture2D framebuf_tex_a_;
-    DGL::GLTexture2D framebuf_tex_b_;
 
     GeoBatch batch_;
 

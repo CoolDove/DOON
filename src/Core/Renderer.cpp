@@ -7,6 +7,7 @@
 #include <gl/GL.h>
 #include <DGLCore/GLDebugger.h>
 #include <DGLCore/GLShader.h>
+#include <DGLCore/GLFramebuffer.h>
 
 #include "Image.h"
 #include "Space.h"
@@ -14,16 +15,17 @@
 
 using namespace DGL;
 
-GLuint Renderer::tempframebuffer_ = 0;
+
 void Renderer::blit(DGL::GLTexture2D* src, DGL::GLTexture2D* dst, Dove::IRect2D rect_src, Dove::IRect2D rect_dst) {
     if (!src || !dst) return;
     
-    // TODO: stash and recover framebuffer
+    GLint stash = GLFramebuffer::current_framebuffer();
 
-    GLuint* fbuf = (GLuint*)malloc(2 * sizeof(GLuint));
-    glCreateFramebuffers(2, fbuf);
-    glNamedFramebufferTexture(fbuf[0], GL_COLOR_ATTACHMENT0, src->get_glid(), 0);
-    glNamedFramebufferTexture(fbuf[1], GL_COLOR_ATTACHMENT0, dst->get_glid(), 0);
+    GLFramebuffer fbuf[2];
+    fbuf[0].init();
+    fbuf[1].init();
+    fbuf[0].attach(src);
+    fbuf[1].attach(dst);
 
     GLint srcx0 = rect_src.posx;
     GLint srcy0 = rect_src.posy;
@@ -35,16 +37,18 @@ void Renderer::blit(DGL::GLTexture2D* src, DGL::GLTexture2D* dst, Dove::IRect2D 
     GLint dstx1 = rect_dst.posx + rect_dst.width;
     GLint dsty1 = rect_dst.posy + rect_dst.height;
 
-    glBlitNamedFramebuffer(fbuf[0], fbuf[1], srcx0, srcy0, srcx1, srcy1, dstx0, dsty0, dstx1, dsty1, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    glBlitNamedFramebuffer(
+        fbuf[0].get_glid(), fbuf[1].get_glid(),
+        srcx0, srcy0, srcx1, srcy1, dstx0, dsty0, dstx1, dsty1,
+        GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
-    glDeleteFramebuffers(2, fbuf);
-    free(fbuf);
+    glBindFramebuffer(GL_FRAMEBUFFER, stash);
 }
 
 Renderer::Renderer(Application *_app)
-:   framebuf_(0),
-    current_paint_tex_(nullptr),
+:   current_paint_tex_(nullptr),
     other_paint_tex_(nullptr)
+
 {
     app_ = _app;
     init_opengl();
@@ -81,15 +85,6 @@ void Renderer::init() {
     int wnd_width = app_->window_info_.width;
     int wnd_height = app_->window_info_.height;
 
-    framebuf_tex_a_.init();
-    framebuf_tex_a_.allocate(1, SizedInternalFormat::RGBA8,
-                           wnd_width, wnd_height,
-                           PixFormat::RGBA, PixType::UNSIGNED_BYTE);
-    framebuf_tex_b_.init();
-    framebuf_tex_b_.allocate(1, SizedInternalFormat::RGBA8,
-                           wnd_width, wnd_height,
-                           PixFormat::RGBA, PixType::UNSIGNED_BYTE);
-
     paint_tex_a_.init();
     paint_tex_a_.allocate(1, SizedInternalFormat::RGBA8,
                              app_->curr_scene_->info_.width, app_->curr_scene_->info_.height,
@@ -99,11 +94,7 @@ void Renderer::init() {
                              app_->curr_scene_->info_.width, app_->curr_scene_->info_.height,
                              PixFormat::RGBA, PixType::UNSIGNED_BYTE);
 
-    glCreateFramebuffers(1, &framebuf_);
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuf_);
-
-    glCreateFramebuffers(2, &fbuf_layers_);
-    // glBindFramebuffer(GL_FRAMEBUFFER, fbuf_layers_);
+    fbuf_paint_.init();
 
     recreate_canvas_batch();
 }
@@ -127,11 +118,11 @@ void Renderer::render() {
     {// compose layers to paint_tex_
         glDisable(GL_BLEND);
 
-        glBindFramebuffer(GL_FRAMEBUFFER, fbuf_layers_);
+        fbuf_paint_.bind();
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-        glNamedFramebufferTexture(fbuf_layers_, GL_COLOR_ATTACHMENT0, paint_tex_b_.get_glid(), 0);
+        fbuf_paint_.attach(&paint_tex_a_);
         glClear(GL_COLOR_BUFFER_BIT);
-        glNamedFramebufferTexture(fbuf_layers_, GL_COLOR_ATTACHMENT0, paint_tex_a_.get_glid(), 0);
+        fbuf_paint_.attach(&paint_tex_b_);
         glClear(GL_COLOR_BUFFER_BIT);
         glDepthFunc(GL_ALWAYS);
 
@@ -141,7 +132,7 @@ void Renderer::render() {
 
         for (auto const& layer : scn->layers_) {
             swap_paint_tex();
-            glNamedFramebufferTexture(fbuf_layers_, GL_COLOR_ATTACHMENT0, current_paint_tex_->get_glid(), 0);
+            fbuf_paint_.attach(current_paint_tex_);
             glClear(GL_COLOR_BUFFER_BIT);
 
             paint_shader->uniform_f("_size", (float)scn->info_.width, (float)scn->info_.height);
@@ -155,7 +146,7 @@ void Renderer::render() {
             // render brush layer
             if (&(*layer) == scn->get_curr_layer()) {
                 swap_paint_tex();
-                glNamedFramebufferTexture(fbuf_layers_, GL_COLOR_ATTACHMENT0, current_paint_tex_->get_glid(), 0);
+                fbuf_paint_.attach(current_paint_tex_);
                 glClear(GL_COLOR_BUFFER_BIT);
 
                 scn->brush_layer_.bind(0);
@@ -199,20 +190,10 @@ void Renderer::render() {
         program_canvas_.uniform_i("_tex", 0);
         batch_.draw_batch();
     }
-    
-    // detach the framebuffer texture
-    glNamedFramebufferTexture(framebuf_, GL_COLOR_ATTACHMENT0, 0, 0);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 }
 
 void Renderer::resize_framebuffer(Dove::IVector2D _size) {
-    framebuf_tex_a_.release();
-    framebuf_tex_a_.init();
-    framebuf_tex_a_.allocate(1, SizedInternalFormat::RGBA8, _size.x, _size.y);
-
-    framebuf_tex_b_.release();
-    framebuf_tex_b_.init();
-    framebuf_tex_b_.allocate(1, SizedInternalFormat::RGBA8, _size.x, _size.y);
 }
 
 void Renderer::init_opengl() {

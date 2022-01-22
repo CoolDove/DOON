@@ -19,7 +19,7 @@ GLTexture2D::~GLTexture2D() {
         glDeleteTextures(1, &id_);
 }
 
-void GLTexture2D::init(bool _immutable) {
+void GLTexture2D::init() {
     assert(!inited_);
     glCreateTextures((GLenum)type_, 1, &id_);
     if (!id_) throw DGL::EXCEPTION::CREATION_FAILED();

@@ -97,7 +97,7 @@ public:
     GLTexture2D(const GLTexture2D&) = delete;
     GLTexture2D* operator=(const GLTexture2D&) = delete;
     
-    void init(bool _immutable = true);
+    void init();
     void release();
 
 public:

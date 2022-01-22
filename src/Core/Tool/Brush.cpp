@@ -9,6 +9,7 @@
 #include <Core/Space.h>
 #include <DGLCore/GLDebugger.h>
 #include <DGLCore/GLTexture.h>
+#include <DGLCore/GLFramebuffer.h>
 #include <cstring>
 #include <stdint.h>
 #include <string.h>
@@ -82,10 +83,11 @@ void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
         temp.init();
         temp.allocate(1, SizedInternalFormat::RGBA8, src->info_.width, src->info_.height, PixFormat::RGBA, PixType::UNSIGNED_BYTE, nullptr);
         
-        GLuint fbuf;
-        glCreateFramebuffers(1, &fbuf);
-        glBindFramebuffer(GL_FRAMEBUFFER, fbuf);
-        glNamedFramebufferTexture(fbuf, GL_COLOR_ATTACHMENT0, temp.get_glid(), 0);
+        GLFramebuffer fbuf;
+        fbuf.init();
+        fbuf.bind();
+        fbuf.attach(&temp);
+
         glViewport(0, 0, dst->info_.width, dst->info_.height);
         glDepthFunc(GL_ALWAYS);
 
@@ -101,7 +103,7 @@ void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
 
         app_->renderer_->get_canvas_quad()->draw_batch();
 
-        glNamedFramebufferTexture(fbuf, GL_COLOR_ATTACHMENT0, 0, 0);
+        // glNamedFramebufferTexture(fbuf, GL_COLOR_ATTACHMENT0, 0, 0);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         IRect2D rect;
@@ -113,8 +115,7 @@ void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
 
         painting_region_ = {0};
         clear_brush_tex();
-        
-        glDeleteFramebuffers(1, &fbuf);
+
     }
 }
 
@@ -203,19 +204,19 @@ Dove::IRect2D Brush::draw_circle(int _x, int _y, int _r) {
 }
 
 void Brush::clear_brush_tex(Col_RGBA color) {
-    GLint fbuf_stash;
-    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &fbuf_stash);
+    GLint fbuf_stash = GLFramebuffer::current_framebuffer();
 
-    GLuint fbuf;
-    glCreateFramebuffers(1, &fbuf);
-    glBindFramebuffer(GL_FRAMEBUFFER, fbuf);
-    glNamedFramebufferTexture(fbuf, GL_COLOR_ATTACHMENT0, app_->curr_scene_->brush_layer_.get_glid(), 0);
+    GLFramebuffer fbuf;
+
+    fbuf.init();
+    fbuf.bind();
+
+    fbuf.attach(&app_->curr_scene_->brush_layer_);
+
     glClearColor(0.0, 0.0, 0.0, 0.0);
     glClear(GL_COLOR_BUFFER_BIT);
-
+    
     glBindFramebuffer(GL_FRAMEBUFFER, fbuf_stash);
-
-    glDeleteFramebuffers(1, &fbuf);
 
     painting_region_ = {0};
 }
