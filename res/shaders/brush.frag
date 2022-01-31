@@ -5,8 +5,10 @@ in vec2 v_uv;
 layout (location = 0) out vec4 FragColor;
 
 uniform sampler2D _brushtex;
+uniform vec4 _brushcol;
 
 void main() {
     vec4 col = texture(_brushtex, v_uv);
-    FragColor = vec4(1.0, 1.0, 1.0, col.a);
+    col *= _brushcol;
+    FragColor = col;
 }

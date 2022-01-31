@@ -73,6 +73,7 @@ void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
 
     if (holding_) {
         holding_ = false;
+
         // @Composition: composite the whole image for now
         glDisable(GL_BLEND);
         GLTexture2D* brush_texture = &(app_->curr_scene_->brush_layer_);
@@ -113,7 +114,7 @@ void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
         curr_layer->mark_dirt(painting_region_);
 
         painting_region_ = {0};
-        clear_brush_tex();
+        clear_brush_tex({0xff, 0xff, 0xff, 0x00});
 
     }
 }
@@ -182,6 +183,8 @@ Dove::IRect2D Brush::draw_circle(int _x, int _y, int _r) {
         shader_->bind();
         brush_tex_->bind(0);
         shader_->uniform_i("_brushtex", 0);
+        auto fcol = get_float_col(col_);
+        shader_->uniform_f("_brushcol", fcol.r, fcol.g, fcol.b, fcol.a);
         shader_->uniform_f("_dappos", (float)_x, (float)_y);
         shader_->uniform_f("_canvassize", (float)scn->info_.width, (float)scn->info_.height);
         shader_->uniform_f("_dapsize", (float)_r);
@@ -212,7 +215,8 @@ void Brush::clear_brush_tex(Col_RGBA color) {
 
     fbuf.attach(&app_->curr_scene_->brush_layer_);
 
-    glClearColor(0.0, 0.0, 0.0, 0.0);
+    auto fcol = get_float_col(color);
+    glClearColor(fcol.r, fcol.g, fcol.b, fcol.a);
     glClear(GL_COLOR_BUFFER_BIT);
     
     glBindFramebuffer(GL_FRAMEBUFFER, fbuf_stash);
