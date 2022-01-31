@@ -74,6 +74,7 @@ void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
     if (holding_) {
         holding_ = false;
         // @Composition: composite the whole image for now
+        glDisable(GL_BLEND);
         GLTexture2D* brush_texture = &(app_->curr_scene_->brush_layer_);
         Layer* curr_layer = app_->curr_scene_->get_curr_layer();
 
