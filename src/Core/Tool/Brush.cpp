@@ -1,20 +1,25 @@
 ﻿#include "Brush.h"
-#include "Base/General.h"
-#include "Core/Color.h"
-#include "Core/Scene.h"
-#include "DGLCore/GLEnums.h"
-#include "DGLCore/GLGeoBatch.h"
-#include "DoveLog.hpp"
+#include "BrushCommand.h"
+
+#include <Base/General.h>
+#include <Core/Color.h>
+#include <Core/Scene.h>
+#include <DGLCore/GLEnums.h>
+#include <DGLCore/GLGeoBatch.h>
+#include <DoveLog.hpp>
 #include <Core/Application.h>
 #include <Core/Space.h>
 #include <DGLCore/GLDebugger.h>
 #include <DGLCore/GLTexture.h>
 #include <DGLCore/GLFramebuffer.h>
+
 #include <cstring>
 #include <stdint.h>
 #include <string.h>
+
 #include <Core/DOONRes.h>
 #include <Core/Renderer.h>
+#include <Core/History.h>
 
 // @doing: remove old img and tex pair
 using namespace DGL;
@@ -106,6 +111,12 @@ void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+
+        // @Test: test command history system
+
+        BrushCommand* cmd = new BrushCommand(_x);
+        app_->curr_scene_->get_history_sys()->push(cmd);
+
         IRect2D rect;
         rect.position = {0, 0};
         rect.size = {src->info_.width, src->info_.height};
@@ -168,16 +179,18 @@ Dove::IRect2D Brush::draw_circle(int _x, int _y, int _r) {
 
     // DLOG_DEBUG("pos: %d, %d", _x, _y);
     {// Draw to current brush layer
+    
         glEnable(GL_BLEND);
         glBlendEquation(GL_FUNC_ADD);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
         glBindFramebuffer(GL_FRAMEBUFFER, fbuf_brush_);
         static const GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0 };
         glDrawBuffers(1, draw_buffers);
         glViewport(0, 0, scn->info_.width, scn->info_.height);
 
-        auto texid = scn->brush_layer_.get_glid(); // brush layer texture
+        // auto texid = scn->brush_layer_.get_glid(); // brush layer texture
+        auto texid = scn->get_curr_layer()->tex_->get_glid(); // draw to current layer directly
         glNamedFramebufferTexture(fbuf_brush_, GL_COLOR_ATTACHMENT0, texid, 0);
 
         shader_->bind();

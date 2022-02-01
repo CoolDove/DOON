@@ -5,6 +5,7 @@
 #include <Core/Image.h>
 #include <Core/Layer.h>
 #include <Core/Color.h>
+#include <Core/History.h>
 #include <Base/General.h>
 
 #include <list>
@@ -37,6 +38,7 @@ public:
 
     Layer*        get_curr_layer() { return curr_layer_ite_->get(); };
     Dove::IRect2D get_region() const { return region_; };
+    HistorySys*   get_history_sys() { return &history_sys_; }
 public:
     Camera      camera_;
 
@@ -50,6 +52,7 @@ public:
     } info_;
 
 private:
+    HistorySys    history_sys_;
     Dove::IRect2D region_; // updated region
     LayerIte      curr_layer_ite_;
 };

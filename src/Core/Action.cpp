@@ -9,7 +9,6 @@ ActionList::ActionList()
 {
     // @Temp: build action list in code, will be replaced by .doon parsing
     // using namespace Dove;
-    // register_key("def", ActionKey{KeyCode::A, ModKey::None}, "press_a");
     // register_action("def", "press_a", press_a);    
     // register_key("def", ActionKey{KeyCode::A, ModKey::Shift}, "press_s_a");
     // register_action("def", "press_s_a", press_s_a);    

@@ -2,6 +2,7 @@
 #include "DoveLog.hpp"
 #include "Renderer.h"
 #include <DGLCore/DGLCore.h>
+#include <Core/Action.h>
 
 #include <algorithm>
 #include <assert.h>
@@ -44,6 +45,7 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
 
     inited_ = true;
 
+    // @LoadResource:
     RES->LoadShader("./res/shaders/paint.vert", "./res/shaders/paint.frag", "paint");
     RES->LoadShader("./res/shaders/canvas.vert", "./res/shaders/canvas.frag", "canvas");
     RES->LoadShader("./res/shaders/base.vert", "./res/shaders/base.frag", "base");
@@ -77,9 +79,13 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     renderer_->init();
 
     // @ActionList:
+    using namespace Dove;
     action_list_ = std::make_unique<ActionList>();
-
-    action_list_->invoke({Dove::KeyCode::A, Dove::ModKey::None});
+    // action_list_->invoke({Dove::KeyCode::A, Dove::ModKey::None});
+    action_list_->register_key("def", ActionKey{KeyCode::Z, ModKey::Ctrl}, "undo");
+    action_list_->register_key("def", ActionKey{KeyCode::Z, ModKey::Ctrl|ModKey::Shift}, "redo");
+    action_list_->register_action("def", "undo", &Application::action_undo);
+    action_list_->register_action("def", "redo", &Application::action_redo);
 
 //  @temporary: check the version
     GLint major;

@@ -67,6 +67,11 @@ public:// window
 
 public:
     GLuint buf_tex_;
+
+public: 
+    static void action_undo();
+    static void action_redo();
+
 private:
     void init_dlog();
     void init_window(HINSTANCE _instance, HINSTANCE _prev_instance, char* _cmd_line, int _show_code);
