@@ -1,12 +1,6 @@
 #pragma once
 #include <stack>
-
-class Command
-{
-public:
-    virtual void on_undo() {};// this is for undo to work
-    virtual void on_redo() {};// this is for redo to work
-};
+#include "Command.h"
 
 class HistorySys
 {
@@ -14,6 +8,9 @@ public:
     void push(Command* p_cmd, bool _do_action = false);
     void undo();
     void redo();
+public:
+    int count_redo_stack() const { return redo_stack_.size(); };
+    int count_history() const { return history_.size(); };
 private:
     void clear_redo_stack();
 private:

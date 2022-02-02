@@ -1,5 +1,5 @@
 ﻿#include "Brush.h"
-#include "BrushCommand.h"
+#include <Core/Command_Brush.h>
 
 #include <Base/General.h>
 #include <Core/Color.h>
@@ -79,6 +79,12 @@ void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
     if (holding_) {
         holding_ = false;
 
+
+        BrushCommand* cmd = new BrushCommand(painting_region_, app_);
+        app_->curr_scene_->get_history_sys()->push(cmd);
+
+        DLOG_DEBUG("redo stack: %d", app_->curr_scene_->get_history_sys()->count_redo_stack());
+
         // @Composition: composite the whole image for now
         glDisable(GL_BLEND);
         GLTexture2D* brush_texture = &(app_->curr_scene_->brush_layer_);
@@ -110,12 +116,6 @@ void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
         app_->renderer_->get_canvas_quad()->draw_batch();
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-
-        // @Test: test command history system
-
-        BrushCommand* cmd = new BrushCommand(_x);
-        app_->curr_scene_->get_history_sys()->push(cmd);
 
         IRect2D rect;
         rect.position = {0, 0};
@@ -189,8 +189,8 @@ Dove::IRect2D Brush::draw_circle(int _x, int _y, int _r) {
         glDrawBuffers(1, draw_buffers);
         glViewport(0, 0, scn->info_.width, scn->info_.height);
 
-        // auto texid = scn->brush_layer_.get_glid(); // brush layer texture
-        auto texid = scn->get_curr_layer()->tex_->get_glid(); // draw to current layer directly
+        // auto texid = scn->get_curr_layer()->tex_->get_glid(); // draw to current layer directly
+        auto texid = scn->brush_layer_.get_glid();
         glNamedFramebufferTexture(fbuf_brush_, GL_COLOR_ATTACHMENT0, texid, 0);
 
         shader_->bind();

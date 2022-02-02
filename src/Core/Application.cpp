@@ -3,6 +3,7 @@
 #include "Renderer.h"
 #include <DGLCore/DGLCore.h>
 #include <Core/Action.h>
+#include <Core/Command_Brush.h>
 
 #include <algorithm>
 #include <assert.h>
@@ -144,10 +145,14 @@ void Application::render_ui() {
                     Tool::Brush* brs = dynamic_cast<Tool::Brush*>(curr_tool_);
                     static float bcol[4] = {1.0f,1.0f,1.0f,1.0f};
                     ImGui::ColorEdit4("brush_col", bcol, ImGuiColorEditFlags_AlphaBar);
-                    brs->col_.r = (unsigned char)(bcol[0] * 0xff);
-                    brs->col_.g = (unsigned char)(bcol[1] * 0xff);
-                    brs->col_.a = (unsigned char)(bcol[3] * 0xff);
-                    brs->col_.b = (unsigned char)(bcol[2] * 0xff);
+                    Col_RGBA color = {
+                        (unsigned char)(bcol[0] * 0xff),
+                        (unsigned char)(bcol[1] * 0xff),
+                        (unsigned char)(bcol[2] * 0xff),
+                        (unsigned char)(bcol[3] * 0xff)
+                    };
+
+                    if (brs->col_ != color) brs->col_ = color;
 
                     ImGui::DragInt("brush_size_max", &brs->size_max_, 0.1f, 1, 7000);
                     ImGui::DragFloat("brush_size_min", &brs->size_min_scale_, 0.01f, 0.0f, 1.0f);

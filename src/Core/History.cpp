@@ -26,7 +26,8 @@ void HistorySys::redo() {
 }
 
 void HistorySys::clear_redo_stack() {
-    for (int i = 0; i < redo_stack_.size(); i++) {
+    int redo_count = redo_stack_.size(); 
+    for (int i = 0; i < redo_count; i++) {
         Command* cmd = redo_stack_.top();
         redo_stack_.pop();
         delete cmd;
