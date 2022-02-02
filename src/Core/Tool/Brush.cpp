@@ -83,8 +83,6 @@ void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
         BrushCommand* cmd = new BrushCommand(painting_region_, app_);
         app_->curr_scene_->get_history_sys()->push(cmd);
 
-        DLOG_DEBUG("redo stack: %d", app_->curr_scene_->get_history_sys()->count_redo_stack());
-
         // @Composition: composite the whole image for now
         glDisable(GL_BLEND);
         GLTexture2D* brush_texture = &(app_->curr_scene_->brush_layer_);
