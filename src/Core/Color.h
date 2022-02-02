@@ -12,6 +12,13 @@ struct Col_RGB {
     };
 };
 
+inline bool operator == (const Col_RGB& ls, const Col_RGB& rs) {
+    return (ls.cluster&0xffffff00) == (rs.cluster&0xffffff00);
+}
+inline bool operator != (const Col_RGB& ls, const Col_RGB& rs) {
+    return (ls.cluster&0xffffff00) != (rs.cluster&0xffffff00);
+}
+
 struct Col_RGBA {
     union {
         struct {
@@ -23,6 +30,13 @@ struct Col_RGBA {
         uint32_t cluster;
     };
 };
+
+inline bool operator == (const Col_RGBA& ls, const Col_RGBA& rs) {
+    return ls.cluster == rs.cluster;
+}
+inline bool operator != (const Col_RGBA& ls, const Col_RGBA& rs) {
+    return ls.cluster != rs.cluster;
+}
 
 struct FCol_RGB {
     float r;
