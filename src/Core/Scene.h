@@ -26,6 +26,7 @@ public:
     void on_render();
     void on_update();
 
+    void add_layer(const std::string& _path);
     void add_layer(Col_RGBA _col, const std::string& _name);
     void add_layer(Col_RGBA _col);
     void change_layer(const std::string& _name);

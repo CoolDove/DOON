@@ -120,7 +120,7 @@ void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
         rect.size = {src->info_.width, src->info_.height};
         Renderer::blit(&temp, dst, rect, rect);
 
-        curr_layer->mark_dirt(painting_region_);
+        // curr_layer->mark_dirt(painting_region_);
 
         painting_region_ = {0};
         clear_brush_tex({0xff, 0xff, 0xff, 0x00});

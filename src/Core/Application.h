@@ -71,6 +71,7 @@ public:
 public: 
     static void action_undo();
     static void action_redo();
+    static void action_save();
 
 private:
     void init_dlog();

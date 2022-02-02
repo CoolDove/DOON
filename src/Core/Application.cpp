@@ -19,6 +19,9 @@
 #include <glad/glad.h>
 #include <gl/GL.h>
 
+// @Temporary: test reading binary files
+#include <Core/Serialize.h>
+
 using wglCreateContextAttribsARB_t = HGLRC (WINAPI *) (HDC hDC, HGLRC hshareContext, const int *attribList);
 
 Application* Application::instance_ = nullptr;
@@ -38,7 +41,9 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     init_dlog();
 
     RES = std::make_unique<DOONRes>();
-    
+
+    DooReader reader("d:/paintings/test.doo");
+
     init_window(_instance, _prev_instance, _cmd_line, _show_code);
     renderer_ = make_unique<Renderer>(this);
     init_imgui();
@@ -85,8 +90,11 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     // action_list_->invoke({Dove::KeyCode::A, Dove::ModKey::None});
     action_list_->register_key("def", ActionKey{KeyCode::Z, ModKey::Ctrl}, "undo");
     action_list_->register_key("def", ActionKey{KeyCode::Z, ModKey::Ctrl|ModKey::Shift}, "redo");
+    action_list_->register_key("def", ActionKey{KeyCode::S, ModKey::Ctrl}, "save");
+    
     action_list_->register_action("def", "undo", &Application::action_undo);
     action_list_->register_action("def", "redo", &Application::action_redo);
+    action_list_->register_action("def", "save", &Application::action_save);
 
 //  @temporary: check the version
     GLint major;
