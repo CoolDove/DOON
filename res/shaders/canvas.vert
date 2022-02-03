@@ -8,10 +8,14 @@ out	vec2 v_uv;
 
 uniform mat4 _view;
 uniform mat4 _proj;
+uniform vec2 _cansize;
 
 void main() {
-	gl_Position = _proj * (_view * vec4(aPos, 1.0f));
+    vec3 pos = vec3(_cansize, 0.0) * aPos * 0.5;
+
+	gl_Position = _proj * (_view * vec4(pos, 1.0f));
 	v_uv = uv;
+
     // os_pos = vec2(aPos.x, aPos.y);
     // ndc_pos = vec2(gl_Position.x/gl_Position.w, gl_Position.y/gl_Position.w);
 }

@@ -10,9 +10,8 @@ uniform vec2 _size;
 void main() {
 	v_uv = uv;
     os_pos = vec2(aPos.x, aPos.y);
-    vec2 ndc;
-
-    ndc = os_pos / (_size * 0.5);
+    vec2 ndc = os_pos;
+    // ndc = os_pos / (_size * 0.5);
 
     gl_Position = vec4(ndc, 0.0, 1.0);
 }

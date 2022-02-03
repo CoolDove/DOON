@@ -72,7 +72,8 @@ void Renderer::recreate_canvas_batch() {
         int height = app_->curr_scene_->info_.height;
 
         batch_.clear();
-        batch_.add_quad((float)width, (float)height, "canvas");
+        // batch_.add_quad((float)width, (float)height, "canvas");
+        batch_.add_quad(2, 2, "canvas");
         batch_.upload();
     }
 }
@@ -120,8 +121,6 @@ void Renderer::render() {
             fbuf_paint_.attach(current_paint_tex_);
             glClear(GL_COLOR_BUFFER_BIT);
 
-            paint_shader->uniform_f("_size", (float)scn->info_.width, (float)scn->info_.height);
-
             (*layer).tex_->bind(0);
             paint_shader->uniform_i("_tex", 0);
             other_paint_tex_->bind(1);
@@ -163,13 +162,15 @@ void Renderer::render() {
         int cell_scale = (int)((cam_size * cam_size * cam_size) * 30 + 1);
         shader_base->uniform_mat("_view", 4, &view[0][0]);
         shader_base->uniform_mat("_proj", 4, &proj[0][0]);
-        shader_base->uniform_f("_size", (float)scn->info_.width, (float)scn->info_.height);
+        shader_base->uniform_f("_cansize", scn->info_.width, scn->info_.height);
+        // shader_base->uniform_f("_size", (float)scn->info_.width, (float)scn->info_.height);
         shader_base->uniform_i("_scale", cell_scale);
         batch_.draw_batch();
     }
     
     auto shader_canvas = app_->RES->GetShader("canvas");
     shader_canvas->bind();
+    shader_canvas->uniform_f("_cansize", scn->info_.width, scn->info_.height);
     shader_canvas->uniform_mat("_view", 4, &view[0][0]);
     shader_canvas->uniform_mat("_proj", 4, &proj[0][0]);
     if (current_paint_tex_ != nullptr) {// draw canvas

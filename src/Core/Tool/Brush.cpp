@@ -105,7 +105,6 @@ void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
         auto paint_shader = app_->RES->GetShader("paint");
 
         paint_shader->bind();
-        paint_shader->uniform_f("_size", (float)src->info_.width, (float)src->info_.height);
         src->bind(0);
         paint_shader->uniform_i("_tex", 0);
         dst->bind(1);

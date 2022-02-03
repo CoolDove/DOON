@@ -2,11 +2,12 @@
 
 in vec2 os_pos;
 layout (location = 0) out vec4 FragColor;
-uniform vec2 _size;
+uniform vec2 _cansize;
 uniform int _scale;
 
 void main() {
     // int scale = clamp(_scale, 5, 10);
+    vec2 _size = _cansize;
     int cell = 1 * _scale;
     int dcell = 2 * cell;
 
