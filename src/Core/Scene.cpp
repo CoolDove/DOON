@@ -21,7 +21,6 @@ Scene::Scene(const char* _image_path)
 
     // you must set info_ before adding layers
     add_layer(_image_path);
-    get_curr_layer()->update_tex();
 
     info_.width = get_curr_layer()->info_.width;
     info_.height = get_curr_layer()->info_.height;
@@ -55,7 +54,6 @@ Scene::Scene(unsigned int _width, unsigned int _height, Col_RGBA _col)
                    BufFlag::MAP_WRITE_BIT;
 
     add_layer(_col);
-    get_curr_layer()->update_tex();
 
     Dove::IRect2D region;
     region.posx = region.posy = 0;

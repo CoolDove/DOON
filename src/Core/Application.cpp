@@ -242,7 +242,7 @@ void Application::change_scene(const std::string& _name) {
     if (scenes_.find(_name) != scenes_.end()) {
         curr_scene_ = scenes_[_name].get();
 
-        renderer_->recreate_canvas_batch();
+        // renderer_->recreate_canvas_batch();
     }
 }
 

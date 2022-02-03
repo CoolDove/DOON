@@ -1,4 +1,5 @@
 ﻿#include "Layer.h"
+#include "DoveLog.hpp"
 #include "Base/General.h"
 #include "Core/Color.h"
 #include "DGLCore/GLBuffer.h"
@@ -31,6 +32,7 @@ Layer::Layer(const std::string& path) {
     memcpy(pixels_, img.pixels_, data_size());
 
     update_tex();
+    mem_release();
 }
 
 Layer::Layer(unsigned int _width, unsigned int _height, std::string _name, Col_RGBA _col) {
@@ -58,6 +60,7 @@ Layer::Layer(unsigned int _width, unsigned int _height, std::string _name, Col_R
     tex_->allocate(1, SizedInternalFormat::RGBA8, _width, _height);
 
     update_tex();
+    mem_release();
 }
 
 Layer::~Layer() {
@@ -68,6 +71,10 @@ Layer::~Layer() {
 
 void Layer::update_tex() {
     using namespace DGL;
+    if (!pixels_) {
+        DLOG_ERROR("the pixels_ is null, cannot update texture");
+        return;
+    }
     tex_->upload(
         0, 0, 0, info_.width, info_.height,
         PixFormat::RGBA, PixType::UNSIGNED_BYTE,
@@ -75,7 +82,12 @@ void Layer::update_tex() {
 }
 
 void Layer::mem_fetch() {
-
+    mem_release();
+    pixels_ = (Col_RGBA*)malloc(data_size());
+    glGetTextureImage(
+        tex_->get_glid(), 0,
+        GL_RGBA, GL_UNSIGNED_BYTE,
+        data_size(), pixels_);
 }
 
 void Layer::mem_release() {
