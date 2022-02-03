@@ -6,7 +6,19 @@
 #include <Core/Scene.h>
 // #include <stb_image/std_image.h>
 
-const int DOO_VERSION = 1;
+const uint32_t DOO_VERSION = 0xacbcdcec;
+const uint64_t DOO_MAX_NAME_LENGTH = 256;
+
+
+/*
+.doo
+| doo header | layer0 header | layer0 name | layer0 data| layer1 header | layer1 name | layer1 data|...
+|------------|--------------- ------------- ------------|--------------- ------------- ------------|-----
+
+doo header: sizeof DooHeader
+layer header: sizeof LayerHeader
+name: char[DOO_MAX_NAME_LENGTH]
+*/
 
 inline void ReadDoo(const char* path) {
     FILE* file = fopen(path, "r");
@@ -20,8 +32,7 @@ inline void ReadDoo(const char* path) {
 struct LayerHeader
 {
     uint32_t blend_mode;
-    uint64_t data_size;
-    std::array<char, 256> name;
+    size_t data_size_b;
 };
 
 struct DooHeader

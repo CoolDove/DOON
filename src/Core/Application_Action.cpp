@@ -15,15 +15,5 @@ void Application::action_redo() {
 void Application::action_save() {
     if (instance_ == nullptr || instance_->curr_scene_ == nullptr) return;
     DooWriter writer(instance_->curr_scene_);
-
-    Scene* scn = instance_->curr_scene_;
-    
-    for (auto layer = scn->layers_.begin(); layer != scn->layers_.end(); layer++) {
-        (*layer)->mem_fetch();
-        (*layer)->mem_release();
-    }
-
     writer.write("d:/paintings/test.doo");
-
-    DLOG_DEBUG("saved");
 }

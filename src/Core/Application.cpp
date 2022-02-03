@@ -61,6 +61,7 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     // scenes_["anji"]  = make_unique<Scene>("./res/textures/anji.png");
     scenes_["alp"]   = make_unique<Scene>("./res/textures/alp.png");
     scenes_["blank"]  = make_unique<Scene>(512, 2048, Col_RGBA{0x43, 0x32, 0x64, 0xff});
+    scenes_["little"]  = make_unique<Scene>(16, 16, Col_RGBA{0x43, 0x32, 0x64, 0xff});
     // scenes_["p1"] = make_unique<Scene>("./res/p1.png");
     // scenes_["p2"] = make_unique<Scene>("./res/p2.png");
     // scenes_["p3"] = make_unique<Scene>("./res/p3.png");

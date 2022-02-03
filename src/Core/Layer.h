@@ -19,7 +19,7 @@ public:
     Layer(unsigned int _width, unsigned int _height, std::string _name, Col_RGBA _col);
     ~Layer();
 
-    uint32_t data_size() const { return sizeof(Col_RGBA) * info_.width * info_.height; }
+    uint32_t data_size() const { return sizeof(Col_RGBA) * info_.width * info_.height; } // byte
     void update_tex();
     void mem_fetch();
     void mem_release();
