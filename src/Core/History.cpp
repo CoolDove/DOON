@@ -10,7 +10,7 @@ void HistorySys::push(Command* p_cmd, bool _do_action) {
     clear_redo_stack();
 
     if (history_.size() >= max_ + extension_)
-        release(history_.size() - max_);
+        release((int)history_.size() - max_);
 }
 
 void HistorySys::undo() {
@@ -30,7 +30,7 @@ void HistorySys::redo() {
 }
 
 void HistorySys::clear_redo_stack() {
-    int redo_count = redo_stack_.size(); 
+    int redo_count = (int)redo_stack_.size(); 
     for (int i = 0; i < redo_count; i++) {
         Command* cmd = redo_stack_.top();
         redo_stack_.pop();
@@ -40,8 +40,8 @@ void HistorySys::clear_redo_stack() {
 
 void HistorySys::release(int count) {
     std::stack<Command*> stash;
-    int left_count = history_.size() - count;
-    int history_size = history_.size();
+    int left_count = (int)history_.size() - count;
+    int history_size = (int)history_.size();
 
     for (int i = 0; i < history_size; i++) {
         auto* cmd = history_.top();

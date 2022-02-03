@@ -56,7 +56,7 @@ public:
     std::vector<fpos_t> layer_offsets;
     bool good() const { return good_; }
 
-    uint32_t get_layers_count() const { return layer_headers.size(); }
+    uint32_t get_layers_count() const { return (uint32_t)layer_headers.size(); }
     LayerHeader get_layer_header(uint32_t layer) {
         if (layer >= get_layers_count()) return {0};
         return layer_headers[layer];

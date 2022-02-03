@@ -15,16 +15,14 @@
 #include <stdint.h>
 #include <sys/stat.h>
 
-Scene::Scene(const char* _image_path)
+Scene::Scene(const char* _path)
 :   region_{0}
 {
     camera_.position_.x = 0.0f;
     camera_.position_.y = 0.0f;
     camera_.size_       = 0.9f;
 
-    // you must set info_ before adding layers
-    if (!load_scene(_image_path)) {
-        // failed to load scene
+    if (!load_scene(_path)) {
         create_scene(1024, 1024, Col_RGBA{0xff, 0xff, 0xff, 0x00});
     }
 

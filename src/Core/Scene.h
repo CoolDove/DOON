@@ -19,10 +19,9 @@ using namespace DGL;
 
 class Scene {
 public:
-    Scene(const char* _image_path);
+    Scene(const char* _path);
     Scene(uint32_t _width, uint32_t _height, Col_RGBA _col);
     ~Scene();
-
 
     void on_render();
     void on_update();

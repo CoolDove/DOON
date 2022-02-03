@@ -9,8 +9,8 @@ public:
     void undo();
     void redo();
 public:
-    int count_redo_stack() const { return redo_stack_.size(); };
-    int count_history() const { return history_.size(); };
+    int count_redo_stack() const { return (int)redo_stack_.size(); };
+    int count_history() const { return (int)history_.size(); };
 private:
     // release extension_ when max_ + extension_
     int max_ = 100;

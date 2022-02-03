@@ -1,6 +1,8 @@
 #include "Serialize.h"
 #include "DoveLog.hpp"
 
+//-------------- reader -----------------//
+
 DooReader::DooReader(const char* path)
 :   good_(false)
 {
@@ -39,8 +41,6 @@ void DooReader::read_layer_header(FILE* file) {
         count = fread(name_buf, sizeof(char), DOO_MAX_NAME_LENGTH, file);// read layer name
         if (count < DOO_MAX_NAME_LENGTH) break;
 
-        // fread(container, sizeof(Col_RGBA), header.width * header.height, file);
-
         std::string name(name_buf);
 
         fpos_t pos;
@@ -50,7 +50,7 @@ void DooReader::read_layer_header(FILE* file) {
         layer_names.push_back(name);
         layer_offsets.push_back(pos);
 
-        fseek(file, lheader.data_size_b, SEEK_CUR);
+        fseek(file, (long)lheader.data_size_b, SEEK_CUR);
     }
     free(container);
 }
