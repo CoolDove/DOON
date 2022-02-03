@@ -47,6 +47,9 @@ private:
     DGL::GLTexture2D* current_paint_tex_;
     DGL::GLTexture2D* other_paint_tex_;
 
+    Scene* scene_;
+    void realloc_paint_tex();
+
     void swap_paint_tex() {
         if (current_paint_tex_ == nullptr) {
             current_paint_tex_ = &paint_tex_a_;

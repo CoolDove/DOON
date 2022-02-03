@@ -11,8 +11,6 @@ void HistorySys::push(Command* p_cmd, bool _do_action) {
 
     if (history_.size() >= max_ + extension_)
         release(history_.size() - max_);
-
-    DLOG_DEBUG("histories count: %d", history_.size());
 }
 
 void HistorySys::undo() {

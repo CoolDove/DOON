@@ -120,8 +120,6 @@ void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
         rect.size = {src->info_.width, src->info_.height};
         Renderer::blit(&temp, dst, rect, rect);
 
-        // curr_layer->mark_dirt(painting_region_);
-
         painting_region_ = {0};
         clear_brush_tex({0xff, 0xff, 0xff, 0x00});
 
@@ -161,8 +159,12 @@ void Brush::on_pointer(Input::PointerInfo _info, int _x, int _y) {
         // const Image* tgt_img = app_->curr_scene_->brush_layer_->img_.get();
 
         // draw dot on the brush img
+        int x = (int)cs_pos.x + half_width;
+        int y = -(int)cs_pos.y + half_height;
         Dove::IRect2D dot_region = draw_circle(
-            (int)cs_pos.x + half_width, -(int)cs_pos.y + half_height, brush_size);
+            x, y, brush_size);
+
+        // DLOG_DEBUG("brush pos: %d, %d", x, y);
 
         painting_region_ = Dove::merge_rect(painting_region_, dot_region);
     }

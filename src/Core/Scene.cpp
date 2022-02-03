@@ -19,20 +19,13 @@ Scene::Scene(const char* _image_path)
     camera_.position_.y = 0.0f;
     camera_.size_       = 0.9f;
 
-    // Image img(_image_path, 0);
-
-    // info_.width  = img.info_.width;
-    // info_.height = img.info_.height;
-
     // you must set info_ before adding layers
     add_layer(_image_path);
-    // memcpy(get_curr_layer()->img_->pixels_, img.pixels_, img.get_size_b());
     get_curr_layer()->update_tex();
 
     info_.width = get_curr_layer()->info_.width;
     info_.height = get_curr_layer()->info_.height;
     
-
     Dove::IRect2D region;
     region.posx = region.posy = 0;
     region.width = (uint32_t)info_.width;
@@ -79,10 +72,7 @@ void Scene::on_update() {
 
 void Scene::add_layer(const std::string& _path) {
     std::string name = _path;   
-
-    layers_.emplace_back(std::make_unique<Layer>(
-        _path
-    ));
+    layers_.emplace_back(std::make_unique<Layer>(_path));
     curr_layer_ite_ = --layers_.end();
 }
 

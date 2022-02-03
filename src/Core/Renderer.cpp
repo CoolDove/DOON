@@ -47,8 +47,8 @@ void Renderer::blit(DGL::GLTexture2D* src, DGL::GLTexture2D* dst, Dove::IRect2D 
 
 Renderer::Renderer(Application *_app)
 :   current_paint_tex_(nullptr),
-    other_paint_tex_(nullptr)
-
+    other_paint_tex_(nullptr),
+    scene_(nullptr)
 {
     app_ = _app;
     init_opengl();
@@ -62,15 +62,7 @@ void Renderer::init() {
 
     fbuf_paint_.init();
 
-    paint_tex_a_.init();
-    paint_tex_a_.allocate(1, SizedInternalFormat::RGBA8,
-                             app_->curr_scene_->info_.width, app_->curr_scene_->info_.height,
-                             PixFormat::RGBA, PixType::UNSIGNED_BYTE);
-    paint_tex_b_.init();
-    paint_tex_b_.allocate(1, SizedInternalFormat::RGBA8,
-                             app_->curr_scene_->info_.width, app_->curr_scene_->info_.height,
-                             PixFormat::RGBA, PixType::UNSIGNED_BYTE);
-
+    realloc_paint_tex();
     recreate_canvas_batch();
 }
 
@@ -85,8 +77,26 @@ void Renderer::recreate_canvas_batch() {
     }
 }
 
-void Renderer::render() {
+void Renderer::realloc_paint_tex() {
+    if (scene_ == app_->curr_scene_) return;
+    if (paint_tex_a_.get_inited())
+        paint_tex_a_.release();
+    if (paint_tex_b_.get_inited())
+        paint_tex_b_.release();
 
+    paint_tex_a_.init();
+    paint_tex_a_.allocate(1, SizedInternalFormat::RGBA8,
+                             app_->curr_scene_->info_.width, app_->curr_scene_->info_.height,
+                             PixFormat::RGBA, PixType::UNSIGNED_BYTE);
+    paint_tex_b_.init();
+    paint_tex_b_.allocate(1, SizedInternalFormat::RGBA8,
+                             app_->curr_scene_->info_.width, app_->curr_scene_->info_.height,
+                             PixFormat::RGBA, PixType::UNSIGNED_BYTE);
+    scene_ = app_->curr_scene_;
+}
+
+void Renderer::render() {
+    realloc_paint_tex();
     Scene* scn = app_->curr_scene_;
     Dove::IRect2D updated_region = scn->get_region();
 

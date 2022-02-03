@@ -38,11 +38,16 @@ Layer::Layer(unsigned int _width, unsigned int _height, std::string _name, Col_R
     info_.name       = _name;
     info_.blend_mode = BlendMode::NORMAL;
 
-    Image img_(_width, _height, _col);
     tex_ = std::make_unique<GLTexture2D>();
 
     info_.width = _width;
     info_.height = _height;
+
+    pixels_ = (Col_RGBA*)malloc(sizeof(Col_RGBA) * info_.width * info_.height);
+
+    for (int i = 0; i < info_.width * info_.height; i++) {
+        pixels_[i] = _col;
+    }
 
     tex_->init();
     tex_->param_mag_filter(TexFilter::NEAREST);
@@ -51,11 +56,8 @@ Layer::Layer(unsigned int _width, unsigned int _height, std::string _name, Col_R
     tex_->param_wrap_s(TexWrap::CLAMP_TO_EDGE);
 
     tex_->allocate(1, SizedInternalFormat::RGBA8, _width, _height);
-    tex_->upload(0, 0, 0, _width, _height,
-                PixFormat::RGBA, PixType::UNSIGNED_BYTE,
-                img_.pixels_);
 
-    pixels_ = (Col_RGBA*)malloc(sizeof(Col_RGBA) * info_.width * info_.height);
+    update_tex();
 }
 
 Layer::~Layer() {
