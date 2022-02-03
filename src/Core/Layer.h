@@ -21,6 +21,7 @@ public:
 
     uint32_t data_size() const { return sizeof(Col_RGBA) * info_.width * info_.height; } // byte
     void update_tex();
+    void mem_alloc();
     void mem_fetch();
     void mem_release();
 public:

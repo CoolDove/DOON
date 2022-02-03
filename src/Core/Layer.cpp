@@ -81,6 +81,11 @@ void Layer::update_tex() {
         pixels_);
 }
 
+void Layer::mem_alloc() {
+    mem_release();
+    pixels_ = (Col_RGBA*)malloc(data_size());
+}
+
 void Layer::mem_fetch() {
     mem_release();
     pixels_ = (Col_RGBA*)malloc(data_size());

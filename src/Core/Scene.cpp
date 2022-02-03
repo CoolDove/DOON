@@ -6,11 +6,14 @@
 #include "DGLCore/GLEnums.h"
 #include "stb_image/stb_image.h"
 #include <Core/Sampler.h>
+#include <Core/Serialize.h>
 #include <DoveLog.hpp>
 #include <DGLCore/GLDebugger.h>
 #include <atomic>
-#include <cstring>
+#include <string.h>
+#include <string>
 #include <stdint.h>
+#include <sys/stat.h>
 
 Scene::Scene(const char* _image_path)
 :   region_{0}
@@ -20,20 +23,11 @@ Scene::Scene(const char* _image_path)
     camera_.size_       = 0.9f;
 
     // you must set info_ before adding layers
-    add_layer(_image_path);
+    if (!load_scene(_image_path)) {
+        // failed to load scene
+        create_scene(1024, 1024, Col_RGBA{0xff, 0xff, 0xff, 0x00});
+    }
 
-    info_.width = get_curr_layer()->info_.width;
-    info_.height = get_curr_layer()->info_.height;
-    
-    Dove::IRect2D region;
-    region.posx = region.posy = 0;
-    region.width = (uint32_t)info_.width;
-    region.height = (uint32_t)info_.height;
-
-    brush_layer_.init();
-    brush_layer_.allocate(1, SizedInternalFormat::RGBA8, info_.width, info_.height, PixFormat::RGBA, PixType::UNSIGNED_BYTE);
-
-    mark_region(region);
 }
 
 Scene::Scene(unsigned int _width, unsigned int _height, Col_RGBA _col)
@@ -43,6 +37,10 @@ Scene::Scene(unsigned int _width, unsigned int _height, Col_RGBA _col)
     camera_.position_.y = 0.0f;
     camera_.size_       = 0.9f;
 
+    create_scene(_width, _height, _col);
+}
+
+void Scene::create_scene(uint32_t _width, uint32_t _height, Col_RGBA _col) {
     info_.width  = _width;
     info_.height = _height;
 
@@ -59,10 +57,74 @@ Scene::Scene(unsigned int _width, unsigned int _height, Col_RGBA _col)
     region.posx = region.posy = 0;
     region.width = (uint32_t)info_.width;
     region.height = (uint32_t)info_.height;
-
-    mark_region(region);
 }
 
+static inline std::string get_file_extension(const std::string& path) {
+    int n = path.find_last_of(".");
+    if (n == path.length() - 1) return "";
+
+    return path.substr(n + 1, path.length() - n);
+}
+
+bool Scene::load_scene(const char* path) {
+    auto ext = get_file_extension(path);
+
+    struct stat buffer;
+    if (stat(path, &buffer) == -1) return false;
+
+    if      (ext == "png") load_png(path);
+    else if (ext == "doo") load_doo(path);
+    else return false;
+
+    brush_layer_.init();
+    brush_layer_.allocate(1, SizedInternalFormat::RGBA8, info_.width, info_.height, PixFormat::RGBA, PixType::UNSIGNED_BYTE);
+
+    return true;
+}
+
+bool Scene::load_png(const char* path) {
+    add_layer(path);
+
+    info_.width = get_curr_layer()->info_.width;
+    info_.height = get_curr_layer()->info_.height;
+    
+    Dove::IRect2D region;
+    region.posx = region.posy = 0;
+    region.width = (uint32_t)info_.width;
+    region.height = (uint32_t)info_.height;
+
+
+    return true;
+}
+
+bool Scene::load_doo(const char* path) {
+    DooReader reader(path);
+    const DooHeader* header = &reader.header;
+
+    uint32_t layers_count = reader.get_layers_count();
+
+
+    info_.width = header->width;
+    info_.height = header->height;
+
+    uint32_t pxcount = info_.width * info_.height;
+    uint32_t layer_size = info_.width * info_.height * sizeof(Col_RGBA);
+
+    for (uint32_t i = 0; i < layers_count; i++) {
+        add_layer(Col_RGBA{0xff, 0xff, 0xff, 0x00}, reader.get_layer_name(i));
+        Layer* layer = get_curr_layer();
+        LayerHeader lheader = reader.get_layer_header(i);
+        layer->info_.blend_mode = (BlendMode)lheader.blend_mode;
+
+        layer->mem_alloc();
+        reader.get_layer_pixels(i, layer->pixels_);
+        layer->update_tex();
+        layer->mem_release();
+    }
+
+    
+    return true;
+}
 
 void Scene::on_update() {
 

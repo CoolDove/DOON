@@ -1,13 +1,19 @@
 #include "Serialize.h"
 #include "DoveLog.hpp"
 
-DooReader::DooReader(const char* path) {
-    FILE* file = fopen(path, "r");
+DooReader::DooReader(const char* path)
+:   good_(false)
+{
+    FILE* file = fopen(path, "rb");
     if (!file) return;
 
     header = read_header(file);
 
+    read_layer_header(file);
+
     fclose(file);
+    good_ = true;
+    path_ = path;
 }
 
 DooHeader DooReader::read_header(FILE* file) {
@@ -16,9 +22,37 @@ DooHeader DooReader::read_header(FILE* file) {
     return header;
 }
 
-LayerHeader DooReader::read_layer_header(FILE* file) {
-    LayerHeader header = {0};
-    return header;
+void DooReader::read_layer_header(FILE* file) {
+    fseek(file, DOO_HEADER_SIZE, SEEK_SET);
+
+    Col_RGBA* container = (Col_RGBA*)malloc(header.width * header.height * sizeof(Col_RGBA));
+    while (true) {
+        fpos_t start_pos;
+        fgetpos(file, &start_pos);
+
+        LayerHeader lheader;
+
+        char* name_buf = (char*)malloc(sizeof(char) * DOO_MAX_NAME_LENGTH);
+
+        int count = fread(&lheader, sizeof(LayerHeader), 1, file);// read layer header
+        if (count < 1) break;
+        count = fread(name_buf, sizeof(char), DOO_MAX_NAME_LENGTH, file);// read layer name
+        if (count < DOO_MAX_NAME_LENGTH) break;
+
+        // fread(container, sizeof(Col_RGBA), header.width * header.height, file);
+
+        std::string name(name_buf);
+
+        fpos_t pos;
+        fgetpos(file, &pos);
+
+        layer_headers.push_back(lheader);
+        layer_names.push_back(name);
+        layer_offsets.push_back(pos);
+
+        fseek(file, lheader.data_size_b, SEEK_CUR);
+    }
+    free(container);
 }
 
 
@@ -60,7 +94,7 @@ static inline size_t get_layer_name(Layer* layer, char* buf, size_t bufsize) {
 
 void DooWriter::write(const char* path) {
     make_header(scene_);
-    FILE* file = fopen(path, "w");
+    FILE* file = fopen(path, "wb");
 
     fwrite(&header, sizeof(DooHeader), 1, file);// write doo header
 
@@ -72,6 +106,7 @@ void DooWriter::write(const char* path) {
         size_t name_length = get_layer_name(l, name_buf, DOO_MAX_NAME_LENGTH);
 
         fwrite(&layerh, sizeof(LayerHeader), 1, file);// write layer header
+
         fwrite(name_buf, sizeof(char), DOO_MAX_NAME_LENGTH, file);// write layer name
 
         (*layer)->mem_fetch();
@@ -82,7 +117,8 @@ void DooWriter::write(const char* path) {
             return;
         }
 
-        fwrite((*layer)->pixels_, sizeof(char), layerh.data_size_b, file);// write layer data
+        size_t data_count = header.width * header.height;
+        size_t write = fwrite((*layer)->pixels_, sizeof(Col_RGBA), data_count, file);// write layer data
 
         (*layer)->mem_release();
     }

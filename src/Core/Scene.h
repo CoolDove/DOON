@@ -23,6 +23,7 @@ public:
     Scene(uint32_t _width, uint32_t _height, Col_RGBA _col);
     ~Scene();
 
+
     void on_render();
     void on_update();
 
@@ -44,14 +45,17 @@ public:
     Camera      camera_;
 
     LayerList   layers_;
-    // LayerPtr    brush_layer_;
     DGL::GLTexture2D brush_layer_;
 
     struct {
         int width;
         int height;
     } info_;
-
+private:
+    void create_scene(uint32_t _width, uint32_t _height, Col_RGBA _col);
+    bool load_scene(const char* path);
+    bool load_png(const char* path);
+    bool load_doo(const char* path);
 private:
     HistorySys    history_sys_;
     Dove::IRect2D region_; // updated region

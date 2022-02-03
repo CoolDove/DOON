@@ -21,7 +21,7 @@ name: char[DOO_MAX_NAME_LENGTH]
 */
 
 inline void ReadDoo(const char* path) {
-    FILE* file = fopen(path, "r");
+    FILE* file = fopen(path, "rb");
 
     char* data = (char*)malloc(sizeof(char) * 512);
     fread(data, sizeof(char), 512, file);
@@ -42,6 +42,9 @@ struct DooHeader
     uint32_t height;
 };
 
+const uint32_t DOO_HEADER_SIZE = sizeof(DooHeader);
+const uint32_t DOO_LAYER_HEADER_SIZE = sizeof(LayerHeader) + sizeof(char) * DOO_MAX_NAME_LENGTH;
+
 class DooReader
 {
 public:
@@ -49,9 +52,37 @@ public:
 public:
     DooHeader header;
     std::vector<LayerHeader> layer_headers;
+    std::vector<std::string> layer_names;
+    std::vector<fpos_t> layer_offsets;
+    bool good() const { return good_; }
+
+    uint32_t get_layers_count() const { return layer_headers.size(); }
+    LayerHeader get_layer_header(uint32_t layer) {
+        if (layer >= get_layers_count()) return {0};
+        return layer_headers[layer];
+    }
+    std::string get_layer_name(uint32_t layer) {
+        if (layer >= get_layers_count()) return "";
+        return layer_names[layer];
+    }
+    uint64_t get_layer_data_offset(uint32_t layer) {
+        if (layer >= get_layers_count()) return 0;
+        return layer_offsets[layer];
+    }
+    void get_layer_pixels(uint32_t layer, Col_RGBA* buffer) {
+        if (layer >= get_layers_count()) return;
+
+        // TODO: decode here.
+        FILE* file = fopen(path_.c_str(), "rb");
+        fseek(file, get_layer_data_offset(layer), SEEK_SET);
+        fread(buffer, sizeof(Col_RGBA), header.width * header.height, file);
+        fclose(file);
+    }
 private:
-    DooHeader   read_header(FILE* file);
-    LayerHeader read_layer_header(FILE* file);
+    bool good_;
+    std::string path_;
+    DooHeader read_header(FILE* file);
+    void      read_layer_header(FILE* file);
 };
 
 class DooWriter
@@ -61,7 +92,7 @@ public:
     void write(const char* path);
 public:
     DooHeader header;
-    std::vector<LayerHeader> layer_headers;
+    // std::vector<LayerHeader> layer_headers;
 private:
     DooHeader make_header(Scene* scene);
     LayerHeader make_layer_header(Layer* layer);

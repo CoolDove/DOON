@@ -1,6 +1,7 @@
 #pragma once
 #include <unordered_map>
 #include <string>
+#include <Core/Scene.h>
 #include <DGLCore/GLTexture.h>
 #include <DGLCore/GLProgram.h>
 

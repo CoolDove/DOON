@@ -42,8 +42,6 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
 
     RES = std::make_unique<DOONRes>();
 
-    DooReader reader("d:/paintings/test.doo");
-
     init_window(_instance, _prev_instance, _cmd_line, _show_code);
     renderer_ = make_unique<Renderer>(this);
     init_imgui();
@@ -59,14 +57,11 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     // repair multiple scenes
     long clock = std::clock();
     // scenes_["anji"]  = make_unique<Scene>("./res/textures/anji.png");
-    scenes_["alp"]   = make_unique<Scene>("./res/textures/alp.png");
-    scenes_["blank"]  = make_unique<Scene>(512, 2048, Col_RGBA{0x43, 0x32, 0x64, 0xff});
-    scenes_["little"]  = make_unique<Scene>(16, 16, Col_RGBA{0x43, 0x32, 0x64, 0xff});
-    // scenes_["p1"] = make_unique<Scene>("./res/p1.png");
-    // scenes_["p2"] = make_unique<Scene>("./res/p2.png");
-    // scenes_["p3"] = make_unique<Scene>("./res/p3.png");
-    // scenes_["p4"] = make_unique<Scene>("./res/p4.png");
-    // scenes_["p5"] = make_unique<Scene>("./res/p5.png");
+    // scenes_["alp"]    = make_unique<Scene>("./res/textures/alp.png");
+
+    scenes_["dooload"] = make_unique<Scene>("d:/paintings/test.doo");
+    scenes_["giant"] = make_unique<Scene>("d:/paintings/0116_TheLastGiant.png");
+    scenes_["big"] = make_unique<Scene>(512, 512, Col_RGBA{0x43, 0x32, 0x64, 0xff});
 
     if (scenes_.size() == 0) {
         scenes_["void"] = make_unique<Scene>(1024, 1024, Col_RGBA{0x00, 0x00, 0x00, 0x00});
