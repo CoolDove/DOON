@@ -10,51 +10,29 @@ enum class BlendMode : unsigned char {
     LIGHTEN
 };
 
-class LayerImage {
-private:
-    using ImagePtr = std::unique_ptr<Image>;
-    using Tex2DPtr = std::unique_ptr<DGL::GLTexture2D>;
-public:
-    LayerImage(int _width, int _height, Col_RGBA _col, bool _attach);
-    ~LayerImage();
-    LayerImage(const LayerImage&) = delete;
-    LayerImage operator=(const LayerImage&) = delete;
-
-    ImagePtr img_;
-    Tex2DPtr tex_;
-
-    void mark_dirt(Dove::IRect2D _region);
-    void clear_dirt();
-
-    void update_tex(bool _whole);
-    void attach_gltex();
-
-    Dove::IRect2D get_dirt_region()   const { return dirt_region_; };
-    bool          is_attached_gltex() const { return gl_attached_; };
-private:
-    Dove::IRect2D dirt_region_;
-    bool          gl_attached_;
-};
-
 class Layer {
 private:
     using ImagePtr = std::unique_ptr<Image>;
     using Tex2DPtr = std::unique_ptr<DGL::GLTexture2D>;
 public:
+    Layer(const std::string& path);
     Layer(unsigned int _width, unsigned int _height, std::string _name, Col_RGBA _col);
     ~Layer();
 
-    void update_tex(bool _whole = false);
-    void mark_dirt(Dove::IRect2D _region);
-    void mark_dirt_whole();
-    void clear_dirt();
+    uint32_t data_size() const { return sizeof(Col_RGBA) * info_.width * info_.height; } // byte
+    void update_tex();
+    void mem_alloc();
+    void mem_fetch();
+    void mem_release();
 public:
     struct {
         std::string name;
         BlendMode   blend_mode;
+        uint32_t width;
+        uint32_t height;
     } info_;
 
-    ImagePtr img_;
+    // ImagePtr img_;
     Tex2DPtr tex_;
-    Dove::IRect2D dirt_region_;
+    Col_RGBA* pixels_;
 };

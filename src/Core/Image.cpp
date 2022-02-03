@@ -4,6 +4,7 @@
 #include "assert.h"
 #include "Windows.h"
 #include <string.h>
+#include "DoveLog.hpp"
 
 Image::Image()
 :   inited_(false),
@@ -11,21 +12,22 @@ Image::Image()
 {
 }
 
-// TODO: append alpha channel for 3-channel-images
-Image::Image(const char *_path, int _desired_channel)
-:   inited_(false)
+Image::Image(const char *_path, int _desired_channel = 4)
+:   inited_(false),
+    info_{0}      
 {
     pixels_ = (Col_RGBA*)stbi_load(_path, &info_.width, &info_.height, &info_.channels, _desired_channel);
-
-    // @temp: to be replaced by channel appending
-    assert(info_.channels > 3); // 3-channel-image, cannot be used for now, need to be append
-    assert(pixels_);            // falied to load
-
-    inited_ = true;
+    if (!pixels_) {
+        DLOG_ERROR("failed to load image: %s", _path);
+        return;
+    } else {
+        inited_ = true;
+    }
 }
 
 Image::Image(unsigned int _width, unsigned int _height, Col_RGBA _base_color)
-:   inited_(false)
+:   inited_(false),
+    info_{0}
 {
     recreate(_width, _height, _base_color);
 }

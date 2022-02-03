@@ -5,7 +5,8 @@ namespace DGL
 {
 Program::Program()
 :   id_(0),
-    inited_(false)
+    inited_(false),
+    good_(false)
 {
 }
 
@@ -38,6 +39,11 @@ void Program::link(int _count, ... ) {
 
     for (int i = 0; i < _count; i++) {
         shader = va_arg(args, const Shader*);
+
+        if (!shader->good()) {
+            DLOG_ERROR("shader is not good, failed to link program");
+            return;
+        }
         
         switch (shader->get_type())
         {
@@ -71,9 +77,14 @@ void Program::link(int _count, ... ) {
 
     GLint status;
     glGetProgramiv(id_, GL_LINK_STATUS, &status);
-    assert(status);
+    assert(status && "failed to link program");
+    good_ = true;
 }
 void Program::bind() {
+    if (!good_) {
+        DLOG_ERROR("program is not good, cannot be bind");
+        return;
+    }
     glUseProgram(id_);
 }
 

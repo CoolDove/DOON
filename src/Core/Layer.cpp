@@ -1,4 +1,5 @@
 ﻿#include "Layer.h"
+#include "DoveLog.hpp"
 #include "Base/General.h"
 #include "Core/Color.h"
 #include "DGLCore/GLBuffer.h"
@@ -7,13 +8,48 @@
 #include <stdint.h>
 #include <string.h>
 
+Layer::Layer(const std::string& path) {
+    using namespace DGL;
+    Image img(path.c_str(), 4);
+
+    assert(img.pixels_);
+
+    info_.name = path;
+    info_.blend_mode = BlendMode::NORMAL;
+    info_.width = img.info_.width;
+    info_.height = img.info_.height;
+
+    tex_ = std::make_unique<GLTexture2D>();
+    tex_->init();
+    tex_->param_mag_filter(TexFilter::NEAREST);
+    tex_->param_min_filter(TexFilter::NEAREST);
+    tex_->param_wrap_r(TexWrap::CLAMP_TO_EDGE);
+    tex_->param_wrap_s(TexWrap::CLAMP_TO_EDGE);
+
+    tex_->allocate(1, SizedInternalFormat::RGBA8, info_.width, info_.height);
+
+    pixels_ = (Col_RGBA*)malloc(data_size());
+    memcpy(pixels_, img.pixels_, data_size());
+
+    update_tex();
+    mem_release();
+}
+
 Layer::Layer(unsigned int _width, unsigned int _height, std::string _name, Col_RGBA _col) {
     using namespace DGL;
     info_.name       = _name;
     info_.blend_mode = BlendMode::NORMAL;
 
-    img_ = std::make_unique<Image>(_width, _height, _col);
     tex_ = std::make_unique<GLTexture2D>();
+
+    info_.width = _width;
+    info_.height = _height;
+
+    pixels_ = (Col_RGBA*)malloc(sizeof(Col_RGBA) * info_.width * info_.height);
+
+    for (int i = 0; i < info_.width * info_.height; i++) {
+        pixels_[i] = _col;
+    }
 
     tex_->init();
     tex_->param_mag_filter(TexFilter::NEAREST);
@@ -22,121 +58,46 @@ Layer::Layer(unsigned int _width, unsigned int _height, std::string _name, Col_R
     tex_->param_wrap_s(TexWrap::CLAMP_TO_EDGE);
 
     tex_->allocate(1, SizedInternalFormat::RGBA8, _width, _height);
-    tex_->upload(0, 0, 0, _width, _height,
-                PixFormat::RGBA, PixType::UNSIGNED_BYTE,
-                img_->pixels_);
 
-    mark_dirt({0, 0, _width, _height});
+    update_tex();
+    mem_release();
 }
 
 Layer::~Layer() {
-
-}
-
-void Layer::mark_dirt(Dove::IRect2D _region) {
-    dirt_region_ = Dove::merge_rect(_region, dirt_region_);
-}
-void Layer::mark_dirt_whole() {
-    dirt_region_ = Dove::IRect2D{0, 0, (uint32_t)img_->info_.width, (uint32_t)img_->info_.height};
-}
-void Layer::clear_dirt() {
-    dirt_region_ = {0};
-}
-
-void Layer::update_tex(bool _whole) {
-    using namespace DGL;
-    if (_whole) {
-        tex_->upload(0, 0, 0, img_->info_.width, img_->info_.height,
-                    PixFormat::RGBA, PixType::UNSIGNED_BYTE,
-                    img_->pixels_);
-    } else {
-        // region is 0
-        if (dirt_region_.width == 0 || dirt_region_.height == 0) return;
-        // region is the whole
-        if (dirt_region_.posx == 0 && dirt_region_.posy == 0 &&
-            dirt_region_.width == img_->info_.width && dirt_region_.height == img_->info_.height)
-        {
-            tex_->upload(0, 0, 0, img_->info_.width, img_->info_.height,
-                        PixFormat::RGBA, PixType::UNSIGNED_BYTE,
-                        img_->pixels_);
-        } else {
-            for (uint32_t y = dirt_region_.posy; y <= dirt_region_.posy + dirt_region_.height; y++) {
-                tex_->upload(0, dirt_region_.posx, y, dirt_region_.width, 1,
-                            PixFormat::RGBA, PixType::UNSIGNED_BYTE,
-                            img_->pixels_ + y * img_->info_.width + dirt_region_.posx);
-            }
-        }
-    }
-
-    clear_dirt();
-}
-
-// ---------------------Layer Image------------------------- //
-LayerImage::LayerImage(int _width, int _height, Col_RGBA _col, bool _attach)
-:   gl_attached_(false)
-{
-    img_ = std::make_unique<Image>(_width, _height, _col);
-
-    if (_attach) {
-        attach_gltex();
-    } else {
-        tex_ = nullptr;
+    if (pixels_) {
+        mem_release();
     }
 }
 
-LayerImage::~LayerImage() {
-  
-}
-
-void LayerImage::attach_gltex() {
+void Layer::update_tex() {
     using namespace DGL;
-    if (gl_attached_) return;
-
-    tex_ = std::make_unique<GLTexture2D>();
-
-    int width  = img_->info_.width;
-    int height = img_->info_.height;
-    tex_->init();
-
-    tex_->param_mag_filter(DGL::TexFilter::NEAREST);
-    tex_->param_min_filter(DGL::TexFilter::NEAREST);
-    tex_->param_wrap_r(DGL::TexWrap::CLAMP_TO_EDGE);
-    tex_->param_wrap_s(DGL::TexWrap::CLAMP_TO_EDGE);
-    tex_->allocate(1, DGL::SizedInternalFormat::RGBA8, width, height);
-
-    tex_->upload(0, 0, 0, width, height, PixFormat::RGBA, PixType::UNSIGNED_BYTE, img_->pixels_);
-
-    gl_attached_ = true;
-}
-
-void LayerImage::update_tex(bool _whole) {
-    if (!gl_attached_) return;
-
-    using namespace DGL;
-    int width  = img_->info_.width;
-    int height = img_->info_.height;
-    
-    if (_whole) {
-        tex_->upload(0, 0, 0, width, height, PixFormat::RGBA, PixType::UNSIGNED_BYTE, img_->pixels_);
-    } else {
-        Dove::IRect2D rect = dirt_region_;
-        if (!rect.width || !rect.height) return;
-
-        Col_RGBA* ptr = img_->pixels_ + rect.posy * img_->info_.width + rect.posx;
-        for (int i = rect.posy; i < rect.posy + rect.height; i++) {
-            tex_->upload(0, rect.posx, i,
-                         rect.width, 1,
-                         PixFormat::RGBA, PixType::UNSIGNED_BYTE, ptr);
-            ptr += img_->info_.width;
-        }
+    if (!pixels_) {
+        DLOG_ERROR("the pixels_ is null, cannot update texture");
+        return;
     }
-    clear_dirt();
+    tex_->upload(
+        0, 0, 0, info_.width, info_.height,
+        PixFormat::RGBA, PixType::UNSIGNED_BYTE,
+        pixels_);
 }
 
-void LayerImage::mark_dirt(Dove::IRect2D _region) {
-    dirt_region_ = Dove::merge_rect(_region, dirt_region_);
+void Layer::mem_alloc() {
+    mem_release();
+    pixels_ = (Col_RGBA*)malloc(data_size());
 }
 
-void LayerImage::clear_dirt() {
-    dirt_region_ = {0};
+void Layer::mem_fetch() {
+    mem_release();
+    pixels_ = (Col_RGBA*)malloc(data_size());
+    glGetTextureImage(
+        tex_->get_glid(), 0,
+        GL_RGBA, GL_UNSIGNED_BYTE,
+        data_size(), pixels_);
+}
+
+void Layer::mem_release() {
+    if (pixels_) {
+        free(pixels_);
+        pixels_ = nullptr;
+    }
 }

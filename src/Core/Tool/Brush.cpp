@@ -1,19 +1,28 @@
 ﻿#include "Brush.h"
-#include "Base/General.h"
-#include "Core/Color.h"
-#include "Core/Compositor.h"
-#include "Core/Scene.h"
-#include "DGLCore/GLEnums.h"
-#include "DoveLog.hpp"
+#include <Core/Command_Brush.h>
+
+#include <Base/General.h>
+#include <Core/Color.h>
+#include <Core/Scene.h>
+#include <DGLCore/GLEnums.h>
+#include <DGLCore/GLGeoBatch.h>
+#include <DoveLog.hpp>
 #include <Core/Application.h>
 #include <Core/Space.h>
 #include <DGLCore/GLDebugger.h>
 #include <DGLCore/GLTexture.h>
+#include <DGLCore/GLFramebuffer.h>
+
 #include <cstring>
 #include <stdint.h>
 #include <string.h>
 
+#include <Core/DOONRes.h>
+#include <Core/Renderer.h>
+#include <Core/History.h>
+
 // @doing: remove old img and tex pair
+using namespace DGL;
 namespace Tool
 {
 Brush::Brush(Application* _app) 
@@ -22,15 +31,28 @@ Brush::Brush(Application* _app)
     col_{0xff,0xff,0xff,0xff},
     size_min_scale_(0.01f),
     painting_region_{0},
-    size_max_(20)
+    size_max_(20),
+    shader_(nullptr)
 {
     DLOG_TRACE("brush constructed");
 }
 
 Brush::~Brush() {
 }
-
 void Brush::on_init() {
+    brush_tex_ = app_->RES->LoadGLTexture2D("./res/brushes/ugly.png", "brush_ugly");
+    DLOG_DEBUG("brush texture loaded: ugly");
+    if (shader_ = app_->RES->LoadShader("./res/shaders/brush.vert", "./res/shaders/brush.frag", "brush")) {
+        DLOG_DEBUG("brush shader loaded");
+    } else {
+        DLOG_ERROR("failed to load brush shader");
+    }
+
+    quad_.init({{ Attribute::POSITION, 3 }, { Attribute::UV, 2 }});
+    quad_.add_quad(1, 1, "brush");
+    quad_.upload();
+
+    glCreateFramebuffers(1, &fbuf_brush_);
 }
 
 void Brush::on_activate() {
@@ -45,7 +67,6 @@ void Brush::on_update() {
 
 void Brush::on_pointer_down(Input::PointerInfo _info, int _x, int _y) {
     if (!holding_) {
-        // DLOG_TRACE("brush down");
         holding_ = true;
     }
 }
@@ -57,42 +78,50 @@ void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
 
     if (holding_) {
         holding_ = false;
-        // DLOG_TRACE("brush up");
+
+
+        BrushCommand* cmd = new BrushCommand(painting_region_, app_);
+        app_->curr_scene_->get_history_sys()->push(cmd);
 
         // @Composition: composite the whole image for now
-        Layer* brush_layer = app_->curr_scene_->brush_layer_.get();
-        Image* brush_img = app_->curr_scene_->brush_layer_->img_.get();
+        glDisable(GL_BLEND);
+        GLTexture2D* brush_texture = &(app_->curr_scene_->brush_layer_);
         Layer* curr_layer = app_->curr_scene_->get_curr_layer();
-        IRect2D* p_region = &painting_region_;
-        int width  = p_region->width;
-        int height = p_region->height;
-        int size_b = width * height * sizeof(Col_RGBA); // region byte size 
-        BufFlag flag = BufFlag::DYNAMIC_STORAGE_BIT | BufFlag::MAP_READ_BIT | BufFlag::MAP_WRITE_BIT;
 
-        Image src_sub(brush_img, *p_region);
-        Image dst_sub(&(*curr_layer->img_), *p_region);
+        GLTexture2D* src = brush_texture;
+        GLTexture2D* dst = app_->curr_scene_->get_curr_layer()->tex_.get();
+        GLTexture2D temp;
+        temp.init();
+        temp.allocate(1, SizedInternalFormat::RGBA8, src->info_.width, src->info_.height, PixFormat::RGBA, PixType::UNSIGNED_BYTE, nullptr);
+        
+        GLFramebuffer fbuf;
+        fbuf.init();
+        fbuf.bind();
+        fbuf.attach(&temp);
 
-        uint32_t result_id = app_->compositor_->compose("common", src_sub.pixels_, dst_sub.pixels_, size_b);
-        app_->compositor_->get_result(result_id, dst_sub.pixels_, size_b);
-        
-        // set current layer image
-        curr_layer->img_->set_subimage(&dst_sub, p_region->position);
-        curr_layer->mark_dirt(*p_region);
+        glViewport(0, 0, dst->info_.width, dst->info_.height);
+        glDepthFunc(GL_ALWAYS);
 
-        // TODO: record brush command into commands history
-        // ...
-        // ...
-        
-        // @Clear:
-        uint32_t layer_w = brush_img->info_.width;
-        uint32_t layer_h = brush_img->info_.height;
-        uint32_t layer_s = layer_w * layer_h * sizeof(Col_RGBA);
-        // clear brush img
-        memset(brush_img->pixels_, 0x00, layer_s);
-        brush_layer->mark_dirt_whole();
-        
-        curr_layer->mark_dirt(*p_region);
+        auto paint_shader = app_->RES->GetShader("paint");
+
+        paint_shader->bind();
+        src->bind(0);
+        paint_shader->uniform_i("_tex", 0);
+        dst->bind(1);
+        paint_shader->uniform_i("_paintbuffer", 1);
+
+        app_->renderer_->get_canvas_quad()->draw_batch();
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        IRect2D rect;
+        rect.position = {0, 0};
+        rect.size = {src->info_.width, src->info_.height};
+        Renderer::blit(&temp, dst, rect, rect);
+
         painting_region_ = {0};
+        clear_brush_tex({0xff, 0xff, 0xff, 0x00});
+
     }
 }
 
@@ -126,62 +155,60 @@ void Brush::on_pointer(Input::PointerInfo _info, int _x, int _y) {
         int size_min = (int)(size_min_scale_ * size_max_);
         unsigned int brush_size = (unsigned int)((pressure / 1024.0f) * (size_max_ - (size_min)) + size_min);
 
-        const Image* tgt_img = app_->curr_scene_->brush_layer_->img_.get();
+        // const Image* tgt_img = app_->curr_scene_->brush_layer_->img_.get();
 
         // draw dot on the brush img
-        Dove::IRect2D dot_region =
-            draw_circle((int)cs_pos.x + half_width, -(int)cs_pos.y + half_height, brush_size, tgt_img);
+        int x = (int)cs_pos.x + half_width;
+        int y = -(int)cs_pos.y + half_height;
+        Dove::IRect2D dot_region = draw_circle(
+            x, y, brush_size);
+
+        // DLOG_DEBUG("brush pos: %d, %d", x, y);
+
         painting_region_ = Dove::merge_rect(painting_region_, dot_region);
-        app_->curr_scene_->brush_layer_->mark_dirt(dot_region);
-
-        // New Pen System
-
-        // @StepZ: collect sample points
-
-        // @StepA: collect dap data into a vector;
-        std::vector<Vec2> daps;
-
-        // @StepB: render daps using Opengl Blending...
-        
     }
 }
 
-Dove::IRect2D Brush::draw_circle(int _x, int _y, int _r, const Image* _target_img) {
-    if (_x < -_r || _x > _target_img->info_.width + _r || _y < -_r || _y > _target_img->info_.height + _r )
+Dove::IRect2D Brush::draw_circle(int _x, int _y, int _r) {
+    Scene* scn = app_->curr_scene_;
+    if (_x < -_r || _x > scn->info_.width + _r || _y < -_r || _y > scn->info_.height + _r)
         return Dove::IRect2D{0};
 
-    // a function changing the vec2 position into an index
-    auto px = [=](int _x, int _y){
-        return _y * _target_img->info_.width + _x;
-    };
+    if (shader_ == nullptr || brush_tex_ == nullptr) return {0};
 
-    int start_y = _y - _r;
+    // DLOG_DEBUG("pos: %d, %d", _x, _y);
+    {// Draw to current brush layer
+    
+        glEnable(GL_BLEND);
+        glBlendEquation(GL_FUNC_ADD);
+        glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
-    for (int i = 0; i < glm::min(2 * _r, _target_img->info_.height - start_y); i++)
-    {
-        int line_y = start_y + i;
-        if (line_y < 0) continue;
+        glBindFramebuffer(GL_FRAMEBUFFER, fbuf_brush_);
+        static const GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0 };
+        glDrawBuffers(1, draw_buffers);
+        glViewport(0, 0, scn->info_.width, scn->info_.height);
 
-        int scan_length = (int)(2 * glm::sqrt(_r * _r - (_r - i) * (_r - i)));
-        int start_x = (int)(_x - scan_length * 0.5f);
-        if (start_x < 0) {
-            scan_length += start_x;
-            start_x = 0;
-        }
+        // auto texid = scn->get_curr_layer()->tex_->get_glid(); // draw to current layer directly
+        auto texid = scn->brush_layer_.get_glid();
+        glNamedFramebufferTexture(fbuf_brush_, GL_COLOR_ATTACHMENT0, texid, 0);
 
-        scan_length = glm::min(scan_length, _target_img->info_.width - start_x);
-        int start = px(start_x, line_y);
+        shader_->bind();
+        brush_tex_->bind(0);
+        shader_->uniform_i("_brushtex", 0);
+        auto fcol = get_float_col(col_);
+        shader_->uniform_f("_brushcol", fcol.r, fcol.g, fcol.b, fcol.a);
+        shader_->uniform_f("_dappos", (float)_x, (float)_y);
+        shader_->uniform_f("_canvassize", (float)scn->info_.width, (float)scn->info_.height);
+        shader_->uniform_f("_dapsize", (float)_r);
 
-        for (int j = 0; j < scan_length; j++)
-        {
-            unsigned int* pix = (unsigned int*)_target_img->pixels_ + start + j;
-            *pix = col_.cluster;
-        }
+        quad_.draw_batch();
+
+        glNamedFramebufferTexture(fbuf_brush_, GL_COLOR_ATTACHMENT0, 0, 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
     // mark the updated region of current scene
     Dove::IRect2D region;
-    Scene* scn = app_->curr_scene_;
     region.posx   = glm::max(_x - _r, 0);
     region.posy   = glm::max(_y - _r, 0);
     region.width  = glm::min(_x + _r, scn->info_.width) - region.posx;
@@ -189,4 +216,24 @@ Dove::IRect2D Brush::draw_circle(int _x, int _y, int _r, const Image* _target_im
 
     return region;
 }
+
+void Brush::clear_brush_tex(Col_RGBA color) {
+    GLint fbuf_stash = GLFramebuffer::current_framebuffer();
+
+    GLFramebuffer fbuf;
+
+    fbuf.init();
+    fbuf.bind();
+
+    fbuf.attach(&app_->curr_scene_->brush_layer_);
+
+    auto fcol = get_float_col(color);
+    glClearColor(fcol.r, fcol.g, fcol.b, fcol.a);
+    glClear(GL_COLOR_BUFFER_BIT);
+    
+    glBindFramebuffer(GL_FRAMEBUFFER, fbuf_stash);
+
+    painting_region_ = {0};
+}
+
 }

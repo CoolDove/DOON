@@ -89,68 +89,22 @@ enum class TexWrap : uint32_t {
     MIRROR_CLAMP_TO_EDGE = 0x8743,
 };
 
-class GLTexture {
+class GLTexture2D {
 public:
-    GLTexture();
-    ~GLTexture();
+    GLTexture2D();
+    ~GLTexture2D();
 
-    GLTexture(const GLTexture&) = delete;
-    GLTexture* operator=(const GLTexture&) = delete;
+    GLTexture2D(const GLTexture2D&) = delete;
+    GLTexture2D* operator=(const GLTexture2D&) = delete;
     
-    void init(bool _immutable = true);
+    void init();
     void release();
 
 public:
     TexType  get_type() const { return type_; }
     uint32_t get_glid() const { return id_; }
     bool     get_inited() const { return inited_; }
-    bool     get_immutable() const { return immutable_; }
     bool     get_allocated() const { return allocated_; }
-
-public:
-    void param_min_filter(TexFilter _filter) {
-        assert(inited_);
-        glTextureParameteri(id_, (GLenum)TexParam::TEXTURE_MIN_FILTER, (GLenum)_filter);
-    }
-
-    void param_mag_filter(TexFilter _filter) {
-        assert(inited_);
-        glTextureParameteri(id_, (GLenum)TexParam::TEXTURE_MAG_FILTER, (GLenum)_filter);
-    }
-
-    void param_wrap_r(TexWrap _wrap) {
-        assert(inited_);
-        glTextureParameteri(id_, (GLenum)TexParam::TEXTURE_WRAP_R, (GLenum)_wrap);
-    }
-    void param_wrap_s(TexWrap _wrap) {
-        assert(inited_);
-        glTextureParameteri(id_, (GLenum)TexParam::TEXTURE_WRAP_S, (GLenum)_wrap);
-    }
-
-    void param_wrap_t(TexWrap _wrap) {
-        assert(inited_);
-        glTextureParameteri(id_, (GLenum)TexParam::TEXTURE_WRAP_T, (GLenum)_wrap);
-    }
-
-public:
-    struct {
-        uint32_t width;
-        uint32_t height;
-        uint32_t levels;
-        SizedInternalFormat format;
-    } info_;
-
-protected:
-    GLuint  id_;
-    bool    inited_;
-    bool    immutable_;
-    bool    allocated_;
-    TexType type_;
-};
-
-class GLTexture2D : public GLTexture {
-public:
-    GLTexture2D();
 
     // params in the second line are used only when this is a mutable texture
     void allocate(uint32_t _levels, SizedInternalFormat _format, int _width, int _height,
@@ -166,18 +120,28 @@ public:
     uint32_t get_levels_count() const { return levels_count_; }
 private:
     uint32_t levels_count_;
-};
 
-class GLTextureBuffer : public GLTexture {
 public:
-    GLTextureBuffer();
+    void param_min_filter(TexFilter _filter) {glTextureParameteri(id_, (GLenum)TexParam::TEXTURE_MIN_FILTER, (GLenum)_filter);}
+    void param_mag_filter(TexFilter _filter) {glTextureParameteri(id_, (GLenum)TexParam::TEXTURE_MAG_FILTER, (GLenum)_filter);}
+    void param_wrap_r(TexWrap _wrap) {glTextureParameteri(id_, (GLenum)TexParam::TEXTURE_WRAP_R, (GLenum)_wrap);}
+    void param_wrap_s(TexWrap _wrap) {glTextureParameteri(id_, (GLenum)TexParam::TEXTURE_WRAP_S, (GLenum)_wrap);}
+    void param_wrap_t(TexWrap _wrap) {glTextureParameteri(id_, (GLenum)TexParam::TEXTURE_WRAP_T, (GLenum)_wrap);}
 
-    void init();
-    void allocate(size_t _size_b, BufFlag _flag, SizedInternalFormat _format);
-    void bind_image(uint32_t _unit, Access _acc, ImageUnitFormat _format);
 public:
-    std::unique_ptr<Buffer> buffer_;
+    struct {
+        uint32_t width;
+        uint32_t height;
+        uint32_t levels;
+        SizedInternalFormat format;
+    } info_;
+
 private:
-    bool attached_;
+    GLuint  id_;
+    bool    inited_;
+    bool    immutable_;
+    bool    allocated_;
+    TexType type_;
 };
+
 }

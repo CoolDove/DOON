@@ -32,6 +32,5 @@ public:
         int channels;
     } info_;
 
-private:
     bool inited_;
 };

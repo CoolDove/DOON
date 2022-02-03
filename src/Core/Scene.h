@@ -5,6 +5,7 @@
 #include <Core/Image.h>
 #include <Core/Layer.h>
 #include <Core/Color.h>
+#include <Core/History.h>
 #include <Base/General.h>
 
 #include <list>
@@ -18,13 +19,14 @@ using namespace DGL;
 
 class Scene {
 public:
-    Scene(const char* _image_path);
+    Scene(const char* _path);
     Scene(uint32_t _width, uint32_t _height, Col_RGBA _col);
     ~Scene();
 
     void on_render();
     void on_update();
 
+    void add_layer(const std::string& _path);
     void add_layer(Col_RGBA _col, const std::string& _name);
     void add_layer(Col_RGBA _col);
     void change_layer(const std::string& _name);
@@ -37,18 +39,24 @@ public:
 
     Layer*        get_curr_layer() { return curr_layer_ite_->get(); };
     Dove::IRect2D get_region() const { return region_; };
+    HistorySys*   get_history_sys() { return &history_sys_; }
 public:
     Camera      camera_;
 
     LayerList   layers_;
-    LayerPtr    brush_layer_;
+    DGL::GLTexture2D brush_layer_;
 
     struct {
         int width;
         int height;
     } info_;
-
 private:
+    void create_scene(uint32_t _width, uint32_t _height, Col_RGBA _col);
+    bool load_scene(const char* path);
+    bool load_png(const char* path);
+    bool load_doo(const char* path);
+private:
+    HistorySys    history_sys_;
     Dove::IRect2D region_; // updated region
     LayerIte      curr_layer_ite_;
 };

@@ -7,16 +7,48 @@
 #include <gl/GL.h>
 #include <DGLCore/GLDebugger.h>
 #include <DGLCore/GLShader.h>
+#include <DGLCore/GLFramebuffer.h>
 
 #include "Image.h"
 #include "Space.h"
 #include "Color.h"
 
 using namespace DGL;
+
+
+void Renderer::blit(DGL::GLTexture2D* src, DGL::GLTexture2D* dst, Dove::IRect2D rect_src, Dove::IRect2D rect_dst) {
+    if (!src || !dst) return;
+    
+    GLint stash = GLFramebuffer::current_framebuffer();
+
+    GLFramebuffer fbuf[2];
+    fbuf[0].init();
+    fbuf[1].init();
+    fbuf[0].attach(src);
+    fbuf[1].attach(dst);
+
+    GLint srcx0 = rect_src.posx;
+    GLint srcy0 = rect_src.posy;
+    GLint srcx1 = rect_src.posx + rect_src.width;
+    GLint srcy1 = rect_src.posy + rect_src.height;
+    
+    GLint dstx0 = rect_dst.posx;
+    GLint dsty0 = rect_dst.posy;
+    GLint dstx1 = rect_dst.posx + rect_dst.width;
+    GLint dsty1 = rect_dst.posy + rect_dst.height;
+
+    glBlitNamedFramebuffer(
+        fbuf[0].get_glid(), fbuf[1].get_glid(),
+        srcx0, srcy0, srcx1, srcy1, dstx0, dsty0, dstx1, dsty1,
+        GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, stash);
+}
+
 Renderer::Renderer(Application *_app)
-:   framebuf_(0),
-    current_paint_tex_(nullptr),
-    other_paint_tex_(nullptr)
+:   current_paint_tex_(nullptr),
+    other_paint_tex_(nullptr),
+    scene_(nullptr)
 {
     app_ = _app;
     init_opengl();
@@ -25,58 +57,12 @@ Renderer::Renderer(Application *_app)
 void Renderer::init() {
     batch_.init({{DGL::Attribute::POSITION, 3}, { DGL::Attribute::UV, 2 }});
 
-    try {
-        Shader canvas_vert("./res/shaders/canvas.vert", ShaderType::VERTEX_SHADER);
-        Shader canvas_frag("./res/shaders/canvas.frag", ShaderType::FRAGMENT_SHADER);
-        program_canvas_.link(2, &canvas_vert, &canvas_frag);
-    } catch (const DGL::EXCEPTION::SHADER_COMPILING_FAILED& err) {
-        DLOG_ERROR("shader error: %s", err.msg.c_str());
-    }
-
-    try {
-        Shader base_vert("./res/shaders/base.vert", ShaderType::VERTEX_SHADER);
-        Shader base_frag("./res/shaders/base.frag", ShaderType::FRAGMENT_SHADER);
-        program_base_.link(2, &base_vert, &base_frag);
-    } catch (const DGL::EXCEPTION::SHADER_COMPILING_FAILED& err) {
-        DLOG_ERROR("shader error: %s", err.msg.c_str());
-    }
-
-    try {
-        Shader paint_vert("./res/shaders/paint.vert", ShaderType::VERTEX_SHADER);
-        Shader paint_frag("./res/shaders/paint.frag", ShaderType::FRAGMENT_SHADER);
-        program_paint_.link(2, &paint_vert, &paint_frag);
-    } catch (const DGL::EXCEPTION::SHADER_COMPILING_FAILED& err) {
-        DLOG_ERROR("shader error: %s", err.msg.c_str());
-    }
-
-    // create framebuffer and framebuffer textures
     int wnd_width = app_->window_info_.width;
     int wnd_height = app_->window_info_.height;
 
-    framebuf_tex_a_.init();
-    framebuf_tex_a_.allocate(1, SizedInternalFormat::RGBA8,
-                           wnd_width, wnd_height,
-                           PixFormat::RGBA, PixType::UNSIGNED_BYTE);
-    framebuf_tex_b_.init();
-    framebuf_tex_b_.allocate(1, SizedInternalFormat::RGBA8,
-                           wnd_width, wnd_height,
-                           PixFormat::RGBA, PixType::UNSIGNED_BYTE);
+    fbuf_paint_.init();
 
-    paint_tex_a_.init();
-    paint_tex_a_.allocate(1, SizedInternalFormat::RGBA8,
-                             app_->curr_scene_->info_.width, app_->curr_scene_->info_.height,
-                             PixFormat::RGBA, PixType::UNSIGNED_BYTE);
-    paint_tex_b_.init();
-    paint_tex_b_.allocate(1, SizedInternalFormat::RGBA8,
-                             app_->curr_scene_->info_.width, app_->curr_scene_->info_.height,
-                             PixFormat::RGBA, PixType::UNSIGNED_BYTE);
-
-    glCreateFramebuffers(1, &framebuf_);
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuf_);
-
-    glCreateFramebuffers(2, &fbuf_layers_);
-    // glBindFramebuffer(GL_FRAMEBUFFER, fbuf_layers_);
-
+    realloc_paint_tex();
     recreate_canvas_batch();
 }
 
@@ -86,49 +72,68 @@ void Renderer::recreate_canvas_batch() {
         int height = app_->curr_scene_->info_.height;
 
         batch_.clear();
-        batch_.add_quad((float)width, (float)height, "canvas");
+        // batch_.add_quad((float)width, (float)height, "canvas");
+        batch_.add_quad(2, 2, "canvas");
         batch_.upload();
     }
 }
 
-// FIXME: **blending error
-void Renderer::render() {
+void Renderer::realloc_paint_tex() {
+    if (scene_ == app_->curr_scene_) return;
+    if (paint_tex_a_.get_inited())
+        paint_tex_a_.release();
+    if (paint_tex_b_.get_inited())
+        paint_tex_b_.release();
 
+    paint_tex_a_.init();
+    paint_tex_a_.allocate(1, SizedInternalFormat::RGBA8,
+                             app_->curr_scene_->info_.width, app_->curr_scene_->info_.height,
+                             PixFormat::RGBA, PixType::UNSIGNED_BYTE);
+    paint_tex_b_.init();
+    paint_tex_b_.allocate(1, SizedInternalFormat::RGBA8,
+                             app_->curr_scene_->info_.width, app_->curr_scene_->info_.height,
+                             PixFormat::RGBA, PixType::UNSIGNED_BYTE);
+    scene_ = app_->curr_scene_;
+}
+
+void Renderer::render() {
+    realloc_paint_tex();
     Scene* scn = app_->curr_scene_;
     Dove::IRect2D updated_region = scn->get_region();
 
     {// compose layers to paint_tex_
         glDisable(GL_BLEND);
-        glBindFramebuffer(GL_FRAMEBUFFER, fbuf_layers_);
-        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-        glNamedFramebufferTexture(fbuf_layers_, GL_COLOR_ATTACHMENT0, paint_tex_b_.get_glid(), 0);
-        glClear(GL_COLOR_BUFFER_BIT);
-        glNamedFramebufferTexture(fbuf_layers_, GL_COLOR_ATTACHMENT0, paint_tex_a_.get_glid(), 0);
-        glClear(GL_COLOR_BUFFER_BIT);
 
-        program_paint_.bind();
+        fbuf_paint_.bind();
+        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        fbuf_paint_.attach(&paint_tex_a_);
+        glClear(GL_COLOR_BUFFER_BIT);
+        fbuf_paint_.attach(&paint_tex_b_);
+        glClear(GL_COLOR_BUFFER_BIT);
+        glDepthFunc(GL_ALWAYS);
+
+        auto paint_shader = app_->RES->GetShader("paint");
+        paint_shader->bind();
         glViewport(0, 0, scn->info_.width, scn->info_.height);
 
         for (auto const& layer : scn->layers_) {
             swap_paint_tex();
-            glNamedFramebufferTexture(fbuf_layers_, GL_COLOR_ATTACHMENT0, current_paint_tex_->get_glid(), 0);
+            fbuf_paint_.attach(current_paint_tex_);
             glClear(GL_COLOR_BUFFER_BIT);
 
-            program_paint_.uniform_f("_size", (float)scn->info_.width, (float)scn->info_.height);
-
             (*layer).tex_->bind(0);
-            program_paint_.uniform_i("_tex", 0);
+            paint_shader->uniform_i("_tex", 0);
             other_paint_tex_->bind(1);
-            program_paint_.uniform_i("_paintbuffer", 1);
+            paint_shader->uniform_i("_paintbuffer", 1);
             batch_.draw_batch();
 
             // render brush layer
             if (&(*layer) == scn->get_curr_layer()) {
                 swap_paint_tex();
-                glNamedFramebufferTexture(fbuf_layers_, GL_COLOR_ATTACHMENT0, current_paint_tex_->get_glid(), 0);
+                fbuf_paint_.attach(current_paint_tex_);
                 glClear(GL_COLOR_BUFFER_BIT);
 
-                scn->brush_layer_->tex_->bind(0);
+                scn->brush_layer_.bind(0);
                 other_paint_tex_->bind(1);
                 batch_.draw_batch();
             }
@@ -151,38 +156,32 @@ void Renderer::render() {
     glm::mat4 proj = Space::mat_camproj(&app_->curr_scene_->camera_, wnd_width, wnd_height);
 
     {// draw base
-        program_base_.bind();
+        auto shader_base = app_->RES->GetShader("base");
+        shader_base->bind();
         float cam_size = (10.0f - cam->size_)/10.0f;
         int cell_scale = (int)((cam_size * cam_size * cam_size) * 30 + 1);
-        program_base_.uniform_mat("_view", 4, &view[0][0]);
-        program_base_.uniform_mat("_proj", 4, &proj[0][0]);
-        program_base_.uniform_f("_size", (float)scn->info_.width, (float)scn->info_.height);
-        program_base_.uniform_i("_scale", cell_scale);
-        batch_.draw_batch();
-    }
-
-    if (current_paint_tex_ != nullptr) {// draw canvas
-        program_canvas_.bind();
-        program_canvas_.uniform_mat("_view", 4, &view[0][0]);
-        program_canvas_.uniform_mat("_proj", 4, &proj[0][0]);
-        current_paint_tex_->bind(0);
-        program_canvas_.uniform_i("_tex", 0);
+        shader_base->uniform_mat("_view", 4, &view[0][0]);
+        shader_base->uniform_mat("_proj", 4, &proj[0][0]);
+        shader_base->uniform_f("_cansize", (float)scn->info_.width, (float)scn->info_.height);
+        // shader_base->uniform_f("_size", (float)scn->info_.width, (float)scn->info_.height);
+        shader_base->uniform_i("_scale", cell_scale);
         batch_.draw_batch();
     }
     
-    // detach the framebuffer texture
-    glNamedFramebufferTexture(framebuf_, GL_COLOR_ATTACHMENT0, 0, 0);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    auto shader_canvas = app_->RES->GetShader("canvas");
+    shader_canvas->bind();
+    shader_canvas->uniform_f("_cansize", (float)scn->info_.width, (float)scn->info_.height);
+    shader_canvas->uniform_mat("_view", 4, &view[0][0]);
+    shader_canvas->uniform_mat("_proj", 4, &proj[0][0]);
+    if (current_paint_tex_ != nullptr) {// draw canvas
+        current_paint_tex_->bind(0);
+        shader_canvas->uniform_i("_tex", 0);
+        batch_.draw_batch();
+    }
+
 }
 
 void Renderer::resize_framebuffer(Dove::IVector2D _size) {
-    framebuf_tex_a_.release();
-    framebuf_tex_a_.init();
-    framebuf_tex_a_.allocate(1, SizedInternalFormat::RGBA8, _size.x, _size.y);
-
-    framebuf_tex_b_.release();
-    framebuf_tex_b_.init();
-    framebuf_tex_b_.allocate(1, SizedInternalFormat::RGBA8, _size.x, _size.y);
 }
 
 void Renderer::init_opengl() {

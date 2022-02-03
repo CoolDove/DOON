@@ -1,8 +1,9 @@
 ﻿#include "Application.h"
-#include "Core/Compositor.h"
 #include "DoveLog.hpp"
 #include "Renderer.h"
 #include <DGLCore/DGLCore.h>
+#include <Core/Action.h>
+#include <Core/Command_Brush.h>
 
 #include <algorithm>
 #include <assert.h>
@@ -18,6 +19,9 @@
 #include <glad/glad.h>
 #include <gl/GL.h>
 
+// @Temporary: test reading binary files
+#include <Core/Serialize.h>
+
 using wglCreateContextAttribsARB_t = HGLRC (WINAPI *) (HDC hDC, HGLRC hshareContext, const int *attribList);
 
 Application* Application::instance_ = nullptr;
@@ -32,28 +36,32 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
 
     // NOTE:
     // initialization order:
-    // dlog >> window >> render(>>opengl) >> imgui >> tablet >> scene >> tools
+    // dlog >> doonres >> window >> render(>>opengl) >> imgui >> tablet >> scene >> tools
 
     init_dlog();
+
+    RES = std::make_unique<DOONRes>();
+
     init_window(_instance, _prev_instance, _cmd_line, _show_code);
     renderer_ = make_unique<Renderer>(this);
     init_imgui();
     init_tablet();
 
-    compositor_ = make_unique<Compositor>();
-
     inited_ = true;
+
+    // @LoadResource:
+    RES->LoadShader("./res/shaders/paint.vert", "./res/shaders/paint.frag", "paint");
+    RES->LoadShader("./res/shaders/canvas.vert", "./res/shaders/canvas.frag", "canvas");
+    RES->LoadShader("./res/shaders/base.vert", "./res/shaders/base.frag", "base");
 
     // repair multiple scenes
     long clock = std::clock();
     // scenes_["anji"]  = make_unique<Scene>("./res/textures/anji.png");
-    scenes_["alp"]   = make_unique<Scene>("./res/textures/alp.png");
-    // scenes_["test"]  = make_unique<Scene>("./res/textures/test.png");
-    // scenes_["p1"] = make_unique<Scene>("./res/p1.png");
-    // scenes_["p2"] = make_unique<Scene>("./res/p2.png");
-    // scenes_["p3"] = make_unique<Scene>("./res/p3.png");
-    // scenes_["p4"] = make_unique<Scene>("./res/p4.png");
-    // scenes_["p5"] = make_unique<Scene>("./res/p5.png");
+    // scenes_["alp"]    = make_unique<Scene>("./res/textures/alp.png");
+
+    scenes_["dooload"] = make_unique<Scene>("d:/paintings/test.doo");
+    scenes_["giant"] = make_unique<Scene>("d:/paintings/0116_TheLastGiant.png");
+    scenes_["big"] = make_unique<Scene>(512, 512, Col_RGBA{0x43, 0x32, 0x64, 0xff});
 
     if (scenes_.size() == 0) {
         scenes_["void"] = make_unique<Scene>(1024, 1024, Col_RGBA{0x00, 0x00, 0x00, 0x00});
@@ -73,9 +81,16 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     renderer_->init();
 
     // @ActionList:
+    using namespace Dove;
     action_list_ = std::make_unique<ActionList>();
-
-    action_list_->invoke({Dove::KeyCode::A, Dove::ModKey::None});
+    // action_list_->invoke({Dove::KeyCode::A, Dove::ModKey::None});
+    action_list_->register_key("def", ActionKey{KeyCode::Z, ModKey::Ctrl}, "undo");
+    action_list_->register_key("def", ActionKey{KeyCode::Z, ModKey::Ctrl|ModKey::Shift}, "redo");
+    action_list_->register_key("def", ActionKey{KeyCode::S, ModKey::Ctrl}, "save");
+    
+    action_list_->register_action("def", "undo", &Application::action_undo);
+    action_list_->register_action("def", "redo", &Application::action_redo);
+    action_list_->register_action("def", "save", &Application::action_save);
 
 //  @temporary: check the version
     GLint major;
@@ -134,10 +149,14 @@ void Application::render_ui() {
                     Tool::Brush* brs = dynamic_cast<Tool::Brush*>(curr_tool_);
                     static float bcol[4] = {1.0f,1.0f,1.0f,1.0f};
                     ImGui::ColorEdit4("brush_col", bcol, ImGuiColorEditFlags_AlphaBar);
-                    brs->col_.r = (unsigned char)(bcol[0] * 0xff);
-                    brs->col_.g = (unsigned char)(bcol[1] * 0xff);
-                    brs->col_.a = (unsigned char)(bcol[3] * 0xff);
-                    brs->col_.b = (unsigned char)(bcol[2] * 0xff);
+                    Col_RGBA color = {
+                        (unsigned char)(bcol[0] * 0xff),
+                        (unsigned char)(bcol[1] * 0xff),
+                        (unsigned char)(bcol[2] * 0xff),
+                        (unsigned char)(bcol[3] * 0xff)
+                    };
+
+                    if (brs->col_ != color) brs->col_ = color;
 
                     ImGui::DragInt("brush_size_max", &brs->size_max_, 0.1f, 1, 7000);
                     ImGui::DragFloat("brush_size_min", &brs->size_min_scale_, 0.01f, 0.0f, 1.0f);
@@ -219,7 +238,7 @@ void Application::change_scene(const std::string& _name) {
     if (scenes_.find(_name) != scenes_.end()) {
         curr_scene_ = scenes_[_name].get();
 
-        renderer_->recreate_canvas_batch();
+        // renderer_->recreate_canvas_batch();
     }
 }
 

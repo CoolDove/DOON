@@ -5,11 +5,11 @@
 #include <thread>
 #include <Windows.h>
 
-#include <Core/Compositor.h>
 #include "Scene.h"
 #include "Tool/Tools.h"
 
 #include <Core/Action.h>
+#include <Core/DOONRes.h>
 
 #define WGL_CONTEXT_MAJOR_VERSION_ARB           	0x2091
 #define WGL_CONTEXT_MINOR_VERSION_ARB           	0x2092
@@ -50,7 +50,7 @@ public:
     } tools_;
 
     unique_ptr<Renderer>    renderer_;
-    unique_ptr<Compositor>  compositor_;
+    unique_ptr<DOONRes>     RES;
 
 public:// window
     bool    inited_;
@@ -67,6 +67,12 @@ public:// window
 
 public:
     GLuint buf_tex_;
+
+public: 
+    static void action_undo();
+    static void action_redo();
+    static void action_save();
+
 private:
     void init_dlog();
     void init_window(HINSTANCE _instance, HINSTANCE _prev_instance, char* _cmd_line, int _show_code);
