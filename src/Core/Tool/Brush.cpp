@@ -87,7 +87,6 @@ void Brush::on_pointer_down(Input::PointerInfo _info, int _x, int _y) {
     last_dap_pos_ = canvas_pos;
     last_mouse_pos_ = canvas_pos;
     last_brush_size_ = calculate_brush_size(&_info);
-    DLOG_DEBUG("start brush size: %d", last_brush_size_);
 }
 
 void Brush::create_blend_assets() {
@@ -138,17 +137,13 @@ static Dove::IVector2D dovec2(glm::vec2 vec) {
 
 void Brush::generate_daps(Dove::IVector2D mouse_pos_canvas_space, float brush_size) {
     daps_.clear();
-
     glm::vec2 start_pos = glmvec2(last_dap_pos_);
     glm::vec2 mpos = glmvec2(mouse_pos_canvas_space);
     glm::vec2 direction = glm::normalize(mpos - glmvec2(last_dap_pos_));
     float target_dist = glm::distance(glmvec2(last_dap_pos_), mpos);
-
     float dist = glm::clamp(distance_, 1.0f, distance_);
-
     for (float i = 0; glm::distance(start_pos, glmvec2(last_dap_pos_)) < target_dist; i += dist) {
         last_dap_pos_ = dovec2(glmvec2(last_dap_pos_) + direction * dist);
-
         BrushDap dap = {
             last_dap_pos_,
             0,
@@ -160,23 +155,31 @@ void Brush::generate_daps(Dove::IVector2D mouse_pos_canvas_space, float brush_si
 
 void Brush::draw_daps() {
     if (daps_.size() == 0) return;
+
+    auto* shader = app_->RES->GetShader("dap");
+    if (!shader) {
+        DLOG_ERROR("failed to find shader: dap");
+        return;
+    }
+    Scene* scn = app_->curr_scene_;
+
+    shader->bind();
+    blend_framebuf_->bind();
+    glViewport(0, 0, scn->info_.width, scn->info_.height);
+    glDisable(GL_BLEND);
+
+    shader->uniform_i("_paintbuffer", 0);
+    brush_tex_->bind(1);
+    shader->uniform_i("_brushtex", 1);
+
     for (auto ite = daps_.begin(); ite != daps_.end(); ite++) {
-        blend_framebuf_->bind();
 
-        Scene* scn = app_->curr_scene_;
-
-        if (ite == --daps_.end()) {
+        if (ite == --daps_.end())
             blend_framebuf_->attach(&scn->brush_layer_);
-        }
 
         // TODO: draw the dap to the frame buffer, use blend_other_tex() to blend
-        blend_framebuf_->bind();
-        auto* shader = app_->RES->GetShader("dap");
-
-        glViewport(0, 0, scn->info_.width, scn->info_.height);
-
         blend_other_tex()->bind(0);
-        shader->uniform_i("_paintbuffer", 0);
+
         shader->uniform_f("_dappos", (float)ite->position.x, (float)ite->position.y);
         shader->uniform_f("_canvassize", (float)scn->info_.width, (float)scn->info_.height);
         shader->uniform_f("_dapsize", (float)ite->radius);
@@ -188,10 +191,6 @@ void Brush::draw_daps() {
 }
 
 void Brush::flush_data() {
-    clear_brush_tex({0xff, 0xff, 0xff, 0x00});
-    return;
-
-// --------------
     using namespace Dove;
     BrushCommand* cmd = new BrushCommand(painting_region_, app_);
     app_->curr_scene_->get_history_sys()->push(cmd);
@@ -255,27 +254,18 @@ void Brush::on_pointer_up(Input::PointerInfo _info, int _x, int _y) {
 void Brush::worldpos_to_canvaspos(int wx, int wy, int* cx, int* cy) {
     int wnd_width = app_->window_info_.width;
     int wnd_height = app_->window_info_.height;
-
     DGL::Camera* cam = &app_->curr_scene_->camera_;
-
     glm::mat4 matrix = Space::mat_ndc_world(cam, wnd_width, wnd_height);
     glm::vec4 ws_pos = glm::vec4(wx, wy, 1, 1);
-
     ws_pos.x = glm::clamp(ws_pos.x, 0.0f, (float)wnd_width);
     ws_pos.y = glm::clamp(ws_pos.y, 0.0f, (float)wnd_height);
-
     ws_pos.x = (ws_pos.x / wnd_width) * 2.0f - 1.0f;
     ws_pos.y = ((wnd_height - ws_pos.y) / wnd_height) * 2.0f - 1.0f;
-
     glm::vec4 cs_pos = matrix * ws_pos;
-
     int half_width  = (int)(0.5f * app_->curr_scene_->info_.width);
     int half_height = (int)(0.5f * app_->curr_scene_->info_.height);
-
-
     *cx = (int)cs_pos.x + half_width;
     *cy = -(int)cs_pos.y + half_height;
-
 }
 
 void Brush::on_pointer(Input::PointerInfo _info, int _x, int _y) {
@@ -287,7 +277,6 @@ void Brush::on_pointer(Input::PointerInfo _info, int _x, int _y) {
         Scene* scn = app_->curr_scene_;
         float pressure = _info.pen_info.pressure ? (float)_info.pen_info.pressure : 1024.0f;
 
-        // unsigned int brush_size = (unsigned int)((pressure / 1024.0f) * (size_max_ - (size_min)) + size_min);
         unsigned int brush_size = calculate_brush_size(&_info);
 
         Dove::IVector2D canvas_pos;
@@ -295,30 +284,27 @@ void Brush::on_pointer(Input::PointerInfo _info, int _x, int _y) {
 
         generate_daps(canvas_pos, brush_size);
 
-        // draw_daps();
+        draw_daps();
 
         // NOTE: build brush region for this stroke
-        // Dove::IRect2D rect;
-        // float extend_size = glm::floor(1.42f * glm::max((float)brush_size, last_brush_size_));
-        // rect.posx = glm::min(last_mouse_pos_.x, canvas_pos.x);
-        // rect.posy = glm::min(last_mouse_pos_.y, canvas_pos.y);
-// 
-        // rect.width = glm::max(last_mouse_pos_.x, canvas_pos.x) - rect.posx;
-        // rect.height = glm::max(last_mouse_pos_.y, canvas_pos.y) - rect.posy;
-// 
-        // rect.posx -= rect.width * 0.5f;
-        // rect.posx = glm::clamp(rect.posx, 0, scn->info_.width);
-// 
-        // rect.posy -= rect.height * 0.5f;
-        // rect.posy = glm::clamp(rect.posy, 0, scn->info_.height);
-// 
-        // rect.width += extend_size;
-        // rect.width = glm::clamp(rect.width, 0u, (uint32_t)(scn->info_.width - rect.posx));
-// 
-        // rect.height += extend_size;
-        // rect.height = glm::clamp(rect.height, 0u, (uint32_t)(scn->info_.height - rect.posy));
-// 
-        // painting_region_ = Dove::merge_rect(painting_region_, rect);
+        Dove::IRect2D rect;
+        float extend_size = glm::floor(1.42f * glm::max((float)brush_size, last_brush_size_));
+        rect.posx = glm::min(last_mouse_pos_.x, canvas_pos.x);
+        rect.posy = glm::min(last_mouse_pos_.y, canvas_pos.y);
+        rect.width = glm::max(last_mouse_pos_.x, canvas_pos.x) - rect.posx;
+        rect.height = glm::max(last_mouse_pos_.y, canvas_pos.y) - rect.posy;
+        rect.posx -= rect.width * 0.5f;
+        rect.posx = glm::clamp(rect.posx, 0, scn->info_.width);
+        rect.posy -= rect.height * 0.5f;
+        rect.posy = glm::clamp(rect.posy, 0, scn->info_.height);
+        rect.width += extend_size;
+        rect.width = glm::clamp(rect.width, 0u, (uint32_t)(scn->info_.width - rect.posx));
+        rect.height += extend_size;
+        rect.height = glm::clamp(rect.height, 0u, (uint32_t)(scn->info_.height - rect.posy));
+
+        painting_region_ = Dove::merge_rect(painting_region_, rect);
+
+        last_brush_size_ = calculate_brush_size(&_info);
     }
 }
 

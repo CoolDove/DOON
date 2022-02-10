@@ -11,7 +11,7 @@ uniform float _dapsize;
 void main() {
     v_uv = uv;
     vec2 hcansize = 0.5 * _canvassize;
-    vec2 wp = aPos * _dapsize + _dappos;
+    vec2 wp = aPos.xy * _dapsize + _dappos;
     wp = (wp - hcansize) / hcansize;
     gl_Position = vec4(wp, 1, 1);
 }
