@@ -53,15 +53,15 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     RES->LoadShader("./res/shaders/paint.vert", "./res/shaders/paint.frag", "paint");
     RES->LoadShader("./res/shaders/canvas.vert", "./res/shaders/canvas.frag", "canvas");
     RES->LoadShader("./res/shaders/base.vert", "./res/shaders/base.frag", "base");
+    RES->LoadShader("./res/shaders/dap.vert", "./res/shaders/dap.frag", "dap");
 
     // repair multiple scenes
     long clock = std::clock();
     // scenes_["anji"]  = make_unique<Scene>("./res/textures/anji.png");
     // scenes_["alp"]    = make_unique<Scene>("./res/textures/alp.png");
-
-    scenes_["dooload"] = make_unique<Scene>("d:/paintings/test.doo");
-    scenes_["giant"] = make_unique<Scene>("d:/paintings/0116_TheLastGiant.png");
-    scenes_["big"] = make_unique<Scene>(512, 512, Col_RGBA{0x43, 0x32, 0x64, 0xff});
+    // scenes_["dooload"] = make_unique<Scene>("d:/paintings/test.doo");
+    // scenes_["giant"] = make_unique<Scene>("d:/paintings/0116_TheLastGiant.png");
+    // scenes_["big"] = make_unique<Scene>(512, 512, Col_RGBA{0x43, 0x32, 0x64, 0xff});
 
     if (scenes_.size() == 0) {
         scenes_["void"] = make_unique<Scene>(1024, 1024, Col_RGBA{0x00, 0x00, 0x00, 0x00});
@@ -137,6 +137,17 @@ void Application::render_ui() {
 
     ImGui::NewFrame();
     {
+
+        if (ImGui::CollapsingHeader("System")) {
+            static char load_path[256] = "";
+            ImGui::InputText("Path", load_path, 256);
+            static char load_name[256] = "";
+            ImGui::InputText("Name", load_name, 256);
+            if (ImGui::Button("Load")) {
+                scenes_[load_name] = make_unique<Scene>(load_path);
+            }
+        }
+
         if (ImGui::Begin("panel")) {
             if (ImGui::CollapsingHeader("cam")) {
                 float cam_region = 0.5f * glm::max(curr_scene_->info_.width, curr_scene_->info_.height);
