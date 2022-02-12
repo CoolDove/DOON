@@ -16,7 +16,5 @@ void main() {
     float outa = src.a + dst.a * (1 - src.a);
     vec3 col = (src.rgb * src.a + dst.rgb * dst.a * (1 - src.a)) / outa;
 
-    col.xyz *= dst.a;
-
     FragColor = vec4(col, outa);
 }
