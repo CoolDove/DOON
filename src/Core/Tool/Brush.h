@@ -43,7 +43,6 @@ public:
     float    distance_;
 
     Col_RGBA col_;
-    
 
     Dove::IRect2D painting_region_;
     DGL::GLTexture2D* brush_tex_;
@@ -54,6 +53,7 @@ private: // blend things
     DGL::GLTexture2D* blend_tex_a_ = nullptr;
     DGL::GLTexture2D* blend_tex_b_ = nullptr;
     DGL::GLTexture2D* blend_attaching_ = nullptr;
+    DGL::GLTexture2D* blend_test = nullptr;
     DGL::GLFramebuffer* blend_framebuf_ = nullptr;
 
     DGL::GLTexture2D* blend_attaching_tex() const { return blend_attaching_; }
@@ -75,13 +75,13 @@ private:
     std::list<BrushDap> mpoints_;// store the mouse point info
     std::list<BrushDap> daps_;// store the interpolated points since last mouse point pushed
     Dove::IVector2D last_dap_pos_;
-
-    Dove::IVector2D last_mouse_pos_;
     float last_brush_size_;
 
-    float calculate_brush_size(Input::PointerInfo* _info);
+    Dove::IVector2D last_mouse_pos_;
+
+    float calculate_brush_size(const Input::PointerInfo* _info);
     void draw_daps();// draw every dap in the daps and clear the daps
-    void generate_daps(Dove::IVector2D mouse_pos_canvas_space, float brush_size);
+    void generate_daps(Dove::IVector2D mouse_pos_canvas_space, const Input::PointerInfo* brush_info);
     void worldpos_to_canvaspos(int wx, int wy, int* cx, int* cy);
 
     void flush_data();// bake brush layer to current layer and push brush command, then clear the brush layer
