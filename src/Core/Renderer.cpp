@@ -148,6 +148,7 @@ void Renderer::render() {
     int wnd_height = app_->window_info_.height;
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
     glViewport(0, 0, wnd_width, wnd_height);
 
@@ -183,6 +184,7 @@ void Renderer::render() {
 
 void Renderer::resize_framebuffer(Dove::IVector2D _size) {
 }
+
 
 void Renderer::init_opengl() {
     device_context_ = GetDC(app_->window_);
@@ -242,6 +244,13 @@ void Renderer::init_opengl() {
             wglMakeCurrent(device_context_, modern_glrc);
             gl_context_ = modern_glrc;
         }
+
+        // NOTE: close the vsync
+        typedef void (APIENTRY *PFNWGLEXTSWAPCONTROLPROC) (int);
+        PFNWGLEXTSWAPCONTROLPROC wglSwapIntervalEXT = NULL;
+        wglSwapIntervalEXT = (PFNWGLEXTSWAPCONTROLPROC)wglGetProcAddress("wglSwapIntervalEXT");
+        wglSwapIntervalEXT(0);
+        
 #ifdef DEBUG
         gl_debug_init();
 #endif

@@ -324,7 +324,7 @@ LRESULT CALLBACK wnd_proc(HWND _window, UINT _message, WPARAM _wparam, LPARAM _l
         } break;
         case WM_POINTERDOWN:
         {
-            DLOG_TRACE("pointer down");
+            // DLOG_TRACE("pointer down");
             if (!app->curr_tool_) break;
 
             int mx, my;
