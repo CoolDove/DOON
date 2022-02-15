@@ -3,6 +3,7 @@
 in vec2 os_pos;
 in vec2 v_uv;
 in vec2 screen_uv;
+in float radius;
 
 layout (location = 0) out vec4 FragColor;
 
@@ -12,7 +13,12 @@ uniform sampler2D _brushtex;
 uniform sampler2D _paintbuffer;
 
 void main() {
-    vec4 src = texture(_brushtex, v_uv);
+    vec4 src;
+    if (radius < 2.0) {
+        src = vec4(1.0);
+    } else {
+        src = texture(_brushtex, v_uv);
+    }
     vec4 dst = texture(_paintbuffer, screen_uv);
 
     src *= _brushcol;

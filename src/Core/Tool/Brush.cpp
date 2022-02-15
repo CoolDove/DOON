@@ -40,13 +40,8 @@ namespace Tool
     Brush::~Brush() {
     }
     void Brush::on_init() {
-        brush_tex_ = app_->RES->LoadGLTexture2D("./res/brushes/ugly.png", "brush_ugly");
-        DLOG_DEBUG("brush texture loaded: ugly");
-        if (shader_ = app_->RES->LoadShader("./res/shaders/brush.vert", "./res/shaders/brush.frag", "brush")) {
-            DLOG_DEBUG("brush shader loaded");
-        } else {
-            DLOG_ERROR("failed to load brush shader");
-        }
+        brush_tex_ = app_->RES->GetGLTexture2D("brush_circle_soft");
+        shader_ = app_->RES->GetShader("brush");
         
         quad_.init({{ Attribute::POSITION, 3 }, { Attribute::UV, 2 }});
         quad_.add_quad(1, 1, "brush");
@@ -107,15 +102,6 @@ namespace Tool
         blend_tex_b_->init();
         blend_tex_b_->allocate(1, SizedInternalFormat::RGBA8, width, height);
 
-        // @Temporary:
-        // blend_test = new GLTexture2D();
-        // blend_test->init();
-        // blend_test->allocate(1, SizedInternalFormat::RGBA8, width, height);
-        // Col_RGBA* data = (Col_RGBA*)malloc(width * height * sizeof(Col_RGBA));
-        // memset(data, 0xff, width * height * sizeof(Col_RGBA));
-        // blend_tex_b_->upload(0, 0, 0, width, height, PixFormat::RGBA, PixType::UNSIGNED_BYTE, data);
-        // free(data);
-
         switch_attaching_texture();
     }
     
@@ -128,10 +114,6 @@ namespace Tool
         blend_tex_b_ = nullptr;
         blend_framebuf_ = nullptr;
         blend_attaching_ = nullptr;
-
-        // @Temporary:
-        // if (blend_test != nullptr) delete blend_test;
-        // blend_test = nullptr;
     }
     
     void Brush::switch_attaching_texture() {
@@ -167,7 +149,11 @@ namespace Tool
 
         #define DRAW_MULTI_DAPS
         #ifdef DRAW_MULTI_DAPS
-            while (true) {
+            // TODO: fix special situation for brush_distance==1
+            // NOTE: terrible temporary fix for infinity loop
+            const static int MAX_STEP = 32;
+            int step = 0;
+            while (step < MAX_STEP) {
                 glm::vec2 last_pos_glm = glmvec2(last_dap_pos_);
                 float stepdistance = glm::distance(last_pos_glm, mpos);
                 if (stepdistance < dist) {
@@ -182,6 +168,7 @@ namespace Tool
                 };
                 daps_.push_back(dap);
                 painting_region_ = Dove::merge_rect(painting_region_, get_daprect(dap.position, brush_size));
+                step++;
             }
         #else
             BrushDap dap = {
@@ -195,19 +182,19 @@ namespace Tool
         #endif
     }
     
-    // FIXME:
     void Brush::draw_daps() {
         if (daps_.size() == 0) return;
         using namespace DGL;
         
         auto* shader = app_->RES->GetShader("dap");
+
         if (!shader) {
             DLOG_ERROR("failed to find shader: dap");
             return;
         }
+
         Scene* scn = app_->curr_scene_;
         
-        // blit brush layer to the target framebuffer
         Dove::IRect2D blitrect;
         blitrect.position = {0, 0};
         blitrect.size = {(uint32_t)scn->info_.width, (uint32_t)scn->info_.height};
@@ -226,7 +213,7 @@ namespace Tool
         shader->uniform_i("_brushtex", 1);
 
         shader->uniform_f(
-            "_brushcol", (float)col_.r / 255.0, (float)col_.g / 255.0, (float)col_.b / 255.0, (float)col_.a / 255.0);
+            "_brushcol", (float)col_.r/255.0, (float)col_.g/255.0, (float)col_.b/255.0, (float)col_.a/255.0);
 
         shader->uniform_f("_canvassize", (float)scn->info_.width, (float)scn->info_.height);
         
@@ -334,53 +321,6 @@ namespace Tool
             generate_daps(canvas_pos, &_info);
             draw_daps();
         }
-    }
-    
-    Dove::IRect2D Brush::draw_circle(int _x, int _y, int _r) {
-        Scene* scn = app_->curr_scene_;
-        if (_x < -_r || _x > scn->info_.width + _r || _y < -_r || _y > scn->info_.height + _r)
-            return Dove::IRect2D{0};
-        
-        if (shader_ == nullptr || brush_tex_ == nullptr) return {0};
-        
-        // DLOG_DEBUG("pos: %d, %d", _x, _y);
-        {// Draw to current brush layer
-            
-            glEnable(GL_BLEND);
-            glBlendEquation(GL_FUNC_ADD);
-            glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-            
-            glBindFramebuffer(GL_FRAMEBUFFER, fbuf_brush_);
-            static const GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0 };
-            glDrawBuffers(1, draw_buffers);
-            glViewport(0, 0, scn->info_.width, scn->info_.height);
-            
-            auto texid = scn->brush_layer_.get_glid();
-            glNamedFramebufferTexture(fbuf_brush_, GL_COLOR_ATTACHMENT0, texid, 0);
-            
-            shader_->bind();
-            brush_tex_->bind(0);
-            shader_->uniform_i("_brushtex", 0);
-            auto fcol = get_float_col(col_);
-            shader_->uniform_f("_brushcol", fcol.r, fcol.g, fcol.b, fcol.a);
-            shader_->uniform_f("_dappos", (float)_x, (float)_y);
-            shader_->uniform_f("_canvassize", (float)scn->info_.width, (float)scn->info_.height);
-            shader_->uniform_f("_dapsize", (float)_r);
-            
-            quad_.draw_batch();
-            
-            glNamedFramebufferTexture(fbuf_brush_, GL_COLOR_ATTACHMENT0, 0, 0);
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        }
-        
-        // mark the updated region of current scene
-        Dove::IRect2D region;
-        region.posx   = glm::max(_x - _r, 0);
-        region.posy   = glm::max(_y - _r, 0);
-        region.width  = glm::min(_x + _r, scn->info_.width) - region.posx;
-        region.height = glm::min(_y + _r, scn->info_.height) - region.posy;
-        
-        return region;
     }
     
     void Brush::clear_brush_tex(Col_RGBA color) {

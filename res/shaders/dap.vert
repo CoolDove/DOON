@@ -4,6 +4,7 @@ layout (location = 1) in vec2 uv;
 
 out	vec2 v_uv;
 out vec2 screen_uv;
+out float radius;
 
 uniform vec2 _dappos;
 uniform vec2 _canvassize;
@@ -16,5 +17,7 @@ void main() {
     wp = (wp - hcansize) / hcansize;
     gl_Position = vec4(wp, 1, 1);
     screen_uv = (wp + 1.0) * 0.5;
+
+    radius = _dapsize;
 }
 

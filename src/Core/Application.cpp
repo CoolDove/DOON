@@ -40,8 +40,6 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
 
     init_dlog();
 
-    RES = std::make_unique<DOONRes>();
-
     init_window(_instance, _prev_instance, _cmd_line, _show_code);
     renderer_ = make_unique<Renderer>(this);
     init_imgui();
@@ -50,12 +48,11 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     inited_ = true;
 
     // @LoadResource:
-    RES->LoadShader("./res/shaders/paint.vert", "./res/shaders/paint.frag", "paint");
-    RES->LoadShader("./res/shaders/canvas.vert", "./res/shaders/canvas.frag", "canvas");
-    RES->LoadShader("./res/shaders/base.vert", "./res/shaders/base.frag", "base");
-    RES->LoadShader("./res/shaders/dap.vert", "./res/shaders/dap.frag", "dap");
+    RES = std::make_unique<DOONRes>();
+    RES->SetResourcePath("./res");
+    RES->LoadResourcesPath();
 
-    // repair multiple scenes
+
     long clock = std::clock();
     // scenes_["anji"]  = make_unique<Scene>("./res/textures/anji.png");
     // scenes_["alp"]    = make_unique<Scene>("./res/textures/alp.png");
