@@ -21,6 +21,7 @@
 
 // @Temporary: test reading binary files
 #include <Core/Serialize.h>
+#include <Core/Config.h>
 
 using wglCreateContextAttribsARB_t = HGLRC (WINAPI *) (HDC hDC, HGLRC hshareContext, const int *attribList);
 
@@ -61,7 +62,7 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     // scenes_["big"] = make_unique<Scene>(512, 512, Col_RGBA{0x43, 0x32, 0x64, 0xff});
 
     if (scenes_.size() == 0) {
-        scenes_["void"] = make_unique<Scene>(1024, 1024, Col_RGBA{0x00, 0x00, 0x00, 0x00});
+        scenes_["void"] = make_unique<Scene>(4096, 4096, Col_RGBA{0x00, 0x00, 0x00, 0x00});
     }
     
     curr_scene_ = scenes_.begin()->second.get();
@@ -96,6 +97,14 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     glGetIntegerv(GL_MINOR_VERSION, &minor);
 
     DLOG_TRACE("GL version: %d.%d\n", major, minor);
+
+    // @Temp: load config here
+    Config config("./res/.doon");
+    std::string token;
+    while ((token = config.get_token()) != "") {
+        DLOG_DEBUG("token: %s", token.c_str());
+    }
+    
 }
 
 Application::~Application() {
@@ -156,7 +165,7 @@ void Application::render_ui() {
                 if (dynamic_cast<Tool::Brush*>(curr_tool_)) {
                     Tool::Brush* brs = dynamic_cast<Tool::Brush*>(curr_tool_);
                     static float bcol[4] = {1.0f,1.0f,1.0f,1.0f};
-                    ImGui::ColorEdit4("brush_col", bcol, ImGuiColorEditFlags_AlphaBar);
+                    ImGui::ColorEdit4("brush_col", bcol, ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_DisplayRGB);
                     Col_RGBA color = {
                         (unsigned char)(bcol[0] * 0xff),
                         (unsigned char)(bcol[1] * 0xff),

@@ -1,4 +1,4 @@
-﻿keymap: default
+keymap: default
 {
     <C-s>: save_current_scene,
     <C-z>: undo,
