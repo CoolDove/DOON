@@ -4,7 +4,7 @@
 Config::Config(const char* path) {
     file = fopen(path, "r");
     if (!file) {
-        DLOG_ERROR("failed to find config file: %s", path);
+        error("failed to find config file: %s");
         return;
     }
     good_ = true;
@@ -47,3 +47,95 @@ std::string Config::get_token() {
     fseek(file, -1, SEEK_CUR);
     return token;
 }
+
+
+bool Config::parse_pair(char* _key, char* _value) {
+    std::string token = get_token();
+    std::string key_stash = token;
+
+    token = get_token();
+    if (token == ":") {
+        token = get_token();
+        // TODO:
+        strcpy(_key, key_stash.c_str());
+        strcpy(_value, token.c_str());
+        return true;
+    } else {
+        return false;
+    }
+}
+
+SettingPair Config::parse_settings(bool* _iseof, char* _name, char* _type) {
+    SettingPair empty;
+
+    if (!good_) return empty;
+
+    SettingPair output;
+    std::string type;
+    std::string name;
+
+    std::string token_stash = get_token();
+    type = token_stash;
+    if (token_stash == "keymap" ||
+        token_stash == "brush" ||
+        token_stash == "blendmode")
+    {
+        token_stash = get_token();
+        if (token_stash != ":") {
+            error("config error: missing ':'");
+            return empty;
+        }
+
+        name = get_token();
+
+        token_stash = get_token();
+        if (token_stash != "{") {
+            error("config error: missing '{'");
+            return empty;
+        }
+
+        // parse setting pairs
+        char* key = (char*)malloc(256 * sizeof(char)) ;
+        char* value = (char*)malloc(256 * sizeof(char));
+
+        bool pair_result = true;
+        while (pair_result) {
+            pair_result = parse_pair(key, value);
+            if (!pair_result) {
+                error("failed to parse pair");
+                return empty;
+            }
+            output[key] = value;
+            
+            token_stash = get_token();
+
+            if (token_stash == "}") {
+                if (_name != nullptr) strcpy(_name, name.c_str());
+                if (_type != nullptr) strcpy(_type, type.c_str());
+                return output;
+            } else if (token_stash == ",") {
+                // nothing
+            } else {
+                error("failed");
+                return empty;
+            }
+        }
+        free(key);
+        free(value);
+        
+        token_stash = get_token();
+        if (token_stash != "}") {
+            if (_name != nullptr) strcpy(_name, name.c_str());
+            if (_type != nullptr) strcpy(_type, type.c_str());
+            return output;
+        }
+    } else if (token_stash == "") {
+        // EOF
+        if (_iseof) *_iseof = true;
+        return empty;
+    } else {
+        error("settings type error, only support: keymap, brush, blendmode");
+        return empty;
+    }
+}
+

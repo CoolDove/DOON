@@ -56,13 +56,11 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
 
     long clock = std::clock();
     // scenes_["anji"]  = make_unique<Scene>("./res/textures/anji.png");
-    // scenes_["alp"]    = make_unique<Scene>("./res/textures/alp.png");
     // scenes_["dooload"] = make_unique<Scene>("d:/paintings/test.doo");
-    // scenes_["giant"] = make_unique<Scene>("d:/paintings/0116_TheLastGiant.png");
     // scenes_["big"] = make_unique<Scene>(512, 512, Col_RGBA{0x43, 0x32, 0x64, 0xff});
 
     if (scenes_.size() == 0) {
-        scenes_["void"] = make_unique<Scene>(4096, 4096, Col_RGBA{0x00, 0x00, 0x00, 0x00});
+        scenes_["void"] = make_unique<Scene>(2048, 2048, Col_RGBA{0x00, 0x00, 0x00, 0x00});
     }
     
     curr_scene_ = scenes_.begin()->second.get();
@@ -98,12 +96,14 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
 
     DLOG_TRACE("GL version: %d.%d\n", major, minor);
 
+    Application::action_load_config();
+
     // @Temp: load config here
-    Config config("./res/.doon");
-    std::string token;
-    while ((token = config.get_token()) != "") {
-        DLOG_DEBUG("token: %s", token.c_str());
-    }
+    // Config config("./res/.doon");
+    // std::string token;
+    // while ((token = config.get_token()) != "") {
+        // DLOG_DEBUG("token: %s", token.c_str());
+    // }
     
 }
 

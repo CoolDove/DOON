@@ -4,27 +4,27 @@ keymap: default
     <C-z>: undo,
     <C-S-z>: redo,
     <C-o>: open,
-    <C-n>: new_scene,
+    <C-n>: new_scene
 }
 
 keymap: brush
 {
     <a>: brush_size_decrease,
-    <s>: brush_size_increase,
+    <s>: brush_size_increase
 }
 
 brush: default
 {
     texture: brush_circle,
     shader: brush_default,
-    smooth: 1.0,
+    smooth: 1.0
 }
 
 brush: square
 {
     texture: brush_square,
     shader: brush_default,
-    smooth: 0.45,
+    smooth: 0.45
 }
 
 blendmode: default
