@@ -1,6 +1,7 @@
 #include "Application.h"
 #include <Core/Serialize.h>
 #include "DoveLog.hpp"
+#include <Core/Tool/Brush.h>
 #include <Core/Config.h>
 
 void Application::action_undo() {
@@ -20,15 +21,25 @@ void Application::action_save() {
 }
 
 void Application::action_load_config() {
+    using namespace Tool;
     Config config("./res/.doon");
 
-
     bool end = false;
+
     while (!end) {
         char* namebuf = (char*)malloc(256 * sizeof(char));
         char* typebuf = (char*)malloc(256 * sizeof(char));
         bool iseof = false;
         SettingPair pairs = config.parse_settings(&iseof, namebuf, typebuf);
+        if (!strcmp(typebuf, "brush")) {
+            Brush* brush = Brush::ConfigMake(&pairs);
+            if (brush != nullptr) {
+                Application::instance_->add_brush(namebuf, brush);
+                DLOG_DEBUG("brush: %s config loaded.", namebuf);
+            } else {
+                DLOG_ERROR("failed to load brush: %s", namebuf);
+            }
+        }
         free(namebuf);
         free(typebuf);
         if (iseof) end = true;

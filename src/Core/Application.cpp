@@ -32,6 +32,7 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
 :   window_info_{0, 0},
     inited_(false)
 {
+    using namespace Tool;
     if (!instance_) 
         instance_ = this;
 
@@ -69,17 +70,14 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     DLOG_TRACE("scene loaded, takes %ldms", clock);
 
     // init tools
-    tools_.brush = make_unique<Tool::Brush>(this);
-    tools_.brush->on_init();
-    curr_tool_ = tools_.brush.get();
-    curr_tool_->on_activate();
+    add_brush("default", new Brush(this));
+    curr_tool_ = brushes_["default"];
 
     renderer_->init();
 
     // @ActionList:
     using namespace Dove;
     action_list_ = std::make_unique<ActionList>();
-    // action_list_->invoke({Dove::KeyCode::A, Dove::ModKey::None});
     action_list_->register_key("def", ActionKey{KeyCode::Z, ModKey::Ctrl}, "undo");
     action_list_->register_key("def", ActionKey{KeyCode::Z, ModKey::Ctrl|ModKey::Shift}, "redo");
     action_list_->register_key("def", ActionKey{KeyCode::S, ModKey::Ctrl}, "save");
@@ -97,17 +95,12 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     DLOG_TRACE("GL version: %d.%d\n", major, minor);
 
     Application::action_load_config();
-
-    // @Temp: load config here
-    // Config config("./res/.doon");
-    // std::string token;
-    // while ((token = config.get_token()) != "") {
-        // DLOG_DEBUG("token: %s", token.c_str());
-    // }
-    
 }
 
 Application::~Application() {
+    for (auto ite = brushes_.begin(); ite != brushes_.end(); ite++) {
+        delete ite->second;
+    }
 }
 
 void Application::run() {
@@ -268,6 +261,16 @@ void Application::init_dlog() {
     DLOG_TRACE("dlog inited");
 
     DLOG_INIT;
+}
+
+void Application::add_brush(const std::string& name, Tool::Brush* p_brush) {
+    if (p_brush == nullptr) return;
+    bool set_currtool = false;
+    if (brushes_.find(name) != brushes_.end()) {
+        if (curr_tool_ == brushes_[name]) set_currtool = true;
+        delete brushes_[name];
+    }
+    curr_tool_ = brushes_[name] = p_brush;
 }
 
 // @region: INIT

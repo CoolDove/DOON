@@ -8,6 +8,7 @@
 #include <Core/Image.h>
 #include <Core/Layer.h>
 #include <Base/General.h>
+#include <Core/Config.h>
 
 using DGL::Program;
 class Application;
@@ -21,11 +22,13 @@ struct BrushDap
     float radius;
 };
 
+
 class Brush : public Tool
 {
 public:
     Brush(Application* _app);
     ~Brush();
+    static Brush* ConfigMake(const SettingPair* p_setting);
 public:
     virtual void on_init();
     virtual void on_activate();
@@ -87,13 +90,14 @@ private:
     void flush_data();// bake brush layer to current layer and push brush command, then clear the brush layer
     
 private:
-    Dove::IRect2D draw_circle(int _x, int _y, int _r);
+    // Dove::IRect2D draw_circle(int _x, int _y, int _r);
 
     void clear_brush_tex(Col_RGBA color = {0x00, 0x00, 0x00, 0x00});
 
-    GLuint fbuf_brush_;
+    // GLuint fbuf_brush_;
     Application* app_;
     bool         holding_;
     DGL::Program* shader_;
 };
+
 }

@@ -15,7 +15,7 @@ keymap: brush
 
 brush: default
 {
-    texture: brush_circle,
+    texture: brush_circle_soft,
     shader: brush_default,
     smooth: 1.0
 }

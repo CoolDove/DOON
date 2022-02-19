@@ -35,19 +35,47 @@ namespace Tool
     shader_(nullptr)
     {
         DLOG_TRACE("brush constructed");
+
+        quad_.init({{ Attribute::POSITION, 3 }, { Attribute::UV, 2 }});
+        quad_.add_quad(1, 1, "brush");
+        quad_.upload();
+        brush_tex_ = app_->RES->GetGLTexture2D("brush_circle_soft");
+        shader_ = app_->RES->GetShader("brush");
+
+        // glCreateFramebuffers(1, &fbuf_brush_);
     }
     
     Brush::~Brush() {
     }
+
     void Brush::on_init() {
-        brush_tex_ = app_->RES->GetGLTexture2D("brush_circle_soft");
-        shader_ = app_->RES->GetShader("brush");
-        
-        quad_.init({{ Attribute::POSITION, 3 }, { Attribute::UV, 2 }});
-        quad_.add_quad(1, 1, "brush");
-        quad_.upload();
-        
-        glCreateFramebuffers(1, &fbuf_brush_);
+    }
+
+    Brush* Brush::ConfigMake(const SettingPair* p_settings) {
+        Application* app = Application::instance_;
+        Brush* brush = new Brush(app);
+        for (auto ite = p_settings->cbegin(); ite != p_settings->cend(); ite++) {
+            if (ite->first == "texture") {
+                auto tex = app->RES->GetGLTexture2D(ite->second);
+                if (tex != nullptr) {
+                    brush->brush_tex_ = tex;
+                    DLOG_DEBUG("set brush texture: %s", ite->second.c_str());
+                } else {
+                    DLOG_ERROR("failed to find texture \"%s\"", ite->second.c_str());
+                    delete brush;
+                    return nullptr;
+                }
+            } else if (ite->first == "shader") {
+                // TODO:
+            } else if (ite->first == "smooth") {
+                // TODO:
+            } else {
+                DLOG_ERROR("unexpected key: %s", ite->first.c_str());
+                delete brush;
+                return nullptr;
+            }
+        }
+        return brush;
     }
     
     void Brush::on_activate() {
