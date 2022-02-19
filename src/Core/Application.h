@@ -73,9 +73,10 @@ public:
     GLuint buf_tex_;
 
 public: 
+    void register_app_actions();
     static void action_undo();
     static void action_redo();
-    static void action_save();
+    static void action_save_current_scene();
     static void action_load_config();
 
 private:
@@ -87,5 +88,4 @@ private:
     void init_tablet();
 private:
     void gui_BrushChooser();
-    
 };

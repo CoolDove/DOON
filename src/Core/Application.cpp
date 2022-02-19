@@ -76,23 +76,8 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     renderer_->init();
 
     // @ActionList:
-    using namespace Dove;
     action_list_ = std::make_unique<ActionList>();
-    action_list_->register_key("def", ActionKey{KeyCode::Z, ModKey::Ctrl}, "undo");
-    action_list_->register_key("def", ActionKey{KeyCode::Z, ModKey::Ctrl|ModKey::Shift}, "redo");
-    action_list_->register_key("def", ActionKey{KeyCode::S, ModKey::Ctrl}, "save");
-    
-    action_list_->register_action("def", "undo", &Application::action_undo);
-    action_list_->register_action("def", "redo", &Application::action_redo);
-    action_list_->register_action("def", "save", &Application::action_save);
-
-//  @temporary: check the version
-    GLint major;
-    GLint minor;
-    glGetIntegerv(GL_MAJOR_VERSION, &major);
-    glGetIntegerv(GL_MINOR_VERSION, &minor);
-
-    DLOG_TRACE("GL version: %d.%d\n", major, minor);
+    register_app_actions();
 
     Application::action_load_config();
 }
@@ -223,8 +208,8 @@ void Application::render_ui() {
         ImGui::LabelText("canvas size",  "-%d * %d-", curr_scene_->info_.width, curr_scene_->info_.height);
         ImGui::EndGroup();
 
-        auto* calls = &action_list_->call_pages_["def"];
-        auto* actions = &action_list_->action_pages_["def"];
+        auto* calls = &action_list_->key_pages_["default"];
+        auto* actions = &action_list_->action_map_;
 
         for (auto ite = calls->begin(); ite != calls->end(); ite++) {
             auto action_ite = actions->find(ite->second);
