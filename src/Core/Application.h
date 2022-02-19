@@ -85,4 +85,7 @@ private:
 
     void init_tools();
     void init_tablet();
+private:
+    void gui_BrushChooser();
+    
 };

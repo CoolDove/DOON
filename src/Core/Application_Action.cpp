@@ -35,7 +35,7 @@ void Application::action_load_config() {
             Brush* brush = Brush::ConfigMake(&pairs);
             if (brush != nullptr) {
                 Application::instance_->add_brush(namebuf, brush);
-                DLOG_DEBUG("brush: %s config loaded.", namebuf);
+                DLOG_DEBUG("brush \"%s\" loaded.", namebuf);
             } else {
                 DLOG_ERROR("failed to load brush: %s", namebuf);
             }

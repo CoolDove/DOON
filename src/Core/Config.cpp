@@ -25,7 +25,7 @@ static bool valid_name_char(char c) {
 
 std::string Config::get_token() {
     int next = ' ';
-    while (next == ' ' || next == '\n' ) {
+    while (next == ' ' || next == '\n' || next == '\t') {
         next = fgetc(file);
     }
     

@@ -34,15 +34,11 @@ namespace Tool
     size_max_(20),
     shader_(nullptr)
     {
-        DLOG_TRACE("brush constructed");
-
         quad_.init({{ Attribute::POSITION, 3 }, { Attribute::UV, 2 }});
         quad_.add_quad(1, 1, "brush");
         quad_.upload();
         brush_tex_ = app_->RES->GetGLTexture2D("brush_circle_soft");
-        shader_ = app_->RES->GetShader("brush");
-
-        // glCreateFramebuffers(1, &fbuf_brush_);
+        shader_ = app_->RES->GetShader("brush_default");
     }
     
     Brush::~Brush() {
@@ -59,13 +55,20 @@ namespace Tool
                 auto tex = app->RES->GetGLTexture2D(ite->second);
                 if (tex != nullptr) {
                     brush->brush_tex_ = tex;
-                    DLOG_DEBUG("set brush texture: %s", ite->second.c_str());
                 } else {
                     DLOG_ERROR("failed to find texture \"%s\"", ite->second.c_str());
                     delete brush;
                     return nullptr;
                 }
             } else if (ite->first == "shader") {
+                auto shader = app->RES->GetShader(ite->second);
+                if (shader != nullptr) {
+                    brush->shader_ = shader;
+                } else {
+                    DLOG_ERROR("failed to find shader \"%s\"", ite->second.c_str());
+                    delete brush;
+                    return nullptr;
+                }
                 // TODO:
             } else if (ite->first == "smooth") {
                 // TODO:
@@ -214,10 +217,10 @@ namespace Tool
         if (daps_.size() == 0) return;
         using namespace DGL;
         
-        auto* shader = app_->RES->GetShader("dap");
+        auto* shader = shader_;
 
         if (!shader) {
-            DLOG_ERROR("failed to find shader: dap");
+            DLOG_ERROR("failed to find brush shader");
             return;
         }
 

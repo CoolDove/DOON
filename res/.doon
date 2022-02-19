@@ -15,9 +15,29 @@ keymap: brush
 
 brush: default
 {
-    texture: brush_circle_soft,
+    texture: brush_circle,
     shader: brush_default,
     smooth: 1.0
+}
+brush: add
+{
+    texture: brush_circle_soft,
+	shader: brush_add,
+	smooth: 1.0
+}
+
+brush: rast
+{
+    texture: brush_circle_soft,
+	shader: brush_rast,
+	smooth: 1.0
+}
+
+brush: soft
+{
+    texture: brush_circle_soft,
+	shader: brush_default,
+	smooth: 1.0
 }
 
 brush: square

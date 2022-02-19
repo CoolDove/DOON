@@ -90,11 +90,8 @@ private:
     void flush_data();// bake brush layer to current layer and push brush command, then clear the brush layer
     
 private:
-    // Dove::IRect2D draw_circle(int _x, int _y, int _r);
-
     void clear_brush_tex(Col_RGBA color = {0x00, 0x00, 0x00, 0x00});
 
-    // GLuint fbuf_brush_;
     Application* app_;
     bool         holding_;
     DGL::Program* shader_;

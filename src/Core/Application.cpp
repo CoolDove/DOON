@@ -136,7 +136,6 @@ void Application::render_ui() {
 
     ImGui::NewFrame();
     {
-
         if (ImGui::CollapsingHeader("System")) {
             static char load_path[256] = "";
             ImGui::InputText("Path", load_path, 256);
@@ -148,6 +147,8 @@ void Application::render_ui() {
         }
 
         if (ImGui::Begin("panel")) {
+            gui_BrushChooser();
+            
             if (ImGui::CollapsingHeader("cam")) {
                 float cam_region = 0.5f * glm::max(curr_scene_->info_.width, curr_scene_->info_.height);
                 ImGui::DragFloat2("cam_pos", (float*)&cam->position_, 1.0f, -cam_region, cam_region);
