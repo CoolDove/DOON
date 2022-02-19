@@ -30,6 +30,7 @@ namespace Tool
     col_{0xff,0xff,0xff,0xff},
     size_min_scale_(0.01f),
     distance_(3.0),
+    smooth_(1.0),
     painting_region_{0},
     size_max_(20),
     shader_(nullptr)
@@ -69,9 +70,23 @@ namespace Tool
                     delete brush;
                     return nullptr;
                 }
-                // TODO:
             } else if (ite->first == "smooth") {
-                // TODO:
+                float smooth_value;
+                bool good = true;
+                try {
+                    size_t read = 0;
+                    smooth_value = stof(ite->second, &read);
+                    if (ite->second.size() != read) good = false;
+                } catch (std::invalid_argument) {
+                    good = false;
+                }
+                if (!good) {
+                    DLOG_ERROR("failed to parse \"%s\" to a float", ite->second);
+                    return nullptr;
+                } else {
+                    brush->smooth_ = smooth_value;
+                }
+
             } else {
                 DLOG_ERROR("unexpected key: %s", ite->first.c_str());
                 delete brush;

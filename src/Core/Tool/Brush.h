@@ -41,9 +41,10 @@ public:
     virtual void on_update();
 public:
     // @BrushInfo:
-    int      size_max_;
-    float    size_min_scale_;
-    float    distance_;
+    int   size_max_;
+    float size_min_scale_;
+    float distance_;
+    float smooth_;
 
     Col_RGBA col_;
 

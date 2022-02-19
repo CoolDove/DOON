@@ -37,7 +37,6 @@ void main() {
     float r = 0.0;
     if (rast.x == rast.y) r = 1.0;
     alpha *= r;
-    // col = vec3(r, r, r);
 
     FragColor = vec4(col, alpha);
 }
