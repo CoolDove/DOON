@@ -30,24 +30,70 @@ namespace Tool
     col_{0xff,0xff,0xff,0xff},
     size_min_scale_(0.01f),
     distance_(3.0),
+    smooth_(1.0),
     painting_region_{0},
     size_max_(20),
     shader_(nullptr)
     {
-        DLOG_TRACE("brush constructed");
+        quad_.init({{ Attribute::POSITION, 3 }, { Attribute::UV, 2 }});
+        quad_.add_quad(1, 1, "brush");
+        quad_.upload();
+        brush_tex_ = app_->RES->GetGLTexture2D("brush_circle_soft");
+        shader_ = app_->RES->GetShader("brush_default");
     }
     
     Brush::~Brush() {
     }
+
     void Brush::on_init() {
-        brush_tex_ = app_->RES->GetGLTexture2D("brush_circle_soft");
-        shader_ = app_->RES->GetShader("brush");
-        
-        quad_.init({{ Attribute::POSITION, 3 }, { Attribute::UV, 2 }});
-        quad_.add_quad(1, 1, "brush");
-        quad_.upload();
-        
-        glCreateFramebuffers(1, &fbuf_brush_);
+    }
+
+    Brush* Brush::ConfigMake(const SettingPair* p_settings) {
+        Application* app = Application::instance_;
+        Brush* brush = new Brush(app);
+        for (auto ite = p_settings->cbegin(); ite != p_settings->cend(); ite++) {
+            if (ite->first == "texture") {
+                auto tex = app->RES->GetGLTexture2D(ite->second);
+                if (tex != nullptr) {
+                    brush->brush_tex_ = tex;
+                } else {
+                    DLOG_ERROR("failed to find texture \"%s\"", ite->second.c_str());
+                    delete brush;
+                    return nullptr;
+                }
+            } else if (ite->first == "shader") {
+                auto shader = app->RES->GetShader(ite->second);
+                if (shader != nullptr) {
+                    brush->shader_ = shader;
+                } else {
+                    DLOG_ERROR("failed to find shader \"%s\"", ite->second.c_str());
+                    delete brush;
+                    return nullptr;
+                }
+            } else if (ite->first == "smooth") {
+                float smooth_value;
+                bool good = true;
+                try {
+                    size_t read = 0;
+                    smooth_value = stof(ite->second, &read);
+                    if (ite->second.size() != read) good = false;
+                } catch (std::invalid_argument) {
+                    good = false;
+                }
+                if (!good) {
+                    DLOG_ERROR("failed to parse \"%s\" to a float", ite->second);
+                    return nullptr;
+                } else {
+                    brush->smooth_ = smooth_value;
+                }
+
+            } else {
+                DLOG_ERROR("unexpected key: %s", ite->first.c_str());
+                delete brush;
+                return nullptr;
+            }
+        }
+        return brush;
     }
     
     void Brush::on_activate() {
@@ -186,10 +232,10 @@ namespace Tool
         if (daps_.size() == 0) return;
         using namespace DGL;
         
-        auto* shader = app_->RES->GetShader("dap");
+        auto* shader = shader_;
 
         if (!shader) {
-            DLOG_ERROR("failed to find shader: dap");
+            DLOG_ERROR("failed to find brush shader");
             return;
         }
 

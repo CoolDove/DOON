@@ -4,6 +4,7 @@
 #include <string>
 #include <unordered_map>
 #include <Base/Keys.h>
+#include <Core/Config.h>
 
 enum class ActionArgType : uint32_t {
     INT, 
@@ -11,14 +12,6 @@ enum class ActionArgType : uint32_t {
     STRING
 };
 
-struct ActionArgInfo {
-    uint32_t count;
-    std::vector<ActionArgType> types;
-};
-inline bool operator==(const ActionArgInfo& _lhs, ActionArgInfo _rhs) {
-    return _lhs.count == _rhs.count &&
-           _lhs.types == _rhs.types;
-};
 
 struct ActionKey {
     Dove::KeyCode key;
@@ -64,7 +57,7 @@ using Action = void(*)();
 // use action
 class ActionList {
 private:
-using ActionNameMap = std::unordered_map<ActionKey, std::string>;
+using ActionNameMap = std::unordered_map<ActionKey, std::string>;// ActionKey: key, string: target action name
 using ActionMap     = std::unordered_map<std::string, Action>;
 public:
     ActionList();
@@ -73,16 +66,16 @@ public:
     Action get_action(ActionKey _key);
     bool invoke(ActionKey _key);
 
-    void register_action(const std::string& _page, const std::string& _name, Action _action);
     void switch_page(const std::string& _page_name);
-
-// NOTE: register_key should be controlled by parser, so it will be private later
+    void register_action(const std::string& _name, Action _action);
     void register_key(const std::string& _page, ActionKey _key, const std::string& _command);
 
     void load_config();
-
+    bool config_keymap(const SettingPair* settings, const char* map_name);
+private:
+    ActionKey parse_actionkey(const std::string& str, bool* _good);
 public:
     std::string curr_page_;
-    std::unordered_map<std::string, ActionNameMap> call_pages_;
-    std::unordered_map<std::string, ActionMap>     action_pages_;
+    std::unordered_map<std::string, ActionNameMap> key_pages_;// a bunch of key map
+    ActionMap action_map_;
 };

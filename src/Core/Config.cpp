@@ -7,14 +7,14 @@ Config::Config(const char* path) {
         error("failed to find config file: %s");
         return;
     }
+    file_opened = true;
     good_ = true;
     this->path = path;
 }
 
 Config::~Config() {
-    if (good_) fclose(file);
+    if (file_opened) fclose(file);
 }
-
 
 static bool valid_name_char(char c) {
     return (c >= '0' && c <= '9') ||
@@ -25,7 +25,7 @@ static bool valid_name_char(char c) {
 
 std::string Config::get_token() {
     int next = ' ';
-    while (next == ' ' || next == '\n' ) {
+    while (next == ' ' || next == '\n' || next == '\t') {
         next = fgetc(file);
     }
     
@@ -56,7 +56,6 @@ bool Config::parse_pair(char* _key, char* _value) {
     token = get_token();
     if (token == ":") {
         token = get_token();
-        // TODO:
         strcpy(_key, key_stash.c_str());
         strcpy(_value, token.c_str());
         return true;
@@ -65,10 +64,13 @@ bool Config::parse_pair(char* _key, char* _value) {
     }
 }
 
-SettingPair Config::parse_settings(bool* _iseof, char* _name, char* _type) {
+SettingPair Config::parse_settings(bool* _end, char* _name, char* _type) {
     SettingPair empty;
 
-    if (!good_) return empty;
+    if (!good_) {
+        if (_end) *_end = true;
+        return empty;
+    }
 
     SettingPair output;
     std::string type;
@@ -129,13 +131,11 @@ SettingPair Config::parse_settings(bool* _iseof, char* _name, char* _type) {
             if (_type != nullptr) strcpy(_type, type.c_str());
             return output;
         }
-    } else if (token_stash == "") {
-        // EOF
-        if (_iseof) *_iseof = true;
+    } else if (token_stash == "") {// EOF
+        if (_end) *_end = true;
         return empty;
     } else {
         error("settings type error, only support: keymap, brush, blendmode");
         return empty;
     }
 }
-

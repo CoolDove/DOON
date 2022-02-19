@@ -13,6 +13,7 @@ enum class ModKey : uint32_t {
 };BIT_MASK_ENUM(ModKey)
 
 enum class KeyCode : uint32_t{
+    None = 0u,
     A = 10u,
     B = 11u,
     C = 12u,
