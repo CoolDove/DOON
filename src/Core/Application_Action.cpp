@@ -17,6 +17,7 @@ void Application::register_app_actions() {
     alist->register_action("save_current_scene", action_save_current_scene);
     alist->register_action("save_current_scene_as", action_save_current_scene_as);
     alist->register_action("open_file", action_open_file);
+    alist->register_action("new_scene", action_new_scene);
     alist->register_action("load_config", action_load_config);
 }
 
@@ -31,13 +32,29 @@ void Application::action_redo() {
 }
 
 void Application::action_save_current_scene() {
-    if (instance_ == nullptr || instance_->curr_scene_ == nullptr) return;
-    DooWriter writer(instance_->curr_scene_);
-    writer.write("d:/paintings/test.doo");
+    auto app = Application::instance_;
+    Scene* scn = app->curr_scene_;
+    if (scn == nullptr) return;
+
+    if (scn->save_path_ != "") {
+        DooWriter writer(app->curr_scene_);
+        writer.write(scn->save_path_.c_str());
+    } else {
+        action_save_current_scene_as();
+    }
 }
 
 void Application::action_save_current_scene_as() {
-    // TODO: 
+    auto app = Application::instance_;
+    Scene* scn = app->curr_scene_;
+    if (scn == nullptr) return;
+
+    std::string file = OS::choose_file_save();
+    if (file != "") {
+        scn->save_path_ = file;
+        DooWriter writer(app->curr_scene_);
+        writer.write(scn->save_path_.c_str());
+    }
 }
 
 void Application::action_open_file() {
@@ -47,7 +64,13 @@ void Application::action_open_file() {
 
     if (filename != "") {
         app->curr_scene_ = app->add_scene(filename);
+        std::string ext = filename.substr(filename.size() - 3 ,filename.size());
+        if (ext == "doo") app->curr_scene_->save_path_ = filename;
     }
+}
+
+void Application::action_new_scene() {
+    // TODO: action new scene 
 }
 
 void Application::action_load_config() {
@@ -72,7 +95,6 @@ void Application::action_load_config() {
                 DLOG_ERROR("failed to load brush: %s", namebuf);
             }
         } else if (!strcmp(typebuf, "keymap")) {
-            // TODO: finish this
             ActionList* actions = app->action_list_.get();
             if (actions->config_keymap(&pairs, namebuf)) {
                 // success
@@ -81,7 +103,7 @@ void Application::action_load_config() {
             }
             
         } else if (!strcmp(typebuf, "blendmode")) {
-            // TODO: finish this
+            // TODO: blend mode load config
         } else {
             // nothing
         }

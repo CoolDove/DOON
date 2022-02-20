@@ -1,6 +1,7 @@
 keymap: default
 {
     <C-s>: save_current_scene,
+    <C-S-s>: save_current_scene_as,
     <M-s>: save_all_scenes,
     <C-n>: new_scene,
     <C-o>: open_file,

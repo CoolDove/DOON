@@ -50,6 +50,8 @@ public:
         int width;
         int height;
     } info_;
+
+    std::string save_path_ = "";
 private:
     void create_scene(uint32_t _width, uint32_t _height, Col_RGBA _col);
     bool load_scene(const char* path);

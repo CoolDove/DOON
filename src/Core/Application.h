@@ -85,6 +85,7 @@ public:
     static void action_save_current_scene();
     static void action_save_current_scene_as();
     static void action_open_file();
+    static void action_new_scene();
     static void action_load_config();
 
 private:

@@ -129,6 +129,7 @@ void Application::remove_scene(const std::string& name) {
     if (f != scenes_.end()) {
         delete f->second;
         scenes_.erase(f);
+        curr_scene_ = scenes_["void"];
     }
 }
 
