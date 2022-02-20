@@ -1,10 +1,11 @@
 keymap: default
 {
     <C-s>: save_current_scene,
+    <M-s>: save_all_scenes,
+    <C-n>: new_scene,
+    <C-o>: open_file,
     <C-z>: undo,
-    <C-S-z>: redo,
-    <C-o>: open,
-    <C-n>: new_scene
+    <C-S-z>: redo
 }
 
 brush: default

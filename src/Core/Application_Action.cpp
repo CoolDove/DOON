@@ -3,6 +3,7 @@
 #include "DoveLog.hpp"
 #include <Core/Tool/Brush.h>
 #include <Core/Config.h>
+#include <Base/Win_FileChooser.h>
 
 
 void Application::register_app_actions() {
@@ -14,6 +15,8 @@ void Application::register_app_actions() {
     alist->register_action("undo", action_undo);
     alist->register_action("redo", action_redo);
     alist->register_action("save_current_scene", action_save_current_scene);
+    alist->register_action("save_current_scene_as", action_save_current_scene_as);
+    alist->register_action("open_file", action_open_file);
     alist->register_action("load_config", action_load_config);
 }
 
@@ -31,6 +34,14 @@ void Application::action_save_current_scene() {
     if (instance_ == nullptr || instance_->curr_scene_ == nullptr) return;
     DooWriter writer(instance_->curr_scene_);
     writer.write("d:/paintings/test.doo");
+}
+
+void Application::action_save_current_scene_as() {
+    // TODO: 
+}
+
+void Application::action_open_file() {
+    DLOG_DEBUG(OS::choose_file_open().c_str());
 }
 
 void Application::action_load_config() {
@@ -66,7 +77,7 @@ void Application::action_load_config() {
         } else if (!strcmp(typebuf, "blendmode")) {
             // TODO: finish this
         } else {
-            DLOG_ERROR("unrecognized setting type: %s, only supports: brush, keymap, blendmode", typebuf);
+            // nothing
         }
         free(namebuf);
         free(typebuf);
