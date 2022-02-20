@@ -41,7 +41,13 @@ void Application::action_save_current_scene_as() {
 }
 
 void Application::action_open_file() {
-    DLOG_DEBUG(OS::choose_file_open().c_str());
+    using namespace std;
+    auto app = Application::instance_;
+    string filename = OS::choose_file_open();
+
+    if (filename != "") {
+        app->curr_scene_ = app->add_scene(filename);
+    }
 }
 
 void Application::action_load_config() {

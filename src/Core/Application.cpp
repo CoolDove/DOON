@@ -56,15 +56,15 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
 
 
     long clock = std::clock();
-    // scenes_["anji"]  = make_unique<Scene>("./res/textures/anji.png");
+    // scenes_["anji"]  =   make_unique<Scene>("./res/textures/anji.png");
     // scenes_["dooload"] = make_unique<Scene>("d:/paintings/test.doo");
-    // scenes_["big"] = make_unique<Scene>(512, 512, Col_RGBA{0x43, 0x32, 0x64, 0xff});
+    // scenes_["big"] =     make_unique<Scene>(512, 512, Col_RGBA{0x43, 0x32, 0x64, 0xff});
 
     if (scenes_.size() == 0) {
-        scenes_["void"] = make_unique<Scene>(2048, 2048, Col_RGBA{0x00, 0x00, 0x00, 0x00});
+        add_scene("void", 2048, 2048, Col_RGBA{0x00, 0x00, 0x00, 0x00});
     }
     
-    curr_scene_ = scenes_.begin()->second.get();
+    curr_scene_ = scenes_.begin()->second;
     clock = std::clock() - clock;
 
     DLOG_TRACE("scene loaded, takes %ldms", clock);
@@ -112,6 +112,35 @@ void Application::run() {
     ImGui::DestroyContext();
 }
 
+Scene* Application::add_scene(const std::string& path) {
+    remove_scene(path);
+    scenes_[path] = new Scene(path.c_str());
+    return scenes_[path];
+}
+
+Scene* Application::add_scene(const std::string& name, uint32_t width, uint32_t height, Col_RGBA col) {
+    remove_scene(name);
+    scenes_[name] = new Scene(width, height, col);
+    return scenes_[name];
+}
+void Application::remove_scene(const std::string& name) {
+    if (name == "void") return;
+    auto f = scenes_.find(name);
+    if (f != scenes_.end()) {
+        delete f->second;
+        scenes_.erase(f);
+    }
+}
+
+void Application::clear_scenes() {
+    for (auto ite = scenes_.begin(); ite != scenes_.end(); ite++) {
+        if (ite->first != "void") {
+            delete ite->second;
+            scenes_.erase(ite);
+        }
+    }
+}
+
 void Application::render_ui() {
     DGL::Camera* cam = &curr_scene_->camera_;
 
@@ -121,16 +150,6 @@ void Application::render_ui() {
 
     ImGui::NewFrame();
     {
-        if (ImGui::CollapsingHeader("System")) {
-            static char load_path[256] = "";
-            ImGui::InputText("Path", load_path, 256);
-            static char load_name[256] = "";
-            ImGui::InputText("Name", load_name, 256);
-            if (ImGui::Button("Load")) {
-                scenes_[load_name] = make_unique<Scene>(load_path);
-            }
-        }
-
         if (ImGui::Begin("panel")) {
             gui_BrushChooser();
             
@@ -232,9 +251,7 @@ void Application::render_ui() {
 
 void Application::change_scene(const std::string& _name) {
     if (scenes_.find(_name) != scenes_.end()) {
-        curr_scene_ = scenes_[_name].get();
-
-        // renderer_->recreate_canvas_batch();
+        curr_scene_ = scenes_[_name];
     }
 }
 

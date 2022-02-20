@@ -38,10 +38,16 @@ public:
     void render_ui();
 
     void change_scene(const std::string& _name);
+
+    Scene* add_scene(const std::string& path);
+    Scene* add_scene(const std::string& name, uint32_t width, uint32_t height, Col_RGBA col);
+    void remove_scene(const std::string& name);
+    void clear_scenes();
+
     void add_brush(const std::string& name, Tool::Brush* p_brush);
 
     Scene* curr_scene_;
-    unordered_map<string, unique_ptr<Scene>> scenes_;
+    unordered_map<string, Scene*> scenes_;
 
     unordered_map<string, Tool::Brush*> brushes_;
     
