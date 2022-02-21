@@ -20,10 +20,18 @@
 #include <Core/DOONRes.h>
 #include <Core/Renderer.h>
 #include <Core/History.h>
+#include <Core/Input.h>
 
 using namespace DGL;
 namespace Tool
 {
+    static glm::vec2 glmvec2(Dove::IVector2D vec) {
+        return { (float)vec.x, (float)vec.y };
+    }
+    static Dove::IVector2D dovec2(glm::vec2 vec) {
+        return { (int)vec.x, (int)vec.y };
+    }
+    
     Brush::Brush(Application* _app)
         :   app_(_app),
     holding_(false),
@@ -124,9 +132,8 @@ namespace Tool
         Dove::IVector2D canvas_pos;
         worldpos_to_canvaspos(_x, _y, (int*)&canvas_pos.x, (int*)&canvas_pos.y);
         
-        last_dap_pos_ = canvas_pos;
-        last_mouse_pos_ = canvas_pos;
-        last_brush_size_ = calculate_brush_size(&_info);
+        last_dap_.position = glmvec2(canvas_pos);
+        last_dap_.radius = calculate_brush_size(&_info);
     }
     
     void Brush::create_blend_assets() {
@@ -168,52 +175,41 @@ namespace Tool
         else if (blend_attaching_ == blend_tex_b_) blend_attaching_ = blend_tex_a_;
     }
     
-    static glm::vec2 glmvec2(Dove::IVector2D vec) {
-        return { (float)vec.x, (float)vec.y };
-    }
-    static Dove::IVector2D dovec2(glm::vec2 vec) {
-        return { (int)vec.x, (int)vec.y };
-    }
-    
     void Brush::generate_daps(Dove::IVector2D mouse_pos_canvas_space, const Input::PointerInfo* brush_info) {
         daps_.clear();
 
-        auto get_daprect = [](Dove::IVector2D pos, uint32_t brush_radius) -> Dove::IRect2D {
+        auto get_daprect = [](glm::vec2 pos, uint32_t brush_radius) -> Dove::IRect2D {
             using namespace Dove;
+            Dove::IVector2D dvecpos = dovec2(pos);
             IRect2D rect;
             uint32_t rect_size = (uint32_t)(1.425f * (float)brush_radius) + 1;
             if (rect_size % 2 == 1) rect_size += 1;
-            rect.position = { pos.x - (int)rect_size / 2, pos.y - (int)rect_size / 2 };
+            rect.position = { dvecpos.x - (int)rect_size / 2, dvecpos.y - (int)rect_size / 2 };
             rect.size = { rect_size, rect_size };
             return rect;
         };
 
         glm::vec2 mpos = glmvec2(mouse_pos_canvas_space);// current target
-        float dist = glm::clamp(distance_, 1.0f, distance_);
+        float dist = glm::clamp(distance_, 0.5f, distance_);
 
         float brush_size = calculate_brush_size(brush_info);
 
         #define DRAW_MULTI_DAPS
         #ifdef DRAW_MULTI_DAPS
-            // TODO: fix special situation for brush_distance==1
-            // NOTE: terrible temporary fix for infinity loop
             const static int MAX_STEP = 32;
             int step = 0;
             while (step < MAX_STEP) {
-                glm::vec2 last_pos_glm = glmvec2(last_dap_pos_);
-                float stepdistance = glm::distance(last_pos_glm, mpos);
+                // glm::vec2 last_pos_glm = glmvec2(last_dap_pos_);
+                float stepdistance = glm::distance(last_dap_.position, mpos);
                 if (stepdistance < dist) {
                     break;
                 }
-                glm::vec2 direction = glm::normalize(mpos - last_pos_glm);
-                last_dap_pos_ = dovec2(glmvec2(last_dap_pos_) + direction * dist);
-                BrushDap dap = {
-                    last_dap_pos_,
-                    0,
-                    brush_size
-                };
-                daps_.push_back(dap);
-                painting_region_ = Dove::merge_rect(painting_region_, get_daprect(dap.position, brush_size));
+                glm::vec2 direction = glm::normalize(mpos - last_dap_.position);
+                last_dap_.position += direction * dist;
+                last_dap_.radius = brush_size;
+
+                daps_.push_back(last_dap_);
+                painting_region_ = Dove::merge_rect(painting_region_, get_daprect(last_dap_.position, brush_size));
                 step++;
             }
         #else
@@ -329,7 +325,7 @@ namespace Tool
             flush_data();
             
             release_blend_assets();
-            last_dap_pos_ = { -1, -1 };
+            last_dap_.position = { -1.0f, -1.0f };
         }
     }
     
@@ -355,12 +351,11 @@ namespace Tool
         
         if (_info.btn_state.mouse_l || _info.pen_info.pressure > 0)
         {
-            // TODO: paint multiple brush ink dots
             Scene* scn = app_->curr_scene_;
             float pressure = _info.pen_info.pressure ? (float)_info.pen_info.pressure : 1024.0f;
             
             unsigned int brush_size = calculate_brush_size(&_info);
-            
+
             Dove::IVector2D canvas_pos;
             worldpos_to_canvaspos(_x, _y, (int*)&canvas_pos.x, (int*)&canvas_pos.y);
             

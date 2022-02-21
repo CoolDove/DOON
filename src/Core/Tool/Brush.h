@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "DGLCore/GLGeoBatch.h"
 #include "Tool.h"
+#include <glm/glm.hpp>
 #include <Core/Color.h>
 #include <DGLCore/GLProgram.h>
 #include <DGLCore/GLTexture.h>
@@ -17,7 +18,7 @@ namespace Tool
 
 struct BrushDap
 {
-    Dove::IVector2D position;
+    glm::vec2 position;
     float radians;
     float radius;
 };
@@ -41,6 +42,7 @@ public:
     virtual void on_update();
 public:
     // @BrushInfo:
+    BrushDap follower_;
     int   size_max_;
     float size_min_scale_;
     float distance_;
@@ -78,10 +80,10 @@ private: // blend things
 private:
     std::list<BrushDap> mpoints_;// store the mouse point info
     std::list<BrushDap> daps_;// store the interpolated points since last mouse point pushed
-    Dove::IVector2D last_dap_pos_;
-    float last_brush_size_;
+    BrushDap last_mouse_dap_;
+    BrushDap last_dap_;
 
-    Dove::IVector2D last_mouse_pos_;
+    // Dove::IVector2D last_mouse_pos_;
 
     float calculate_brush_size(const Input::PointerInfo* _info);
     void draw_daps();// draw every dap in the daps and clear the daps
