@@ -54,11 +54,12 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     RES->SetResourcePath("./res");
     RES->LoadResourcesPath();
 
+    init_tools();
 
     long clock = std::clock();
-    // scenes_["anji"]  =   make_unique<Scene>("./res/textures/anji.png");
+    // scenes_["anji"]    = make_unique<Scene>("./res/textures/anji.png");
     // scenes_["dooload"] = make_unique<Scene>("d:/paintings/test.doo");
-    // scenes_["big"] =     make_unique<Scene>(512, 512, Col_RGBA{0x43, 0x32, 0x64, 0xff});
+    // scenes_["big"]     = make_unique<Scene>(512, 512, Col_RGBA{0x43, 0x32, 0x64, 0xff});
 
     if (scenes_.size() == 0) {
         add_scene("void", 2048, 2048, Col_RGBA{0x00, 0x00, 0x00, 0x00});
@@ -68,10 +69,6 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     clock = std::clock() - clock;
 
     DLOG_TRACE("scene loaded, takes %ldms", clock);
-
-    // init tools
-    add_brush("default", new Brush(this));
-    curr_tool_ = brushes_["default"];
 
     renderer_->init();
 
@@ -83,9 +80,7 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
 }
 
 Application::~Application() {
-    for (auto ite = brushes_.begin(); ite != brushes_.end(); ite++) {
-        delete ite->second;
-    }
+    release_tools();
 }
 
 void Application::run() {
@@ -153,13 +148,7 @@ void Application::render_ui() {
     {
         if (ImGui::Begin("panel")) {
             gui_ColorPicker();
-            gui_BrushChooser();
-            
-            // if (ImGui::CollapsingHeader("cam")) {
-                // float cam_region = 0.5f * glm::max(curr_scene_->info_.width, curr_scene_->info_.height);
-                // ImGui::DragFloat2("cam_pos", (float*)&cam->position_, 1.0f, -cam_region, cam_region);
-                // ImGui::DragFloat("cam_size", &cam->size_, 0.1f, 0.1f, 10.0f);
-            // }
+            gui_ToolsChooser();
 
             if (ImGui::CollapsingHeader("tool")) {
                 if (dynamic_cast<Tool::Brush*>(curr_tool_)) {
@@ -268,6 +257,38 @@ void Application::add_brush(const std::string& name, Tool::Brush* p_brush) {
 }
 
 // @region: INIT
+void Application::init_tools() {
+    using namespace Tool;
+    curr_tool_ = nullptr;
+    add_brush("default", new Brush(this));
+
+    tools_.color_picker = new ColorPicker();
+
+    curr_tool_ = brushes_["default"];
+    curr_tool_->on_activate();
+}
+
+void Application::release_tools() {
+    if (tools_.color_picker) 
+        delete tools_.color_picker;
+
+    // release brushes
+    for (auto ite = brushes_.begin(); ite != brushes_.end(); ite++) {
+        delete ite->second;
+    }
+}
+
+void Application::choose_tool(Tool::Tool* target, bool invoke_callback) {
+    if (target == nullptr || target == curr_tool_) return;
+    auto tool_before = curr_tool_;
+
+    curr_tool_ = target;
+    curr_tool_->on_activate();
+
+    if (tool_before != nullptr)
+        tool_before->on_deactivate();
+}
+
 void Application::init_window(HINSTANCE _instance, HINSTANCE _prev_instance, char* _cmd_line, int _show_code) {
     WNDCLASS wnd_class = {};
     wnd_class.style = CS_HREDRAW | CS_VREDRAW;

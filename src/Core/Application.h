@@ -46,6 +46,8 @@ public:
 
     void add_brush(const std::string& name, Tool::Brush* p_brush);
 
+    void choose_tool(Tool::Tool* target, bool invoke_callback = true);
+
     Scene* curr_scene_;
     unordered_map<string, Scene*> scenes_;
 
@@ -53,10 +55,8 @@ public:
     
     // @Tools:
     Tool::Tool*             curr_tool_;
-    struct {
-    // unique_ptr<Tool::Brush> brush;
-    // Tool::Brush*      brush;
-    // ...
+    struct Tools {
+        Tool::ColorPicker* color_picker;
     } tools_;
 
     unique_ptr<Renderer>    renderer_;
@@ -87,15 +87,16 @@ public:
     static void action_open_file();
     static void action_new_scene();
     static void action_load_config();
-
 private:
     void init_dlog();
     void init_window(HINSTANCE _instance, HINSTANCE _prev_instance, char* _cmd_line, int _show_code);
     void init_imgui();
 
     void init_tools();
+    void release_tools();
+
     void init_tablet();
 private:
-    void gui_BrushChooser();
+    void gui_ToolsChooser();
     void gui_ColorPicker();
 };
