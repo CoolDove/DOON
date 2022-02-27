@@ -152,28 +152,18 @@ void Application::render_ui() {
     ImGui::NewFrame();
     {
         if (ImGui::Begin("panel")) {
+            gui_ColorPicker();
             gui_BrushChooser();
             
-            if (ImGui::CollapsingHeader("cam")) {
-                float cam_region = 0.5f * glm::max(curr_scene_->info_.width, curr_scene_->info_.height);
-                ImGui::DragFloat2("cam_pos", (float*)&cam->position_, 1.0f, -cam_region, cam_region);
-                ImGui::DragFloat("cam_size", &cam->size_, 0.1f, 0.1f, 10.0f);
-            }
+            // if (ImGui::CollapsingHeader("cam")) {
+                // float cam_region = 0.5f * glm::max(curr_scene_->info_.width, curr_scene_->info_.height);
+                // ImGui::DragFloat2("cam_pos", (float*)&cam->position_, 1.0f, -cam_region, cam_region);
+                // ImGui::DragFloat("cam_size", &cam->size_, 0.1f, 0.1f, 10.0f);
+            // }
 
             if (ImGui::CollapsingHeader("tool")) {
                 if (dynamic_cast<Tool::Brush*>(curr_tool_)) {
                     Tool::Brush* brs = dynamic_cast<Tool::Brush*>(curr_tool_);
-                    static float bcol[4] = {1.0f,1.0f,1.0f,1.0f};
-                    ImGui::ColorEdit4("brush_col", bcol, ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_DisplayRGB);
-                    Col_RGBA color = {
-                        (unsigned char)(bcol[0] * 0xff),
-                        (unsigned char)(bcol[1] * 0xff),
-                        (unsigned char)(bcol[2] * 0xff),
-                        (unsigned char)(bcol[3] * 0xff)
-                    };
-
-                    if (brs->col_ != color) brs->col_ = color;
-
                     ImGui::DragInt("brush_size_max", &brs->size_max_, 0.1f, 1, 7000);
                     ImGui::DragFloat("brush_size_min", &brs->size_min_scale_, 0.01f, 0.0f, 1.0f);
                 }

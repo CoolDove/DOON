@@ -97,4 +97,5 @@ private:
     void init_tablet();
 private:
     void gui_BrushChooser();
+    void gui_ColorPicker();
 };
