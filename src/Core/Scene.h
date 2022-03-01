@@ -37,14 +37,25 @@ public:
     void mark_region(Dove::IRect2D _region);
     void clear_region();
 
-    Layer*        get_curr_layer() { return curr_layer_ite_->get(); };
-    Dove::IRect2D get_region() const { return region_; };
+    bool composed_dirt_ = true;
+
+    GLTexture2D*    get_composed_texture() {
+        if (composed_dirt_)
+            compose_texture();
+        return &composed_texture_;
+    }
+    void compose_texture();
+    
+    Layer*        get_curr_layer() { return curr_layer_ite_->get(); }
+    Dove::IRect2D get_region() const { return region_; }
     HistorySys*   get_history_sys() { return &history_sys_; }
+
 public:
     Camera      camera_;
 
-    LayerList   layers_;
+    LayerList        layers_;
     DGL::GLTexture2D brush_layer_;
+    DGL::GLTexture2D composed_texture_;
 
     struct {
         int width;
@@ -56,6 +67,7 @@ private:
     void create_scene(uint32_t _width, uint32_t _height, Col_RGBA _col);
     bool load_scene(const char* path);
     bool load_png(const char* path);
+
     bool load_doo(const char* path);
 private:
     HistorySys    history_sys_;

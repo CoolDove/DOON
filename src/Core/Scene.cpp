@@ -14,6 +14,7 @@
 #include <string>
 #include <stdint.h>
 #include <sys/stat.h>
+#include <Core/Renderer.h>
 
 Scene::Scene(const char* _path)
 :   region_{0}
@@ -44,6 +45,9 @@ void Scene::create_scene(uint32_t _width, uint32_t _height, Col_RGBA _col) {
 
     brush_layer_.init();
     brush_layer_.allocate(1, SizedInternalFormat::RGBA8, _width, _height, PixFormat::RGBA, PixType::UNSIGNED_BYTE);
+
+    composed_texture_.init();
+    composed_texture_.allocate(1, SizedInternalFormat::RGBA8, _width, _height, PixFormat::RGBA, PixType::UNSIGNED_BYTE);
 
     BufFlag flag = BufFlag::DYNAMIC_STORAGE_BIT|
                    BufFlag::MAP_READ_BIT|
@@ -77,6 +81,9 @@ bool Scene::load_scene(const char* path) {
     brush_layer_.init();
     brush_layer_.allocate(1, SizedInternalFormat::RGBA8, info_.width, info_.height, PixFormat::RGBA, PixType::UNSIGNED_BYTE);
 
+    composed_texture_.init();
+    composed_texture_.allocate(1, SizedInternalFormat::RGBA8, info_.width, info_.height, PixFormat::RGBA, PixType::UNSIGNED_BYTE);
+
     return true;
 }
 
@@ -93,6 +100,90 @@ bool Scene::load_png(const char* path) {
 
 
     return true;
+}
+
+void Scene::compose_texture() {
+    using namespace DGL;
+
+    GLint fbuf_stash = GLFramebuffer::current_framebuffer();
+
+    GLFramebuffer fbuf_paint;
+    fbuf_paint.init();
+    fbuf_paint.bind();
+
+    GLTexture2D buftex_a;
+    buftex_a.init();
+    buftex_a.allocate(1, SizedInternalFormat::RGBA8,
+                      info_.width, info_.height,
+                      PixFormat::RGBA, PixType::UNSIGNED_BYTE);
+
+    GLTexture2D buftex_b;
+    buftex_b.init();
+    buftex_b.allocate(1, SizedInternalFormat::RGBA8,
+                      info_.width, info_.height,
+                      PixFormat::RGBA, PixType::UNSIGNED_BYTE);
+
+    GLTexture2D* buftex_target = &buftex_a;
+    GLTexture2D* buftex_other = &buftex_b;
+
+    auto swap_fbuf = [&]() {
+        if (buftex_target == &buftex_a) {
+            buftex_target = &buftex_b;
+            buftex_other = &buftex_a;
+        } else {
+            buftex_target = &buftex_a;
+            buftex_other = &buftex_b;
+        }
+    };
+
+    // compose layers to paint_tex_
+    glDisable(GL_BLEND);
+
+    fbuf_paint.bind();
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    fbuf_paint.attach(buftex_target);
+    glClear(GL_COLOR_BUFFER_BIT);
+    fbuf_paint.attach(buftex_other);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glDepthFunc(GL_ALWAYS);
+
+    auto paint_shader = Application::instance_->RES->GetShader("paint");
+    paint_shader->bind();
+    glViewport(0, 0, info_.width, info_.height);
+
+    for (auto const& layer : layers_) {
+        swap_fbuf();
+        fbuf_paint.attach(buftex_target);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        (*layer).tex_->bind(0);
+        paint_shader->uniform_i("_tex", 0);
+        buftex_other->bind(1);
+        paint_shader->uniform_i("_paintbuffer", 1);
+        Application::instance_->renderer_->get_canvas_quad()->draw_batch();
+
+        // render brush layer
+        if (&(*layer) == get_curr_layer()) {
+            swap_fbuf();
+            fbuf_paint.attach(buftex_target);
+            glClear(GL_COLOR_BUFFER_BIT);
+
+            brush_layer_.bind(0);
+            buftex_other->bind(1);
+            Application::instance_->renderer_->get_canvas_quad()->draw_batch();
+        }
+    }
+
+    Dove::IRect2D rect;
+    rect.posx = rect.posy = 0;
+    rect.width = info_.width;
+    rect.height = info_.height;
+    Renderer::blit(buftex_target, &composed_texture_, rect, rect);
+
+    composed_dirt_ = false;
+
+    glBindFramebuffer(GL_FRAMEBUFFER, fbuf_stash);
+
 }
 
 bool Scene::load_doo(const char* path) {

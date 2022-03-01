@@ -265,6 +265,7 @@ namespace Tool
             quad_.draw_batch();
             Renderer::blit(&scn->brush_layer_, blend_other_tex(), painting_region_, painting_region_);
         }
+        scn->composed_dirt_ = true;
     }
     
     void Brush::flush_data() {
