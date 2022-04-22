@@ -34,7 +34,6 @@ brush: rast
 	smooth: 0.8
 }
 
-
 brush: square
 {
     texture: brush_square,
@@ -44,9 +43,4 @@ brush: square
 blendmode: default
 {
     shader: blend_default
-}
-
-blendmode: add
-{
-    shader: blend_add
 }

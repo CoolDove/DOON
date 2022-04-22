@@ -50,6 +50,22 @@ public:
     Dove::IRect2D get_region() const { return region_; }
     HistorySys*   get_history_sys() { return &history_sys_; }
 
+    struct Fcol {
+        float x;
+        float y;
+        float z;
+        float w;
+    } fbrush_color_ = {1};
+    Col_RGBA brush_color_() {
+        Col_RGBA color = {
+            (unsigned char)(fbrush_color_.x * 0xff),
+            (unsigned char)(fbrush_color_.y * 0xff),
+            (unsigned char)(fbrush_color_.z * 0xff),
+            (unsigned char)(fbrush_color_.w * 0xff)
+        };
+        return color;
+    }
+
 public:
     Camera      camera_;
 

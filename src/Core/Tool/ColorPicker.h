@@ -1,5 +1,6 @@
 #pragma once
 #include "Tool.h"
+#include <Core/Color.h>
 
 class Application;
 
@@ -20,5 +21,8 @@ public:
     virtual void on_pointer     (Input::PointerInfo _info, int _x, int _y);
 
     virtual void on_update();
+
+private:
+    Col_RGBA* buffer;
 };
 };

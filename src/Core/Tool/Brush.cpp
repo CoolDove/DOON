@@ -254,8 +254,10 @@ namespace Tool
         brush_tex_->bind(1);
         shader->uniform_i("_brushtex", 1);
 
+        // shader->uniform_f(
+            // "_brushcol", (float)col_.r/255.0, (float)col_.g/255.0, (float)col_.b/255.0, (float)col_.a/255.0);
         shader->uniform_f(
-            "_brushcol", (float)col_.r/255.0, (float)col_.g/255.0, (float)col_.b/255.0, (float)col_.a/255.0);
+            "_brushcol", scn->fbrush_color_.x, scn->fbrush_color_.y, scn->fbrush_color_.z, scn->fbrush_color_.w);
 
         shader->uniform_f("_canvassize", (float)scn->info_.width, (float)scn->info_.height);
         

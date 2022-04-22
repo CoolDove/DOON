@@ -101,9 +101,6 @@ void Renderer::render() {
     Scene* scn = app_->curr_scene_;
     Dove::IRect2D updated_region = scn->get_region();
 
-    // {// compose the scene
-    // }
-
     GLTexture2D* composed_texture = scn->get_composed_texture();
 
     glEnable(GL_BLEND);
@@ -130,7 +127,6 @@ void Renderer::render() {
         shader_base->uniform_mat("_view", 4, &view[0][0]);
         shader_base->uniform_mat("_proj", 4, &proj[0][0]);
         shader_base->uniform_f("_cansize", (float)scn->info_.width, (float)scn->info_.height);
-        // shader_base->uniform_f("_size", (float)scn->info_.width, (float)scn->info_.height);
         shader_base->uniform_i("_scale", cell_scale);
         batch_.draw_batch();
     }

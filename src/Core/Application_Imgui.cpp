@@ -22,17 +22,9 @@ void Application::gui_ColorPicker() {
     // FIXME: i should move the current brush color into Scene or otherwhere we can get without a brush pointer.
     // @Temp: a temp fix
     if (ImGui::CollapsingHeader("Color")) {
-        Tool::Brush* brs = nullptr;
-        brs = dynamic_cast<Tool::Brush*>(curr_tool_);
-        static float bcol[4] = {1.0f,1.0f,1.0f,1.0f};
-        ImGui::ColorPicker4("BrushColor", bcol, ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_DisplayRGB);
-        Col_RGBA color = {
-            (unsigned char)(bcol[0] * 0xff),
-            (unsigned char)(bcol[1] * 0xff),
-            (unsigned char)(bcol[2] * 0xff),
-            (unsigned char)(bcol[3] * 0xff)
-        };
+        // static float bcol[4] = {1.0f,1.0f,1.0f,1.0f};
+        Scene* scn = Application::instance_->curr_scene_;
 
-        if (brs != nullptr && brs->col_ != color) brs->col_ = color;
+        ImGui::ColorPicker4("BrushColor", (float*)&scn->fbrush_color_, ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_DisplayRGB);
     }
 }
