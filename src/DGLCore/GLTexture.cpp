@@ -94,4 +94,27 @@ void GLTexture2D::bind_image(
     glBindImageTexture(_unit, id_, _level, _layered, _layer, (GLenum)_acc, (GLenum)_format);
 }
 
+void* GLTexture2D::mem_alloc() {
+    mem_release();
+    pixels_ = (void*)malloc(data_size());
+    return pixels_;
+}
+
+void* GLTexture2D::mem_fetch() {
+    mem_release();
+    pixels_ = (void*)malloc(data_size());
+    glGetTextureImage(
+        get_glid(), 0,
+        GL_RGBA, GL_UNSIGNED_BYTE,
+        data_size(), pixels_);
+    return pixels_;
+}
+
+void GLTexture2D::mem_release() {
+    if (pixels_ != nullptr) {
+        free(pixels_);
+        pixels_ = nullptr;
+    }
+}
+
 }

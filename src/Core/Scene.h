@@ -37,23 +37,53 @@ public:
     void mark_region(Dove::IRect2D _region);
     void clear_region();
 
-    Layer*        get_curr_layer() { return curr_layer_ite_->get(); };
-    Dove::IRect2D get_region() const { return region_; };
+    bool composed_dirt_ = true;
+
+    GLTexture2D*    get_composed_texture() {
+        if (composed_dirt_)
+            compose_texture();
+        return &composed_texture_;
+    }
+    void compose_texture();
+    
+    Layer*        get_curr_layer() { return curr_layer_ite_->get(); }
+    Dove::IRect2D get_region() const { return region_; }
     HistorySys*   get_history_sys() { return &history_sys_; }
+
+    struct Fcol {
+        float x;
+        float y;
+        float z;
+        float w;
+    } fbrush_color_ = {1};
+    Col_RGBA brush_color_() {
+        Col_RGBA color = {
+            (unsigned char)(fbrush_color_.x * 0xff),
+            (unsigned char)(fbrush_color_.y * 0xff),
+            (unsigned char)(fbrush_color_.z * 0xff),
+            (unsigned char)(fbrush_color_.w * 0xff)
+        };
+        return color;
+    }
+
 public:
     Camera      camera_;
 
-    LayerList   layers_;
+    LayerList        layers_;
     DGL::GLTexture2D brush_layer_;
+    DGL::GLTexture2D composed_texture_;
 
     struct {
         int width;
         int height;
     } info_;
+
+    std::string save_path_ = "";
 private:
     void create_scene(uint32_t _width, uint32_t _height, Col_RGBA _col);
     bool load_scene(const char* path);
     bool load_png(const char* path);
+
     bool load_doo(const char* path);
 private:
     HistorySys    history_sys_;

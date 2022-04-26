@@ -1,18 +1,47 @@
-﻿normal{
-<a>     : [hello_world]
-
-<l>     : [log:hello dove]
-          [hello_world]
-
-<C-a>   : [reset_camera]
-
-<C-S-a> : [hello_world]
-          [reset_camera]
-
-<d>     : [switch_page:dove]
+keymap: default
+{
+    <C-s>: save_current_scene,
+    <C-S-s>: save_current_scene_as,
+    <M-s>: save_all_scenes,
+	<C-S-e>: export_current_scene,
+    <C-n>: new_scene,
+    <C-o>: open_file,
+    <C-z>: undo,
+    <C-S-z>: redo
 }
 
-dove{
-<a>     : [hello_world]
-<s>     : [log:"hello dove", 12]
+brush: default
+{
+    texture: brush_circle,
+    shader: brush_default,
+    smooth: 0.5
+}
+brush: soft
+{
+    texture: brush_circle_soft,
+	smooth: 1.0
+}
+brush: add
+{
+    texture: brush_circle_soft,
+	shader: brush_add,
+	smooth: 0.6
+}
+
+brush: rast
+{
+    texture: brush_circle_soft,
+	shader: brush_rast,
+	smooth: 0.8
+}
+
+brush: square
+{
+    texture: brush_square,
+    smooth: 0.45
+}
+
+blendmode: default
+{
+    shader: blend_default
 }

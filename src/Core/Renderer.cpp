@@ -101,44 +101,7 @@ void Renderer::render() {
     Scene* scn = app_->curr_scene_;
     Dove::IRect2D updated_region = scn->get_region();
 
-    {// compose layers to paint_tex_
-        glDisable(GL_BLEND);
-
-        fbuf_paint_.bind();
-        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-        fbuf_paint_.attach(&paint_tex_a_);
-        glClear(GL_COLOR_BUFFER_BIT);
-        fbuf_paint_.attach(&paint_tex_b_);
-        glClear(GL_COLOR_BUFFER_BIT);
-        glDepthFunc(GL_ALWAYS);
-
-        auto paint_shader = app_->RES->GetShader("paint");
-        paint_shader->bind();
-        glViewport(0, 0, scn->info_.width, scn->info_.height);
-
-        for (auto const& layer : scn->layers_) {
-            swap_paint_tex();
-            fbuf_paint_.attach(current_paint_tex_);
-            glClear(GL_COLOR_BUFFER_BIT);
-
-            (*layer).tex_->bind(0);
-            paint_shader->uniform_i("_tex", 0);
-            other_paint_tex_->bind(1);
-            paint_shader->uniform_i("_paintbuffer", 1);
-            batch_.draw_batch();
-
-            // render brush layer
-            if (&(*layer) == scn->get_curr_layer()) {
-                swap_paint_tex();
-                fbuf_paint_.attach(current_paint_tex_);
-                glClear(GL_COLOR_BUFFER_BIT);
-
-                scn->brush_layer_.bind(0);
-                other_paint_tex_->bind(1);
-                batch_.draw_batch();
-            }
-        }
-    }
+    GLTexture2D* composed_texture = scn->get_composed_texture();
 
     glEnable(GL_BLEND);
     glBlendEquation(GL_FUNC_ADD);
@@ -148,6 +111,7 @@ void Renderer::render() {
     int wnd_height = app_->window_info_.height;
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
     glViewport(0, 0, wnd_width, wnd_height);
 
@@ -163,7 +127,6 @@ void Renderer::render() {
         shader_base->uniform_mat("_view", 4, &view[0][0]);
         shader_base->uniform_mat("_proj", 4, &proj[0][0]);
         shader_base->uniform_f("_cansize", (float)scn->info_.width, (float)scn->info_.height);
-        // shader_base->uniform_f("_size", (float)scn->info_.width, (float)scn->info_.height);
         shader_base->uniform_i("_scale", cell_scale);
         batch_.draw_batch();
     }
@@ -173,16 +136,22 @@ void Renderer::render() {
     shader_canvas->uniform_f("_cansize", (float)scn->info_.width, (float)scn->info_.height);
     shader_canvas->uniform_mat("_view", 4, &view[0][0]);
     shader_canvas->uniform_mat("_proj", 4, &proj[0][0]);
-    if (current_paint_tex_ != nullptr) {// draw canvas
-        current_paint_tex_->bind(0);
-        shader_canvas->uniform_i("_tex", 0);
-        batch_.draw_batch();
-    }
+
+    composed_texture->bind(0);
+    shader_canvas->uniform_i("_tex", 0);
+    batch_.draw_batch();
+
+    // if (current_paint_tex_ != nullptr) {// draw canvas
+        // scn->get_composed_texture()->bind(0);
+        // shader_canvas->uniform_i("_tex", 0);
+        // batch_.draw_batch();
+    // }
 
 }
 
 void Renderer::resize_framebuffer(Dove::IVector2D _size) {
 }
+
 
 void Renderer::init_opengl() {
     device_context_ = GetDC(app_->window_);
@@ -242,6 +211,13 @@ void Renderer::init_opengl() {
             wglMakeCurrent(device_context_, modern_glrc);
             gl_context_ = modern_glrc;
         }
+
+        // NOTE: close the vsync
+        typedef void (APIENTRY *PFNWGLEXTSWAPCONTROLPROC) (int);
+        PFNWGLEXTSWAPCONTROLPROC wglSwapIntervalEXT = NULL;
+        wglSwapIntervalEXT = (PFNWGLEXTSWAPCONTROLPROC)wglGetProcAddress("wglSwapIntervalEXT");
+        wglSwapIntervalEXT(0);
+        
 #ifdef DEBUG
         gl_debug_init();
 #endif

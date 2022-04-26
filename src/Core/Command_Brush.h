@@ -18,6 +18,7 @@ public:
         using namespace Dove;
         auto* renderer = p_app->renderer_.get();
         auto* scn = p_app->curr_scene_;
+        scene_ = scn;
         target_ = scn->get_curr_layer()->tex_.get();// current layer texture
 
         auto* brush_tex = &scn->brush_layer_;
@@ -38,6 +39,8 @@ public:
         delete stash_tex_;
     }
 
+    Scene* scene_;
+
 public:
     Dove::IRect2D rect_;
     DGL::GLTexture2D* stash_tex_;
@@ -56,6 +59,7 @@ public:
         Renderer::blit(stash_tex_, &temp, rect_stash, rect_stash);
         Renderer::blit(target_, stash_tex_, rect_, rect_stash);
         Renderer::blit(&temp, target_, rect_stash, rect_);
+        scene_->composed_dirt_ = true;
     }
 
     void on_redo() override {
@@ -71,5 +75,7 @@ public:
         Renderer::blit(stash_tex_, &temp, rect_stash, rect_stash);
         Renderer::blit(target_, stash_tex_, rect_, rect_stash);
         Renderer::blit(&temp, target_, rect_stash, rect_);
+
+        scene_->composed_dirt_ = true;
     }
 };

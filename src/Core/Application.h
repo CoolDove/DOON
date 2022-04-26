@@ -39,14 +39,24 @@ public:
 
     void change_scene(const std::string& _name);
 
-    Scene* curr_scene_;
-    unordered_map<string, unique_ptr<Scene>> scenes_;
+    Scene* add_scene(const std::string& path);
+    Scene* add_scene(const std::string& name, uint32_t width, uint32_t height, Col_RGBA col);
+    void remove_scene(const std::string& name);
+    void clear_scenes();
 
+    void add_brush(const std::string& name, Tool::Brush* p_brush);
+
+    void choose_tool(Tool::Tool* target, bool invoke_callback = true);
+
+    Scene* curr_scene_;
+    unordered_map<string, Scene*> scenes_;
+
+    unordered_map<string, Tool::Brush*> brushes_;
+    
     // @Tools:
     Tool::Tool*             curr_tool_;
-    struct {
-    unique_ptr<Tool::Brush> brush;
-    // ...
+    struct Tools {
+        Tool::ColorPicker* color_picker;
     } tools_;
 
     unique_ptr<Renderer>    renderer_;
@@ -69,15 +79,26 @@ public:
     GLuint buf_tex_;
 
 public: 
+    // @Actions:
+    void register_app_actions();
     static void action_undo();
     static void action_redo();
-    static void action_save();
-
+    static void action_save_current_scene();
+    static void action_save_current_scene_as();
+    static void action_export_current_scene();
+    static void action_open_file();
+    static void action_new_scene();
+    static void action_load_config();
 private:
     void init_dlog();
     void init_window(HINSTANCE _instance, HINSTANCE _prev_instance, char* _cmd_line, int _show_code);
     void init_imgui();
 
     void init_tools();
+    void release_tools();
+
     void init_tablet();
+private:
+    void gui_ToolsChooser();
+    void gui_ColorPicker();
 };

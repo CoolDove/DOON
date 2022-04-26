@@ -21,6 +21,7 @@
 
 // @Temporary: test reading binary files
 #include <Core/Serialize.h>
+#include <Core/Config.h>
 
 using wglCreateContextAttribsARB_t = HGLRC (WINAPI *) (HDC hDC, HGLRC hshareContext, const int *attribList);
 
@@ -31,6 +32,7 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
 :   window_info_{0, 0},
     inited_(false)
 {
+    using namespace Tool;
     if (!instance_) 
         instance_ = this;
 
@@ -40,8 +42,6 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
 
     init_dlog();
 
-    RES = std::make_unique<DOONRes>();
-
     init_window(_instance, _prev_instance, _cmd_line, _show_code);
     renderer_ = make_unique<Renderer>(this);
     init_imgui();
@@ -50,58 +50,37 @@ Application::Application(HINSTANCE _instance, HINSTANCE _prev_instance, char* _c
     inited_ = true;
 
     // @LoadResource:
-    RES->LoadShader("./res/shaders/paint.vert", "./res/shaders/paint.frag", "paint");
-    RES->LoadShader("./res/shaders/canvas.vert", "./res/shaders/canvas.frag", "canvas");
-    RES->LoadShader("./res/shaders/base.vert", "./res/shaders/base.frag", "base");
+    RES = std::make_unique<DOONRes>();
+    RES->SetResourcePath("./res");
+    RES->LoadResourcesPath();
 
-    // repair multiple scenes
+    init_tools();
+
     long clock = std::clock();
-    // scenes_["anji"]  = make_unique<Scene>("./res/textures/anji.png");
-    // scenes_["alp"]    = make_unique<Scene>("./res/textures/alp.png");
-
-    scenes_["dooload"] = make_unique<Scene>("d:/paintings/test.doo");
-    scenes_["giant"] = make_unique<Scene>("d:/paintings/0116_TheLastGiant.png");
-    scenes_["big"] = make_unique<Scene>(512, 512, Col_RGBA{0x43, 0x32, 0x64, 0xff});
+    // scenes_["anji"]    = make_unique<Scene>("./res/textures/anji.png");
+    // scenes_["dooload"] = make_unique<Scene>("d:/paintings/test.doo");
+    // scenes_["big"]     = make_unique<Scene>(512, 512, Col_RGBA{0x43, 0x32, 0x64, 0xff});
 
     if (scenes_.size() == 0) {
-        scenes_["void"] = make_unique<Scene>(1024, 1024, Col_RGBA{0x00, 0x00, 0x00, 0x00});
+        add_scene("void", 2048, 2048, Col_RGBA{0x00, 0x00, 0x00, 0x00});
     }
     
-    curr_scene_ = scenes_.begin()->second.get();
+    curr_scene_ = scenes_.begin()->second;
     clock = std::clock() - clock;
 
     DLOG_TRACE("scene loaded, takes %ldms", clock);
 
-    // init tools
-    tools_.brush = make_unique<Tool::Brush>(this);
-    tools_.brush->on_init();
-    curr_tool_ = tools_.brush.get();
-    curr_tool_->on_activate();
-
     renderer_->init();
 
     // @ActionList:
-    using namespace Dove;
     action_list_ = std::make_unique<ActionList>();
-    // action_list_->invoke({Dove::KeyCode::A, Dove::ModKey::None});
-    action_list_->register_key("def", ActionKey{KeyCode::Z, ModKey::Ctrl}, "undo");
-    action_list_->register_key("def", ActionKey{KeyCode::Z, ModKey::Ctrl|ModKey::Shift}, "redo");
-    action_list_->register_key("def", ActionKey{KeyCode::S, ModKey::Ctrl}, "save");
-    
-    action_list_->register_action("def", "undo", &Application::action_undo);
-    action_list_->register_action("def", "redo", &Application::action_redo);
-    action_list_->register_action("def", "save", &Application::action_save);
+    register_app_actions();
 
-//  @temporary: check the version
-    GLint major;
-    GLint minor;
-    glGetIntegerv(GL_MAJOR_VERSION, &major);
-    glGetIntegerv(GL_MINOR_VERSION, &minor);
-
-    DLOG_TRACE("GL version: %d.%d\n", major, minor);
+    Application::action_load_config();
 }
 
 Application::~Application() {
+    release_tools();
 }
 
 void Application::run() {
@@ -128,6 +107,36 @@ void Application::run() {
     ImGui::DestroyContext();
 }
 
+Scene* Application::add_scene(const std::string& path) {
+    remove_scene(path);
+    scenes_[path] = new Scene(path.c_str());
+    return scenes_[path];
+}
+
+Scene* Application::add_scene(const std::string& name, uint32_t width, uint32_t height, Col_RGBA col) {
+    remove_scene(name);
+    scenes_[name] = new Scene(width, height, col);
+    return scenes_[name];
+}
+void Application::remove_scene(const std::string& name) {
+    if (name == "void") return;
+    auto f = scenes_.find(name);
+    if (f != scenes_.end()) {
+        delete f->second;
+        scenes_.erase(f);
+        curr_scene_ = scenes_["void"];
+    }
+}
+
+void Application::clear_scenes() {
+    for (auto ite = scenes_.begin(); ite != scenes_.end(); ite++) {
+        if (ite->first != "void") {
+            delete ite->second;
+            scenes_.erase(ite);
+        }
+    }
+}
+
 void Application::render_ui() {
     DGL::Camera* cam = &curr_scene_->camera_;
 
@@ -138,26 +147,12 @@ void Application::render_ui() {
     ImGui::NewFrame();
     {
         if (ImGui::Begin("panel")) {
-            if (ImGui::CollapsingHeader("cam")) {
-                float cam_region = 0.5f * glm::max(curr_scene_->info_.width, curr_scene_->info_.height);
-                ImGui::DragFloat2("cam_pos", (float*)&cam->position_, 1.0f, -cam_region, cam_region);
-                ImGui::DragFloat("cam_size", &cam->size_, 0.1f, 0.1f, 10.0f);
-            }
+            gui_ColorPicker();
+            gui_ToolsChooser();
 
             if (ImGui::CollapsingHeader("tool")) {
                 if (dynamic_cast<Tool::Brush*>(curr_tool_)) {
                     Tool::Brush* brs = dynamic_cast<Tool::Brush*>(curr_tool_);
-                    static float bcol[4] = {1.0f,1.0f,1.0f,1.0f};
-                    ImGui::ColorEdit4("brush_col", bcol, ImGuiColorEditFlags_AlphaBar);
-                    Col_RGBA color = {
-                        (unsigned char)(bcol[0] * 0xff),
-                        (unsigned char)(bcol[1] * 0xff),
-                        (unsigned char)(bcol[2] * 0xff),
-                        (unsigned char)(bcol[3] * 0xff)
-                    };
-
-                    if (brs->col_ != color) brs->col_ = color;
-
                     ImGui::DragInt("brush_size_max", &brs->size_max_, 0.1f, 1, 7000);
                     ImGui::DragFloat("brush_size_min", &brs->size_min_scale_, 0.01f, 0.0f, 1.0f);
                 }
@@ -212,8 +207,8 @@ void Application::render_ui() {
         ImGui::LabelText("canvas size",  "-%d * %d-", curr_scene_->info_.width, curr_scene_->info_.height);
         ImGui::EndGroup();
 
-        auto* calls = &action_list_->call_pages_["def"];
-        auto* actions = &action_list_->action_pages_["def"];
+        auto* calls = &action_list_->key_pages_["default"];
+        auto* actions = &action_list_->action_map_;
 
         for (auto ite = calls->begin(); ite != calls->end(); ite++) {
             auto action_ite = actions->find(ite->second);
@@ -236,9 +231,7 @@ void Application::render_ui() {
 
 void Application::change_scene(const std::string& _name) {
     if (scenes_.find(_name) != scenes_.end()) {
-        curr_scene_ = scenes_[_name].get();
-
-        // renderer_->recreate_canvas_batch();
+        curr_scene_ = scenes_[_name];
     }
 }
 
@@ -253,7 +246,49 @@ void Application::init_dlog() {
     DLOG_INIT;
 }
 
+void Application::add_brush(const std::string& name, Tool::Brush* p_brush) {
+    if (p_brush == nullptr) return;
+    bool set_currtool = false;
+    if (brushes_.find(name) != brushes_.end()) {
+        if (curr_tool_ == brushes_[name]) set_currtool = true;
+        delete brushes_[name];
+    }
+    curr_tool_ = brushes_[name] = p_brush;
+}
+
 // @region: INIT
+void Application::init_tools() {
+    using namespace Tool;
+    curr_tool_ = nullptr;
+    add_brush("default", new Brush(this));
+
+    tools_.color_picker = new ColorPicker();
+
+    curr_tool_ = brushes_["default"];
+    curr_tool_->on_activate();
+}
+
+void Application::release_tools() {
+    if (tools_.color_picker) 
+        delete tools_.color_picker;
+
+    // release brushes
+    for (auto ite = brushes_.begin(); ite != brushes_.end(); ite++) {
+        delete ite->second;
+    }
+}
+
+void Application::choose_tool(Tool::Tool* target, bool invoke_callback) {
+    if (target == nullptr || target == curr_tool_) return;
+    auto tool_before = curr_tool_;
+
+    curr_tool_ = target;
+    curr_tool_->on_activate();
+
+    if (tool_before != nullptr)
+        tool_before->on_deactivate();
+}
+
 void Application::init_window(HINSTANCE _instance, HINSTANCE _prev_instance, char* _cmd_line, int _show_code) {
     WNDCLASS wnd_class = {};
     wnd_class.style = CS_HREDRAW | CS_VREDRAW;
