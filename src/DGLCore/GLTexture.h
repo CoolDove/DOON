@@ -118,6 +118,15 @@ public:
                     Access _acc, ImageUnitFormat _format);
 
     uint32_t get_levels_count() const { return levels_count_; }
+
+    void* mem_alloc();
+    void* mem_fetch();
+    void mem_release();
+    void* mem_pixels();
+private:
+    void* pixels_ = nullptr;
+    size_t data_size() { return info_.width * info_.height * 4 * sizeof(uint32_t); }
+    
 private:
     uint32_t levels_count_;
 

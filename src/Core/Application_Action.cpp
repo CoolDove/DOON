@@ -4,6 +4,7 @@
 #include <Core/Tool/Brush.h>
 #include <Core/Config.h>
 #include <Base/Win_FileChooser.h>
+#include <stb_image/stb_image_write.h>
 
 
 void Application::register_app_actions() {
@@ -14,8 +15,11 @@ void Application::register_app_actions() {
 
     alist->register_action("undo", action_undo);
     alist->register_action("redo", action_redo);
+
     alist->register_action("save_current_scene", action_save_current_scene);
     alist->register_action("save_current_scene_as", action_save_current_scene_as);
+    alist->register_action("export_current_scene", action_export_current_scene);
+
     alist->register_action("open_file", action_open_file);
     alist->register_action("new_scene", action_new_scene);
     alist->register_action("load_config", action_load_config);
@@ -54,6 +58,20 @@ void Application::action_save_current_scene_as() {
         scn->save_path_ = file;
         DooWriter writer(app->curr_scene_);
         writer.write(scn->save_path_.c_str());
+    }
+}
+
+void Application::action_export_current_scene() {
+    auto app = Application::instance_;
+    Scene* scn = app->curr_scene_;
+    if (scn == nullptr) return;
+    std::string file = OS::choose_file_export();
+    if (file != "") {
+        DLOG_DEBUG("export to :%s", file.c_str());
+        auto tex = scn->get_composed_texture();
+        auto pixels = tex->mem_fetch();
+        stbi_write_png(file.c_str(), scn->info_.width, scn->info_.height, 4, pixels, 0);
+        tex->mem_release();
     }
 }
 
